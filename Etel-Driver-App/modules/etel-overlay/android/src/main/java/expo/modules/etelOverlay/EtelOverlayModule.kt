@@ -1,5 +1,8 @@
 package expo.modules.etelOverlay
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
@@ -7,11 +10,16 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
 import android.view.Gravity
 import android.view.MotionEvent
@@ -46,6 +54,16 @@ class EtelOverlayModule : Module() {
   private var rightSide = false
   // trips, new requests, new orders, deliveries in progress
   private var counts = intArrayOf(0, 0, 0, 0)
+  // The ring that spreads out from the logo while there is something to attend to, and the pulse of the logo itself.
+  private var halo: View? = null
+  private var haloAnim: AnimatorSet? = null
+  private var burst: AnimatorSet? = null
+  // Sound and vibration for a NEW request or order (the owner can switch them off in Admin > ETEL app).
+  private var soundOn = true
+  private var vibrateOn = true
+  // requests + orders at the last update; -1 = nothing shown yet, so the first numbers after the badge appears do not make a noise
+  private var lastAttention = -1
+  private var labels = arrayOf("Trip", "Request", "Order", "Delivery")
 
   private fun canDraw(): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
@@ -145,15 +163,35 @@ class EtelOverlayModule : Module() {
     val root = LinearLayout(context)
     root.orientation = LinearLayout.HORIZONTAL
     root.gravity = Gravity.CENTER_VERTICAL
+    root.setPadding(dp(10), dp(10), dp(10), dp(10))   // room for the ring that spreads out from the logo
+    root.clipChildren = false
+    root.clipToPadding = false
 
     val frame = FrameLayout(context)
-    val ring = GradientDrawable().apply {
+    // A white outer edge (so the badge stands out on a light wallpaper), a solid dark disc and a thick gold ring.
+    val edge = GradientDrawable().apply {
       shape = GradientDrawable.OVAL
-      setColor(Color.parseColor("#E60A0703"))
-      setStroke(dp(2), Color.parseColor("#FFD4AF37"))
+      setColor(Color.parseColor("#FFFFFFFF"))
     }
+    val disc = GradientDrawable().apply {
+      shape = GradientDrawable.OVAL
+      setColor(Color.parseColor("#FF0A0703"))
+      setStroke(dp(3), Color.parseColor("#FFF2CC6B"))
+    }
+    val ring = LayerDrawable(arrayOf<Drawable>(edge, disc))
+    ring.setLayerInset(1, dp(2), dp(2), dp(2), dp(2))
     frame.background = ring
-    frame.elevation = dp(6).toFloat()
+    frame.elevation = dp(8).toFloat()
+    frame.clipChildren = false
+    val haloView = View(context)
+    haloView.background = GradientDrawable().apply {
+      shape = GradientDrawable.OVAL
+      setColor(Color.TRANSPARENT)
+      setStroke(dp(3), Color.parseColor("#FFF2CC6B"))
+    }
+    haloView.alpha = 0f
+    frame.addView(haloView, FrameLayout.LayoutParams(size, size))
+    halo = haloView
     val logo = ImageView(context)
     try {
       logo.setImageDrawable(context.packageManager.getApplicationIcon(context.packageName))
@@ -206,16 +244,89 @@ class EtelOverlayModule : Module() {
     return t
   }
 
-  // The golden light: a slow fade while merely online, a quicker pulse while there is something to attend to.
+  // The golden light. While merely online it breathes gently but stays clearly visible (never fainter than 80%). While there is something to
+  // attend to it pulses larger and a gold ring spreads out from the logo.
   private fun startBlink(fast: Boolean) {
     blink?.cancel()
+    haloAnim?.cancel()
     val target = logoFrame ?: return
-    blink = ObjectAnimator.ofFloat(target, "alpha", 1f, if (fast) 0.15f else 0.3f).apply {
-      duration = if (fast) 450L else 900L
+    blink = ObjectAnimator.ofFloat(target, "alpha", 1f, if (fast) 0.9f else 0.8f).apply {
+      duration = if (fast) 500L else 1400L
       repeatMode = ValueAnimator.REVERSE
       repeatCount = ValueAnimator.INFINITE
       interpolator = LinearInterpolator()
       start()
+    }
+    val h = halo ?: return
+    if (!fast) {
+      h.alpha = 0f
+      target.scaleX = 1f
+      target.scaleY = 1f
+      return
+    }
+    val spreadX = ObjectAnimator.ofFloat(h, "scaleX", 1f, 1.7f)
+    val spreadY = ObjectAnimator.ofFloat(h, "scaleY", 1f, 1.7f)
+    val fade = ObjectAnimator.ofFloat(h, "alpha", 0.85f, 0f)
+    val grow = ObjectAnimator.ofFloat(target, "scaleX", 1f, 1.12f)
+    val growY = ObjectAnimator.ofFloat(target, "scaleY", 1f, 1.12f)
+    for (a in arrayOf(spreadX, spreadY, fade, grow, growY)) {
+      a.duration = 1100L
+      a.repeatCount = ValueAnimator.INFINITE
+    }
+    for (a in arrayOf(grow, growY)) a.repeatMode = ValueAnimator.REVERSE
+    haloAnim = AnimatorSet().apply {
+      playTogether(spreadX, spreadY, fade, grow, growY)
+      start()
+    }
+  }
+
+  // A new request or order just arrived: three quick bumps of the logo, a short vibration and the phone's notification sound.
+  private fun attentionBurst() {
+    val target = logoFrame
+    if (target != null) {
+      val older = burst
+      burst = null            // so the older burst's end does not restart the pulse under this one
+      older?.cancel()
+      val sx = ObjectAnimator.ofFloat(target, "scaleX", 1f, 1.4f, 1f)
+      val sy = ObjectAnimator.ofFloat(target, "scaleY", 1f, 1.4f, 1f)
+      for (a in arrayOf(sx, sy)) {
+        a.duration = 350L
+        a.repeatCount = 2
+      }
+      haloAnim?.cancel()
+      halo?.alpha = 0f
+      val set = AnimatorSet()
+      burst = set
+      set.playTogether(sx, sy)
+      set.addListener(object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) {
+          if (burst === set && badge != null) startBlink(counts.sum() > 0)
+        }
+      })
+      set.start()
+    }
+    if (vibrateOn) {
+      try {
+        val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        val pattern = longArrayOf(0, 220, 120, 220)
+        if (vib != null) {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vib.vibrate(VibrationEffect.createWaveform(pattern, -1))
+          } else {
+            @Suppress("DEPRECATION") vib.vibrate(pattern, -1)
+          }
+        }
+      } catch (e: Exception) {
+        // no vibrator, or the permission was refused: the light still pulses
+      }
+    }
+    if (soundOn) {
+      try {
+        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        RingtoneManager.getRingtone(context, uri)?.play()
+      } catch (e: Exception) {
+        // silent phone or no default sound
+      }
     }
   }
 
@@ -231,11 +342,14 @@ class EtelOverlayModule : Module() {
       dot.visibility = View.GONE
     }
     box.removeAllViews()
-    val labels = arrayOf("Trip", "Request", "Order", "Delivery")
     for (i in counts.indices) {
       if (counts[i] > 0) box.addView(pill(labels[i] + " " + counts[i]))
     }
-    startBlink(total > 0)
+    // A request or an order that was not there before = something new to attend to.
+    val attention = counts[1] + counts[2]
+    val fresh = lastAttention >= 0 && attention > lastAttention
+    lastAttention = attention
+    if (fresh) attentionBurst() else if (burst?.isRunning != true) startBlink(total > 0)
     val v = badge
     val lp = params
     if (v != null && lp != null) {
@@ -286,6 +400,13 @@ class EtelOverlayModule : Module() {
   private fun hide() {
     blink?.cancel()
     blink = null
+    haloAnim?.cancel()
+    haloAnim = null
+    val oldBurst = burst
+    burst = null
+    oldBurst?.cancel()
+    halo = null
+    lastAttention = -1
     logoFrame = null
     bubble = null
     pillBox = null
@@ -318,6 +439,16 @@ class EtelOverlayModule : Module() {
       main.post { applyCounts() }
     }
     Function("hide") { main.post { hide() } }
+    // Newer than the first build: the owner's switch for sound and vibration, and the words on the pills.
+    Function("setAlerts") { sound: Boolean, vibrate: Boolean ->
+      soundOn = sound
+      vibrateOn = vibrate
+      true
+    }
+    Function("setLabels") { trip: String, request: String, order: String, delivery: String ->
+      labels = arrayOf(trip, request, order, delivery)
+      main.post { applyCounts() }
+    }
     Function("isShowing") { badge != null }
 
     OnDestroy { main.post { hide() } }

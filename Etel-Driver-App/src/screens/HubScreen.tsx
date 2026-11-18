@@ -168,8 +168,8 @@ export default function HubScreen({ navigation }: Props) {
         <Text style={[styles.cardSub, { color: p.textSecondary }]}>
           {!working
             ? online
-              ? 'Preview: the golden light shows with sample counts while you use other apps.'
-              : 'Preview mode. Your account is not a driver, courier or service giver, so this only shows the golden light with sample counts.'
+              ? 'The golden light shows while you use other apps, with your real counts (your own trips and orders).'
+              : 'Your account is not a driver, courier or service giver, so the golden light counts only your own live trip and your orders on the way.'
             : online
               ? where.length
                 ? translate('Online in: ') + where.map((w) => translate(w)).join(', ')

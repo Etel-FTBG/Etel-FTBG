@@ -13,11 +13,7 @@ export interface LiveCounts {
 const ZERO: LiveCounts = { trips: 0, requests: 0, orders: 0, deliveries: 0, total: 0 };
 const MIN_GAP_MS = 12000;
 
-// A sample set the profile card can switch on, so the golden light can be seen working without a live trip or order.
-const DEMO: LiveCounts = { trips: 1, requests: 2, orders: 1, deliveries: 1, total: 5 };
-
 let counts: LiveCounts = ZERO;
-let demo = false;
 let lastFetch = 0;
 let inflight = false;
 const listeners = new Set<(c: LiveCounts) => void>();
@@ -35,18 +31,9 @@ function set(next: LiveCounts) {
   listeners.forEach((l) => l(getCounts()));
 }
 
+// Only real numbers from the server (hub_counts). There are no sample numbers.
 export function getCounts(): LiveCounts {
-  return demo ? DEMO : counts;
-}
-
-export function isDemo(): boolean {
-  return demo;
-}
-
-export function setDemo(on: boolean): void {
-  if (demo === on) return;
-  demo = on;
-  listeners.forEach((l) => l(getCounts()));
+  return counts;
 }
 
 export function subscribeCounts(l: (c: LiveCounts) => void): () => void {

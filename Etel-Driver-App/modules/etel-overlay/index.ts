@@ -9,6 +9,9 @@ type EtelOverlayNative = {
   hide(): void;
   update(trips: number, requests: number, orders: number, deliveries: number): void;
   isShowing(): boolean;
+  // Newer builds only (a phone with an older install does not have them, so they are called with ?.).
+  setAlerts?(sound: boolean, vibrate: boolean): void;
+  setLabels?(trip: string, request: string, order: string, delivery: string): void;
 };
 
 const native: EtelOverlayNative | null =
@@ -20,3 +23,7 @@ export function requestOverlayPermission(): void { native?.requestPermission(); 
 export function showOnlineBadge(): void { native?.show(); }
 export function hideOnlineBadge(): void { native?.hide(); }
 export function updateOverlayCounts(trips: number, requests: number, orders: number, deliveries: number): void { native?.update(trips, requests, orders, deliveries); }
+// Sound and vibration when a new request or order arrives. Ignored by an older install.
+export function setOverlayAlerts(sound: boolean, vibrate: boolean): void { native?.setAlerts?.(sound, vibrate); }
+// The words on the small pills (for example "New request"). Ignored by an older install.
+export function setOverlayLabels(trip: string, request: string, order: string, delivery: string): void { native?.setLabels?.(trip, request, order, delivery); }

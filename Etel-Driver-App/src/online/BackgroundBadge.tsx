@@ -12,7 +12,25 @@ import {
   showOnlineBadge,
   hideOnlineBadge,
   updateOverlayCounts,
+  setOverlayAlerts,
+  setOverlayLabels,
 } from '../../modules/etel-overlay';
+import { featureOn } from '../hub/apps';
+import { loadHubConfigCache, refreshHubConfig } from '../hub/appConfig';
+
+// The words on the pills depend on what the account does, so a customer sees "Your trip" and a driver sees "New request".
+function labelsFor(role: string | undefined): [string, string, string, string] {
+  switch (role) {
+    case 'driver':
+      return ['Trip', 'New request', 'Order', 'Delivery'];
+    case 'courier':
+      return ['Trip', 'New request', 'New order', 'Delivery'];
+    case 'service_giver':
+      return ['Trip', 'Request', 'New order', 'In progress'];
+    default:
+      return ['Your trip', 'Request', 'Order', 'Your order'];
+  }
+}
 
 const ASKED_KEY = 'etel_overlay_asked';
 const POLL_MS = 20000;
@@ -29,9 +47,14 @@ export default function BackgroundBadge() {
     let timer: ReturnType<typeof setInterval> | null = null;
 
     const sync = () => {
-      const c = applyAlertPrefs(getCounts(), getSession()?.role);
+      const role = getSession()?.role;
+      const c = applyAlertPrefs(getCounts(), role);
       const away = appState.current !== 'active';
-      if (away && canDrawOverlays() && (isOnline() || c.total > 0)) {
+      // The owner can switch the light off, or limit it to admins, in Admin > ETEL app > Features.
+      if (away && featureOn('light', role) && canDrawOverlays() && (isOnline() || c.total > 0)) {
+        const [t, r, o, d] = labelsFor(role);
+        setOverlayLabels(t, r, o, d);
+        setOverlayAlerts(featureOn('light_alert', role), featureOn('light_alert', role));
         updateOverlayCounts(c.trips, c.requests, c.orders, c.deliveries);
         showOnlineBadge();
       } else {
@@ -43,6 +66,7 @@ export default function BackgroundBadge() {
     const startPolling = () => {
       if (timer || !getSession()) return;
       refreshCounts(true).catch(() => {});
+      refreshHubConfig().then(sync).catch(() => {});   // the owner's light / sound switches
       timer = setInterval(() => refreshCounts().catch(() => {}), POLL_MS);
     };
     const stopPolling = () => {
@@ -82,6 +106,7 @@ export default function BackgroundBadge() {
       sync();
     });
     loadAlertPrefs().then(sync);
+    loadHubConfigCache().then(sync).catch(() => {});
     sync();
     return () => {
       offOnline();
