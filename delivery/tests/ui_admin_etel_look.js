@@ -26,7 +26,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     });
     await p.goto(HOST + '/delivery/admin.html', { waitUntil: 'load' }); await p.waitForTimeout(1500);
     await p.evaluate(() => { const n = document.querySelector('.nav-item[data-page="etelapp"]'); if (n) n.classList.remove('etel-cap-hidden'); switchPage('etelapp', n); }); await p.waitForTimeout(1500);
-    t(mode.n + ': four tabs', (await p.locator('[data-ha-tab]').count()) === 4);
+    t(mode.n + ': five tabs', (await p.locator('[data-ha-tab]').count()) === 5);
     await p.click('[data-ha-tab="look"]'); await p.waitForTimeout(1200);
     let txt = await p.innerText('#panel-etelapp');
     t(mode.n + ': the look tab lists the apps but not the feature switches', (await p.locator('.hl-card[data-hl-key]').count()) === 2 && !/Floating golden light/.test(txt));
