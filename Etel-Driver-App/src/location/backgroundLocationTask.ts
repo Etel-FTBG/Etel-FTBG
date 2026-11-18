@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { showLocationDisclosure } from '../permissions/locationDisclosure';
 import * as TaskManager from 'expo-task-manager';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { updateLocation } from '../api/ride';
@@ -84,6 +85,9 @@ export async function startDriverLocationTracking() {
   const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
   if (fgStatus !== 'granted') throw new Error('Foreground location permission denied');
 
+  // Google Play: the plain-words disclosure comes first, and the person can refuse it.
+  const bgNow = await Location.getBackgroundPermissionsAsync();
+  if (!bgNow.granted && !(await showLocationDisclosure())) throw new Error('Background location permission denied');
   const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
   if (bgStatus !== 'granted') throw new Error('Background location permission denied');
 

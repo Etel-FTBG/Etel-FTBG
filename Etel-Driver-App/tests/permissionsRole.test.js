@@ -3,7 +3,7 @@ const ts = require('typescript'); const fs = require('fs'); const path = require
 const src = fs.readFileSync(path.join(__dirname, '../src/permissions/permissions.ts'), 'utf8');
 const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 } }).outputText;
 const m = new Module('p.js'); m.paths = Module._nodeModulePaths(__dirname); const req = m.require.bind(m);
-m.require = (id) => { if (id === 'react-native') return { Alert: {}, Linking: {}, Platform: { OS: 'android' } }; if (/^expo-|etel-overlay/.test(id)) return new Proxy({}, { get: () => () => undefined }); return req(id); };
+m.require = (id) => { if (id === 'react-native') return { Alert: {}, Linking: {}, Platform: { OS: 'android' } }; if (id === './locationDisclosure') return { showLocationDisclosure: async () => true, LOCATION_DISCLOSURE: {} }; if (/^expo-|etel-overlay/.test(id)) return new Proxy({}, { get: () => () => undefined }); return req(id); };
 m._compile(js, path.join(__dirname, '../src/permissions/permissions.js')); const P = m.exports;
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
 const keys = (r) => P.requiredFor(r).join(',');

@@ -477,14 +477,16 @@ class EtelOverlayModule : Module() {
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) true
       else (context.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(context.packageName)
     }
+    // Google Play restricts the permission that shows the one-tap "allow" dialog, so this opens the phone's own battery list instead.
+    // The person finds ETEL there and picks "Don't optimise" / "Unrestricted". isIgnoringBatteryOptimizations needs no permission.
     Function("requestIgnoreBatteryOptimizations") {
       try {
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + context.packageName))
+        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
       } catch (e: Exception) {
         try {
-          val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+          val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName))
           fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
           context.startActivity(fallback)
         } catch (e2: Exception) {

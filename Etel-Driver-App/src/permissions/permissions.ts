@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import { showLocationDisclosure } from './locationDisclosure';
 import { batteryExempt, canDrawOverlays, overlaySupported, requestBatteryExemption, requestOverlayPermission, batterySupported } from '../../modules/etel-overlay';
 
 export type PermKey = 'camera' | 'location' | 'locationAlways' | 'notifications' | 'overlay' | 'battery' | 'autostart';
@@ -15,7 +16,7 @@ export const PERMS: { key: PermKey; icon: string; title: string; why: string }[]
   { key: 'locationAlways', icon: 'navigate', title: 'Location all the time', why: 'So riders and dispatch can follow your trip while ETEL is in the background. Choose "Allow all the time".' },
   { key: 'notifications', icon: 'notifications', title: 'Notifications', why: 'So a new trip, order or message wakes your phone, even when ETEL is closed.' },
   { key: 'overlay', icon: 'layers', title: 'Display over other apps', why: 'Shows the golden ETEL light while you use other apps, so you never miss a request.' },
-  { key: 'battery', icon: 'battery-charging', title: 'No battery limits', why: 'Many phones stop an app in the background to save battery, which delays new trips and orders. Choose "Allow" so ETEL keeps running.' },
+  { key: 'battery', icon: 'battery-charging', title: 'No battery limits', why: 'Many phones stop an app in the background to save battery, which delays new trips and orders. In the list that opens, find ETEL and choose "Don\'t optimise" (or "Unrestricted"), then come back.' },
   { key: 'autostart', icon: 'power', title: 'Auto-start and background activity', why: 'Some phones (Tecno, Infinix, Xiaomi, Huawei, Oppo) have a separate switch in Settings > Apps > ETEL. Turn it on, then tap Done here.' },
 ];
 
@@ -32,6 +33,8 @@ export function permsFor(role: PermRole) {
   const need = requiredFor(role);
   return PERMS.filter((p) => need.includes(p.key));
 }
+
+export { LOCATION_DISCLOSURE, showLocationDisclosure } from './locationDisclosure';
 
 const AUTOSTART_KEY = 'etel_autostart_done';
 
@@ -103,6 +106,7 @@ export async function askPerm(key: PermKey): Promise<void> {
       const r = await Location.requestForegroundPermissionsAsync();
       if (!r.granted && r.canAskAgain === false) await Linking.openSettings();
     } else if (key === 'locationAlways') {
+      if (!(await showLocationDisclosure())) return;   // Google Play: say what the location is used for BEFORE the system dialog, and let the person say no
       const fg = await Location.getForegroundPermissionsAsync();
       if (!fg.granted) {
         await Location.requestForegroundPermissionsAsync();
