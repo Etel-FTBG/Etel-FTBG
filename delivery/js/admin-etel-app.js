@@ -9,6 +9,8 @@ if (!K || window.ETELHubApps) return;
 var esc = K.esc;
 var D = { caps: [], apps: null, host: '', err: '', draft: {} };
 var MODES = [['on', 'Visible'], ['admins', 'Admins only'], ['off', 'Hidden']];
+var FMODES = [['on', 'On'], ['admins', 'Admins only'], ['off', 'Off']];                 // a feature switch (no address)
+var FLABEL = { on: 'On', admins: 'Admins only', off: 'Off' };
 var TONE = { on: 'green', admins: 'amber', off: '' };
 function can(c) { return D.caps.indexOf('*') !== -1 || D.caps.indexOf(c) !== -1; }
 function root() { return document.getElementById('panel-etelapp'); }
@@ -36,14 +38,14 @@ function css() {
 function cur(a) { var d = D.draft[a.key]; return { mode: d && d.mode ? d.mode : a.mode, url: d && d.url !== undefined ? d.url : a.url }; }
 function dirty(a) { var c = cur(a); return c.mode !== a.mode || c.url !== a.url; }
 function card(a) {
-  var c = cur(a), edit = can('owner.only');
+  var c = cur(a), edit = can('owner.only'), feat = a.kind === 'feature';
   var h = '<div class="ha-card" data-key="' + esc(a.key) + '"><div class="ha-row"><h3>' + esc(a.title) + '</h3><span class="ha-pill ' + TONE[a.mode] + '">' +
-    esc(a.mode === 'on' ? 'Visible' : (a.mode === 'admins' ? 'Admins only' : 'Hidden')) + '</span></div>' +
-    '<div class="ha-meta">Opens for: ' + esc(a.who) + (a.changed ? '' : ' - default setting') + '</div>' +
-    '<div class="ak-seg" role="radiogroup" aria-label="' + esc(a.title) + ' visibility">' + MODES.map(function (m) {
+    esc(feat ? FLABEL[a.mode] : (a.mode === 'on' ? 'Visible' : (a.mode === 'admins' ? 'Admins only' : 'Hidden'))) + '</span></div>' +
+    '<div class="ha-meta">' + (feat ? 'Works for: ' : 'Opens for: ') + esc(a.who) + (a.changed ? '' : ' - default setting') + '</div>' +
+    '<div class="ak-seg" role="radiogroup" aria-label="' + esc(a.title) + (feat ? ' switch' : ' visibility') + '">' + (feat ? FMODES : MODES).map(function (m) {
       return '<button type="button" role="radio" aria-checked="' + (c.mode === m[0]) + '" class="' + (c.mode === m[0] ? 'on' : '') + '" data-mode="' + m[0] + '"' + (edit ? '' : ' disabled') + '>' + esc(m[1]) + '</button>'; }).join('') + '</div>';
   var builtIn = a.default_path ? 'https://' + (D.host || 'ethelmarket.com') + a.default_path : '';
-  h += K.field('Address of the app (on ' + (D.host || 'this website') + ')', '<input class="ak-in" data-url inputmode="url" autocomplete="off" placeholder="' + esc(builtIn || ('https://' + (D.host || 'ethelmarket.com') + '/...')) + '" value="' + esc(c.url) + '"' + (edit ? '' : ' disabled') + '>',
+  if (!feat) h += K.field('Address of the app (on ' + (D.host || 'this website') + ')', '<input class="ak-in" data-url inputmode="url" autocomplete="off" placeholder="' + esc(builtIn || ('https://' + (D.host || 'ethelmarket.com') + '/...')) + '" value="' + esc(c.url) + '"' + (edit ? '' : ' disabled') + '>',
     a.needs_url ? 'This app has no built-in address yet. Type it here, then choose Visible or Admins only.' : 'Leave empty to use the built-in address (' + builtIn + '). Type another address only to move the app.');
   if (edit) h += '<div class="ha-row"><span class="ha-note">' + (dirty(a) ? 'Not saved yet.' : '') + '</span><button type="button" class="ak-btn gold" data-save' + (dirty(a) ? '' : ' disabled') + '>Save</button></div>';
   return h + '</div>';
@@ -52,7 +54,7 @@ function view() {
   if (D.err) return '<div class="ak">' + K.empty('⚠️', D.err, '') + '</div>';
   if (!D.apps) return '<div class="ak">' + K.skeleton(4) + '</div>';
   var h = '<div class="ak"><div class="ha-hero"><div><h2>ETEL app</h2><p>Choose which apps the ETEL phone app shows. Phones check again when the app opens or is pulled down to refresh.</p></div></div>' +
-    '<p class="ha-note"><b>Visible</b> = everyone who is allowed to open the app sees it. <b>Admins only</b> = only admin accounts see it (test before you launch). <b>Hidden</b> = nobody sees it. ' +
+    '<p class="ha-note">The <b>Features</b> at the end switch parts of the phone app on or off: the floating golden light, and its sound and vibration. <b>Visible</b> = everyone who is allowed to open the app sees it. <b>Admins only</b> = only admin accounts see it (test before you launch). <b>Hidden</b> = nobody sees it. ' +
     'Even when Visible, the app still checks the person\'s role (for example Driver or Courier) and programme (Investor, Equb, Agent), so a customer never sees the Agent app.</p>';
   var groups = [], by = {};
   D.apps.forEach(function (a) { if (!by[a.group]) { by[a.group] = []; groups.push(a.group); } by[a.group].push(a); });
@@ -70,7 +72,7 @@ function load() {
 }
 function byKey(k) { return (D.apps || []).filter(function (a) { return a.key === k; })[0]; }
 function save(a, btn) {
-  var c = cur(a), turningOn = c.mode === 'on' && a.mode !== 'on';
+  var c = cur(a), turningOn = c.mode === 'on' && a.mode !== 'on' && a.kind !== 'feature';
   var go = function () {
     btn.disabled = true;
     run('admin_hub_apps_save', { key: a.key, mode: c.mode, url: c.url }).then(function (r) {

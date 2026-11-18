@@ -9,22 +9,25 @@
 // ============================================================
 if (!function_exists('hub_apps_catalogue')) {
 
-/* key => array(title, group, default mode, default address path ('' = none yet, the owner must type one), who) */
+/* key => array(title, group, default mode, default address path ('' = none yet, the owner must type one), who, kind)
+   kind 'app' = a tile in the hub; kind 'feature' = a switch for a feature of the phone app (no address). */
 function hub_apps_catalogue() {
     return array(
-        'id'       => array('EtelID', 'Identity', 'on', '/EtelId/', 'Everyone'),
-        'ride'     => array('ETEL Ride', 'Mobility', 'on', '/delivery/ride/', 'Everyone'),
-        'driver'   => array('ETEL Driver', 'Mobility', 'on', '/delivery/driver/', 'Driver and courier accounts'),
-        'courier'  => array('ETEL Courier', 'Delivery and services', 'on', '/delivery/courier/', 'Courier accounts'),
-        'customer' => array('ETEL Delivery', 'Delivery and services', 'on', '/delivery/customer.html', 'Everyone'),
-        'service'  => array('ETEL Services', 'Delivery and services', 'on', '/delivery/servicegiver.html', 'Service giver accounts'),
-        'investor' => array('ETEL Investor', 'My programmes', 'on', '/delivery/investor/', 'Investors only'),
-        'equb'     => array('ETEL Equb', 'My programmes', 'on', '/delivery/equb/', 'Equb members only'),
-        'agent'    => array('ETEL Agent', 'My programmes', 'on', '/delivery/agent/', 'Approved agents only'),
-        'admin'    => array('ETEL Admin', 'Staff', 'off', '/delivery/admin.html', 'Admin accounts only'),
-        'pay'      => array('EtelPay', 'Finance and trade', 'off', '', 'Everyone'),
-        'madeya'   => array('EtelMadeya', 'Finance and trade', 'off', '', 'Everyone'),
-        'gebeya'   => array('EtelGebeya', 'Finance and trade', 'off', '', 'Everyone'),
+        'id'       => array('EtelID', 'Identity', 'on', '/EtelId/', 'Everyone', 'app'),
+        'ride'     => array('ETEL Ride', 'Mobility', 'on', '/delivery/ride/', 'Everyone', 'app'),
+        'driver'   => array('ETEL Driver', 'Mobility', 'on', '/delivery/driver/', 'Driver and courier accounts', 'app'),
+        'courier'  => array('ETEL Courier', 'Delivery and services', 'on', '/delivery/courier/', 'Courier accounts', 'app'),
+        'customer' => array('ETEL Delivery', 'Delivery and services', 'on', '/delivery/customer.html', 'Everyone', 'app'),
+        'service'  => array('ETEL Services', 'Delivery and services', 'on', '/delivery/servicegiver.html', 'Service giver accounts', 'app'),
+        'investor' => array('ETEL Investor', 'My programmes', 'on', '/delivery/investor/', 'Investors only', 'app'),
+        'equb'     => array('ETEL Equb', 'My programmes', 'on', '/delivery/equb/', 'Equb members only', 'app'),
+        'agent'    => array('ETEL Agent', 'My programmes', 'on', '/delivery/agent/', 'Approved agents only', 'app'),
+        'admin'    => array('ETEL Admin', 'Staff', 'off', '/delivery/admin.html', 'Admin accounts only', 'app'),
+        'pay'      => array('EtelPay', 'Finance and trade', 'off', '', 'Everyone', 'app'),
+        'madeya'   => array('EtelMadeya', 'Finance and trade', 'off', '', 'Everyone', 'app'),
+        'gebeya'   => array('EtelGebeya', 'Finance and trade', 'off', '', 'Everyone', 'app'),
+        'light'       => array('Floating golden light', 'Features', 'on', '', 'Everyone (the light that shows over other apps)', 'feature'),
+        'light_alert' => array('Sound and vibration for a new request or order', 'Features', 'on', '', 'Everyone (needs the light)', 'feature'),
     );
 }
 
@@ -62,7 +65,7 @@ function hub_apps_admin_view($pdo) {
     foreach (hub_apps_catalogue() as $key => $c) {
         $o = isset($ov[$key]) ? $ov[$key] : null;
         $out[] = array('key' => $key, 'title' => $c[0], 'group' => $c[1], 'default_mode' => $c[2], 'default_path' => $c[3], 'who' => $c[4],
-                       'needs_url' => $c[3] === '' ? 1 : 0,
+                       'kind' => $c[5], 'needs_url' => ($c[5] === 'app' && $c[3] === '') ? 1 : 0,
                        'mode' => $o ? $o['mode'] : $c[2], 'url' => $o ? $o['url'] : '', 'changed' => $o ? 1 : 0);
     }
     return $out;
@@ -74,9 +77,10 @@ function hub_apps_save($pdo, $adminId, $key, $mode, $url, $host) {
     if (!isset($cat[$key])) return 'Unknown app.';
     if (!in_array($mode, hub_apps_modes(), true)) return 'Choose Visible, Admins only or Hidden.';
     $url = trim((string) $url);
+    if ($cat[$key][5] === 'feature') $url = '';                                    // a feature switch has no address
     $err = hub_apps_url_error($url, $host);
     if ($err !== '') return $err;
-    if ($mode !== 'off' && $cat[$key][3] === '' && $url === '') return 'Type the address of this app first. It has no built-in address yet.';
+    if ($mode !== 'off' && $cat[$key][5] === 'app' && $cat[$key][3] === '' && $url === '') return 'Type the address of this app first. It has no built-in address yet.';
     $pdo->prepare('INSERT INTO app_hub_apps (app_key, mode, url, updated_by, updated_at) VALUES (?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE mode = VALUES(mode), url = VALUES(url), updated_by = VALUES(updated_by), updated_at = NOW()')
         ->execute(array($key, $mode, $url, intval($adminId)));
     return '';

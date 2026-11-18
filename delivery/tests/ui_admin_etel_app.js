@@ -4,14 +4,14 @@ const { chromium } = require('playwright');
 const HOST = process.env.ETEL_HOST || 'http://127.0.0.1:8098'; const SHOTS = process.env.ETEL_SHOTS || '/tmp';
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
 const cat = [['id', 'EtelID', 'Identity', 'on', 0, 'Everyone'], ['ride', 'ETEL Ride', 'Mobility', 'on', 0, 'Everyone'], ['agent', 'ETEL Agent', 'My programmes', 'on', 0, 'Approved agents only'],
-  ['admin', 'ETEL Admin', 'Staff', 'off', 0, 'Admin accounts only'], ['pay', 'EtelPay', 'Finance and trade', 'off', 1, 'Everyone']];
+  ['admin', 'ETEL Admin', 'Staff', 'off', 0, 'Admin accounts only'], ['pay', 'EtelPay', 'Finance and trade', 'off', 1, 'Everyone'], ['light', 'Floating golden light', 'Features', 'on', 0, 'Everyone', 'feature'], ['light_alert', 'Sound and vibration for a new request or order', 'Features', 'on', 0, 'Everyone', 'feature']];
 (async () => {
   const b = await chromium.launch();
   for (const mode of [{ n: 'desktop', w: 1360, h: 900, th: 'light', caps: ['*'] }, { n: 'mobile', w: 390, h: 844, th: 'dark', caps: ['*'] }, { n: 'notowner', w: 1360, h: 900, th: 'light', caps: ['orders.view'] }]) {
     const ctx = await b.newContext({ viewport: { width: mode.w, height: mode.h }, serviceWorkers: 'block' });
     await ctx.addInitScript(([th, caps]) => { window.ETEL_CAPS = caps; try { localStorage.setItem('etel_token', 't'); localStorage.setItem('etel_user', JSON.stringify({ id: 1, name: 'Owner', role: 'admin', phone: '0900000000' })); localStorage.setItem('theme', th); } catch (e) {} }, [mode.th, mode.caps]);
     const p = await ctx.newPage(); const errs = []; const saves = [];
-    let apps = cat.map(c => ({ key: c[0], title: c[1], group: c[2], default_mode: c[3], mode: c[3], url: '', needs_url: c[4], who: c[5], changed: 0, default_path: c[4] ? '' : '/x/' }));
+    let apps = cat.map(c => ({ key: c[0], title: c[1], group: c[2], default_mode: c[3], mode: c[3], url: '', needs_url: c[4], who: c[5], kind: c[6] || 'app', changed: 0, default_path: c[4] ? '' : '/x/' }));
     p.on('pageerror', e => { if (!/admin-home\.js/.test(e.stack || '')) errs.push(e.message); });
     await p.route('**/api/boot.php**', r => {
       let d = {}; try { d = JSON.parse(r.request().postData() || '{}'); } catch (e) {} const a = d.action; let data = {}; let success = true, message = '';
@@ -27,9 +27,9 @@ const cat = [['id', 'EtelID', 'Identity', 'on', 0, 'Everyone'], ['ride', 'ETEL R
     let txt = await p.innerText('#panel-etelapp');
     t(mode.n + ': nav item exists', (await p.$('.nav-item[data-page="etelapp"]')) !== null);
     if (mode.n === 'notowner') { t('notowner: refused with a plain message', /Only the owner/.test(txt)); t('notowner: no switches shown', (await p.$('.ha-card')) === null); await ctx.close(); continue; }
-    t(mode.n + ': all 5 apps shown in groups', (await p.locator('.ha-card').count()) === 5 && /Identity/i.test(txt) && /Finance and trade/i.test(txt));
+    t(mode.n + ': all 5 apps shown in groups', (await p.locator('.ha-card').count()) === 7 && /Features/i.test(txt) && /Identity/i.test(txt) && /Finance and trade/i.test(txt));
     t(mode.n + ': defaults shown (Ride visible, Admin hidden)', (await p.locator('.ha-card[data-key=ride] .ha-pill').innerText()) === 'Visible' && (await p.locator('.ha-card[data-key=admin] .ha-pill').innerText()) === 'Hidden');
-    t(mode.n + ': every app has an address box', (await p.locator('.ha-card [data-url]').count()) === 5);
+    t(mode.n + ': every app has an address box, the feature switches do not', (await p.locator('.ha-card [data-url]').count()) === 5);
     t(mode.n + ': the box shows the built-in address as a hint for Ride', /\/x\//.test(await p.getAttribute('.ha-card[data-key=ride] [data-url]', 'placeholder')));
     t(mode.n + ': Save is disabled until something changes', await p.locator('.ha-card[data-key=agent] [data-save]').isDisabled());
     // hide Agent
@@ -53,6 +53,11 @@ const cat = [['id', 'EtelID', 'Identity', 'on', 0, 'Everyone'], ['ride', 'ETEL R
     await p.click('.ak-modal [data-no]'); await p.waitForTimeout(200); t(mode.n + ': cancel sends nothing', saves.length === 3);
     await p.click('.ha-card[data-key=pay] [data-save]'); await p.waitForTimeout(300); await p.click('.ak-modal [data-yes]'); await p.waitForTimeout(800);
     t(mode.n + ': confirmed: saved Visible with the address', saves.length === 4 && saves[3].mode === 'on' && saves[3].url === 'https://ethelmarket.com/Etel.Pay/wallet/' && (await p.locator('.ha-card[data-key=pay] .ha-pill').innerText()) === 'Visible', JSON.stringify(saves[3]));
+    // feature switch: floating light off, no confirm, no address sent
+    t(mode.n + ': feature switch has On / Admins only / Off', /On\s*Admins only\s*Off/.test((await p.locator('.ha-card[data-key=light] .ak-seg').innerText()).replace(/\n/g, ' ')));
+    await p.click('.ha-card[data-key=light] [data-mode=off]'); await p.click('.ha-card[data-key=light] [data-save]'); await p.waitForTimeout(800);
+    const fs = saves[saves.length - 1];
+    t(mode.n + ': floating light switched off (no confirm dialog)', fs.key === 'light' && fs.mode === 'off' && !fs.url && (await p.$('.ak-modal')) === null && (await p.locator('.ha-card[data-key=light] .ha-pill').innerText()) === 'Off', JSON.stringify(fs));
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); t(mode.n + ': no sideways page scroll', overflow <= 1, String(overflow));
     await p.screenshot({ path: SHOTS + '/etelapp-' + mode.n + '.png' });
     const bad = errs.filter(e => !/favicon|manifest|Failed to load resource|Google Maps/.test(e)); t(mode.n + ': no JS errors', bad.length === 0, bad.join(' | '));

@@ -592,18 +592,23 @@ case 'hub_counts': {
     $trips = $one("SELECT COUNT(*) FROM rides WHERE passenger_id=? AND status IN ('searching','accepted','in_progress','arrived')", array($uid));
     $requests = 0; $orders = 0; $deliveries = 0;
 
-    if ($role === 'driver') {
+    /* A ride driver is anyone with a ride_drivers row: many bajaj drivers hold a courier-role account (the Driver app lets 'courier' in), and
+       counting only role = 'driver' showed them no ride requests. */
+    $isRideDriver = ($role === 'driver') || $one("SELECT COUNT(*) FROM ride_drivers WHERE user_id=?", array($uid)) > 0;
+    if ($isRideDriver) {
         $trips += $one("SELECT COUNT(*) FROM rides WHERE driver_id=? AND status IN ('accepted','in_progress','arrived')", array($uid));
         $vt = 'bajaj';
         try { $me = rides_driver_profile($pdo, $uid); if ($me && !empty($me['vehicle_type'])) $vt = $me['vehicle_type']; } catch (Exception $e) {}
         $requests = $one("SELECT COUNT(*) FROM rides WHERE status='searching' AND passenger_id != ? AND (expires_at IS NULL OR expires_at > NOW()) AND (LOWER(vehicle_type)=LOWER(?) OR vehicle_type IS NULL)", array($uid, $vt));
-    } elseif ($role === 'courier') {
+    }
+    if ($role === 'courier') {
         $cid = $one("SELECT id FROM couriers WHERE user_id=? LIMIT 1", array($uid));
         if ($cid) {
             $orders = $one("SELECT COUNT(*) FROM order_courier_offers WHERE courier_id=? AND response='pending' AND expires_at > NOW()", array($cid));
             $deliveries += $one("SELECT COUNT(*) FROM orders WHERE courier_id=? AND status IN ('assigned','picked_up','in_transit')", array($cid));
         }
-    } elseif ($role === 'service_giver') {
+    }
+    if ($role === 'service_giver') {
         $sid = $one("SELECT id FROM service_givers WHERE user_id=? LIMIT 1", array($uid));
         if ($sid) {
             $orders = $one("SELECT COUNT(*) FROM order_assignments WHERE service_giver_id=? AND status='pending'", array($sid));

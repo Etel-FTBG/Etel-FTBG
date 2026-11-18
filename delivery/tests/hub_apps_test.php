@@ -26,7 +26,7 @@ t('a signed-in customer gets the list (empty by default)', $r['ok'] && $r['ok'][
 $r = call('get_hub_apps', array(), null);
 t('not signed in: 401', $r['code'] === 401);
 $r = call('admin_hub_apps_get', array(), $OWNER);
-t('owner sees all 13 apps with defaults', $r['ok'] && count($r['ok']['apps']) === 13, json_encode($r['err']));
+t('owner sees all 13 apps and 2 feature switches with defaults', $r['ok'] && count($r['ok']['apps']) === 15, json_encode($r['err']));
 $by = array(); if ($r['ok']) foreach ($r['ok']['apps'] as $a) $by[$a['key']] = $a;
 t('defaults: ride on, pay off, admin off', $by['ride']['mode'] === 'on' && $by['pay']['mode'] === 'off' && $by['admin']['mode'] === 'off');
 t('pay has no built-in address (needs one)', $by['pay']['needs_url'] === 1 && $by['ride']['needs_url'] === 0);
@@ -36,6 +36,7 @@ t('an admin who is not the owner cannot save', call('admin_hub_apps_save', array
 t('a customer cannot save', call('admin_hub_apps_save', array('key' => 'agent', 'mode' => 'off'), $CUST)['code'] === 403);
 t('nothing was written by the refused calls', intval($PDO->query('SELECT COUNT(*) FROM app_hub_apps')->fetchColumn()) === 0);
 
+t('feature switches default to on and have no address', $by['light']['mode'] === 'on' && $by['light']['kind'] === 'feature' && $by['light']['needs_url'] === 0 && $by['light_alert']['mode'] === 'on' && $by['ride']['kind'] === 'app');
 // saving
 $r = call('admin_hub_apps_save', array('key' => 'agent', 'mode' => 'off'), $OWNER); t('owner hides the Agent app', $r['ok'] && $r['ok']['saved'], json_encode($r));
 $r = call('get_hub_apps', array(), $CUST); t('phones now get agent=off', $r['ok'] && $r['ok']['apps']['agent']['mode'] === 'off' && count($r['ok']['apps']) === 1, json_encode($r['ok']));
@@ -57,10 +58,14 @@ $r = call('admin_hub_apps_save', array('key' => 'agent', 'mode' => 'on'), $OWNER
 t('one row per app (upsert, no duplicates)', intval($PDO->query("SELECT COUNT(*) FROM app_hub_apps WHERE app_key = 'agent'")->fetchColumn()) === 1);
 t('updated_by is recorded', intval($PDO->query("SELECT updated_by FROM app_hub_apps WHERE app_key = 'agent'")->fetchColumn()) === 1);
 
+$r = call('admin_hub_apps_save', array('key' => 'light', 'mode' => 'admins'), $OWNER); t('owner sets the floating light to admins only', $r['ok']);
+$r = call('admin_hub_apps_save', array('key' => 'light_alert', 'mode' => 'off', 'url' => 'https://evil.example.com/x/'), $OWNER); t('a feature ignores any address (saved, address dropped)', $r['ok'] && $PDO->query("SELECT url FROM app_hub_apps WHERE app_key = 'light_alert'")->fetchColumn() === '');
+$r = call('get_hub_apps', array(), $CUST); t('phones get the feature switches too', $r['ok']['apps']['light']['mode'] === 'admins' && $r['ok']['apps']['light_alert']['mode'] === 'off');
+$r = call('admin_hub_apps_save', array('key' => 'light', 'mode' => 'on'), $OWNER);
 // table missing: everything still answers
 $PDO->exec('RENAME TABLE app_hub_apps TO app_hub_apps_x');
 $r = call('get_hub_apps', array(), $CUST); t('missing table: phones get an empty list, no error', $r['ok'] && $r['ok']['apps'] === array(), json_encode($r));
-$r = call('admin_hub_apps_get', array(), $OWNER); t('missing table: owner view shows defaults', $r['ok'] && count($r['ok']['apps']) === 13);
+$r = call('admin_hub_apps_get', array(), $OWNER); t('missing table: owner view shows defaults', $r['ok'] && count($r['ok']['apps']) === 15);
 $r = call('admin_hub_apps_save', array('key' => 'agent', 'mode' => 'off'), $OWNER); t('missing table: save says run the update', $r['code'] === 500 && strpos($r['err'], 'migration 111') !== false, json_encode($r));
 $PDO->exec('RENAME TABLE app_hub_apps_x TO app_hub_apps');
 echo 'PASSED: ' . $PASS . ' FAILED: ' . count($FAILS) . "\n"; foreach ($FAILS as $f) echo ' - ' . $f . "\n"; exit($FAILS ? 1 : 0);

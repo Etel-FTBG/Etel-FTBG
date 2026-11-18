@@ -110,10 +110,24 @@ function safeUrl(u: string | undefined): string {
 }
 const withSource = (u: string) => u + (u.indexOf('?') < 0 ? '?source=app' : '&source=app');
 
+// Feature switches the owner sets in the same place (Admin > ETEL app > Features): 'light' = the floating golden light over other apps,
+// 'light_alert' = its sound and vibration. Default 'on'.
+type Mode = 'on' | 'admins' | 'off';
+let features: Record<string, Mode> = {};
+export function featureOn(key: 'light' | 'light_alert', role: string | undefined): boolean {
+  const m = features[key] || 'on';
+  return m === 'on' || (m === 'admins' && role === 'admin');
+}
+
 // Puts the built-in values back, then applies the owner's choices. The app objects stay the same objects, so every screen sees the change.
 export function applyHubConfig(cfg: Record<string, HubOverride> | null | undefined): void {
   ALLOWED_ORIGINS.length = 0;
   BASE_ORIGINS.forEach((o) => ALLOWED_ORIGINS.push(o));
+  features = {};
+  for (const f of ['light', 'light_alert']) {
+    const o = cfg && cfg[f];
+    if (o && (o.mode === 'on' || o.mode === 'admins' || o.mode === 'off')) features[f] = o.mode;
+  }
   for (const b of BASE) {
     const a = HUB_APPS.find((x) => x.key === b.key);
     if (!a) continue;

@@ -16,6 +16,12 @@ async function readCache(): Promise<Record<string, HubOverride> | null> {
   }
 }
 
+// Applies the last answer kept on the phone (no network). Used when the app starts in the background.
+export async function loadHubConfigCache(): Promise<void> {
+  const c = await readCache();
+  if (c) applyHubConfig(c);
+}
+
 export async function refreshHubConfig(): Promise<boolean> {
   try {
     const r = await boot<{ apps?: Record<string, HubOverride> }>('get_hub_apps', {});
