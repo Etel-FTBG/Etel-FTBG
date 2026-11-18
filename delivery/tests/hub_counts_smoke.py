@@ -94,6 +94,7 @@ check("a new courier with nothing going on reads 0", c == (0, 0, 0, 0), raw)
 call("driver_get_profile", {}, drv_tok)
 etel_test_db.onboard_driver(drv)
 call("driver_go_online", {"lat": 7.05, "lng": 38.49}, drv_tok)
+req0 = counts(drv_tok)[1][1]   # other smokes may have left open ride requests: compare against this
 etel_test_db.run_sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('ride_offer_wave_secs', 0, 'test') ON DUPLICATE KEY UPDATE rule_value=0")
 st, est = call("ride_estimate_fare", {"distance_km": 2.6, "vehicle_type": "bajaj"}, cust_tok)
 quote = (est.get("data") or {}).get("quote_token")
@@ -103,13 +104,13 @@ check("ride booked", bool(rid), res)
 st, c, raw = counts(cust_tok)
 check("the customer sees 1 live trip, no requests", c == (1, 0, 0, 0), raw)
 st, c, raw = counts(drv_tok)
-check("the driver sees 1 open request", c[1] == 1 and c[0] == 0, raw)
+check("the driver sees 1 more open request", c[1] == req0 + 1 and c[0] == 0, raw)
 st, c, raw = counts(cou_tok)
 
 # --- the driver accepts: the request becomes the driver's trip
 st, acc = call("driver_accept_ride", {"request_id": rid}, drv_tok)
 st, c, raw = counts(drv_tok)
-check("after accepting: the driver has 1 trip and 0 requests", c[0] == 1 and c[1] == 0, (acc, raw))
+check("after accepting: the driver has 1 trip and one request less", c[0] == 1 and c[1] == req0, (acc, raw))
 st, c, raw = counts(cust_tok)
 check("the customer still counts 1 trip", c[0] == 1, raw)
 
@@ -120,7 +121,8 @@ check("finished trip: driver 0", counts(drv_tok)[1][0] == 0)
 etel_test_db.run_sql("UPDATE rides SET status='cancelled' WHERE id=%d" % int(rid))
 
 # --- orders and deliveries
-ok1, _ = etel_test_db.run_sql("INSERT INTO couriers (user_id, courier_code, vehicle_type, status, active) VALUES (%d, 'HC%s', 'bike', 'online', 1) ON DUPLICATE KEY UPDATE active=1" % (cou, TAIL))
+# registering a courier-role account already creates its couriers row (a second row for the same user would stay online and
+# steal orders from the stale-assignment smoke, which picks the lowest id among equal couriers)
 cid = qid("SELECT id FROM couriers WHERE user_id=%d" % cou)
 etel_test_db.run_sql("INSERT INTO orders (order_code, customer_id, status) VALUES ('HO%s1', %d, 'pending')" % (TAIL, cust))
 st, c, raw = counts(cust_tok)
