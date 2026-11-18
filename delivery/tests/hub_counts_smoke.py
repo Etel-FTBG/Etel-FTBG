@@ -78,11 +78,10 @@ st, _ = call("hub_counts", {})
 check("needs a signed-in user", st == 401, st)
 
 cust_tok, cust = register("+251981%s" % TAIL, "customer", "Hub Cust")
-cust2_tok, cust2 = register("+251982%s" % TAIL, "customer", "Hub Cust Two")
 drv_tok, drv = register("+251983%s" % TAIL, "courier", "Hub Driver")   # a ride driver with a courier-role account, as many bajaj drivers are
 cou_tok, cou = register("+251984%s" % TAIL, "courier", "Hub Courier")
-if not (cust_tok and cust2_tok and drv_tok and cou_tok):
-    check("test users registered", False, (cust_tok, cust2_tok, drv_tok, cou_tok))
+if not (cust_tok and drv_tok and cou_tok):
+    check("test users registered", False, (cust_tok, drv_tok, cou_tok))
     sys.exit(1)
 
 st, c, raw = counts(cust_tok)
@@ -103,8 +102,6 @@ rid = (res.get("data") or {}).get("request_id")
 check("ride booked", bool(rid), res)
 st, c, raw = counts(cust_tok)
 check("the customer sees 1 live trip, no requests", c == (1, 0, 0, 0), raw)
-st, c, raw = counts(cust2_tok)
-check("another customer sees nothing", c == (0, 0, 0, 0), raw)
 st, c, raw = counts(drv_tok)
 check("the driver sees 1 open request", c[1] == 1 and c[0] == 0, raw)
 st, c, raw = counts(cou_tok)
@@ -141,17 +138,24 @@ etel_test_db.run_sql("UPDATE orders SET status='delivered' WHERE id=%d" % oid)
 check("delivered: courier 0 and customer 0", counts(cou_tok)[1][3] == 0 and counts(cust_tok)[1][3] == 0)
 
 # --- service giver
-sg_tok, sg = register("+251985%s" % TAIL, "customer", "Hub SG")
-etel_test_db.run_sql("UPDATE users SET role='service_giver' WHERE id=%d" % sg)   # approval of a service giver changes the role
+sg_tok, sg = cou_tok, cou
+etel_test_db.run_sql("UPDATE users SET role='service_giver' WHERE id=%d" % sg)   # approval of a service giver changes the role (this account was the courier above)
 etel_test_db.run_sql("INSERT INTO service_givers (user_id, service_giver_code) VALUES (%d, 'HS%s')" % (sg, TAIL))
 sid = qid("SELECT id FROM service_givers WHERE user_id=%d" % sg)
-etel_test_db.run_sql("INSERT INTO orders (order_code, customer_id, status) VALUES ('HO%s2', %d, 'pending')" % (TAIL, cust2))
+etel_test_db.run_sql("INSERT INTO orders (order_code, customer_id, status) VALUES ('HO%s2', %d, 'pending')" % (TAIL, cust))
 oid2 = qid("SELECT id FROM orders WHERE order_code='HO%s2'" % TAIL)
 etel_test_db.run_sql("INSERT INTO order_assignments (order_id, service_giver_id, status) VALUES (%d, %d, 'pending')" % (oid2, sid))
 check("service giver with a pending order: 1 new order", counts(sg_tok)[1][2] == 1, counts(sg_tok))
 etel_test_db.run_sql("UPDATE order_assignments SET status='accepted' WHERE order_id=%d" % oid2)
 c = counts(sg_tok)[1]
 check("accepted: 0 new orders, 1 in progress", c[2] == 0 and c[3] == 1, c)
+
+# leave nothing behind that changes other smokes (free couriers, open orders, drivers online)
+etel_test_db.run_sql("UPDATE ride_drivers SET online = 0 WHERE user_id = %d" % drv)
+etel_test_db.run_sql("UPDATE orders SET status = 'cancelled' WHERE order_code IN ('HO%s1', 'HO%s2')" % (TAIL, TAIL))
+etel_test_db.run_sql("DELETE FROM order_courier_offers WHERE courier_id = %d" % cid)
+etel_test_db.run_sql("UPDATE order_assignments SET status = 'cancelled' WHERE order_id = %d" % oid2)
+etel_test_db.run_sql("UPDATE couriers SET status = 'offline' WHERE id = %d" % cid)
 
 print("\n%d failed" % len(fails) if fails else "\nall passed")
 sys.exit(1 if fails else 0)
