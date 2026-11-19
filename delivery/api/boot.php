@@ -1861,6 +1861,9 @@ switch ($action) {
     case 'get_hub_apps': case 'app_status': case 'admin_hub_apps_get': case 'admin_hub_apps_save': case 'admin_hub_content_get': case 'admin_hub_content_save': case 'admin_hub_settings_save':
         require __DIR__ . '/controllers/HubAppsController.php';
         break;
+    case 'admin_live_ops':
+        require __DIR__ . '/controllers/LiveOpsController.php';
+        break;
     case 'admin_broadcast_preview': case 'admin_broadcast_send': case 'admin_broadcast_list':
         require __DIR__ . '/controllers/BroadcastController.php';
         break;
