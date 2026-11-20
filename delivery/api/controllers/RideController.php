@@ -1981,6 +1981,12 @@ case 'driver_go_online': {
     if ($idRow && $idRow['identity_match'] === 'mismatch') {
         fail('Your account is flagged for admin review (license details did not match your EtelID record). You cannot go online until an admin approves it.', 403);
     }
+    /* Owner's switch (Admin > Operations > Driver trust): a driver whose insurance, technical inspection or road fund has expired cannot go online until it is renewed. Off by default. */
+    require_once __DIR__ . '/../lib/driver_docs.php';
+    $expiredDocs = dd_blocked_reason($pdo, $u['id']);
+    if ($expiredDocs) {
+        fail('You cannot go online: your ' . implode(', ', $expiredDocs) . (count($expiredDocs) > 1 ? ' have' : ' has') . ' expired. Open Documents, upload the new receipt and wait for approval.', 403, array('code' => 'docs_expired', 'documents' => $expiredDocs));
+    }
     list($hexQ, $hexR) = hexgrid_cell_for($lat, $lng);
     $pdo->prepare("UPDATE ride_drivers SET online=1, lat=?, lng=?, last_seen=NOW(), hex_q=?, hex_r=? WHERE user_id=?")
         ->execute(array($lat, $lng, $hexQ, $hexR, $u['id']));

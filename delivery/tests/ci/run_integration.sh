@@ -76,6 +76,7 @@ run python3 tests/app_status_smoke.py
 run python3 tests/broadcast_smoke.py
 run python3 tests/live_ops_smoke.py
 run python3 tests/sos_staff_smoke.py
+run python3 tests/driver_docs_smoke.py
 run python3 tests/ride_sse_once_smoke.py
 run python3 tests/ride_statement_smoke.py
 run python3 tests/ride_meter_smoke.py
