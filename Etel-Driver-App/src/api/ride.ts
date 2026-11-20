@@ -111,12 +111,15 @@ export async function updateLocation(
   lat: number,
   lng: number,
   accuracy: number,
-  rideId?: number
+  rideId?: number,
+  mocked?: boolean
 ): Promise<UpdateLocationResult> {
   return boot('driver_update_location', {
     lat,
     lng,
     accuracy,
     ...(rideId ? { ride_id: rideId } : {}),
+    // Android says when the position comes from a mock-location (fake GPS) app. Only sent when true; the server records it for the owner.
+    ...(mocked === true ? { mocked: true } : {}),
   });
 }
