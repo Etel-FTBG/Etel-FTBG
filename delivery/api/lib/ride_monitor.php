@@ -296,10 +296,13 @@ function rides_monitor_run($pdo, $push = true) {
     // A panic-button alert that is still open is announced to the staff again (lib/sos_alert.php).
     $sosAgain = 0;
     try { require_once __DIR__ . '/sos_alert.php'; if ($push) $sosAgain = sos_escalate($pdo); } catch (Exception $e) { error_log('[ETEL][monitor] sos escalate failed: ' . $e->getMessage()); }
+    // Drivers whose insurance, technical inspection or road fund is about to expire, or has expired, get a reminder (lib/driver_docs.php, each sent once).
+    $docsReminded = 0;
+    try { require_once __DIR__ . '/driver_docs.php'; if ($push) $docsReminded = dd_send_reminders($pdo); } catch (Exception $e) { error_log('[ETEL][monitor] doc reminders failed: ' . $e->getMessage()); }
     $scan = rides_monitor_scan($pdo);
     $due = rides_monitor_due($pdo, $scan['findings']);
     $sent = $push ? rides_monitor_notify($pdo, $due) : 0;
-    return array('findings' => count($scan['findings']), 'announced' => count($due), 'admins_pushed' => $sent, 'sos_announced_again' => $sosAgain,
+    return array('findings' => count($scan['findings']), 'announced' => count($due), 'admins_pushed' => $sent, 'sos_announced_again' => $sosAgain, 'doc_reminders' => $docsReminded,
                  'critical' => count(array_filter($scan['findings'], function ($f) { return $f['severity'] === 'critical'; })));
 }
 
