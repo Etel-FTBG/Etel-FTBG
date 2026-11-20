@@ -2913,9 +2913,13 @@ case 'sos_trigger': {
     $lng = isset($body['lng']) && is_numeric($body['lng']) ? floatval($body['lng']) : null;
     $message = isset($body['message']) ? trim(substr($body['message'], 0, 500)) : '';
     try {
-        $s = $pdo->prepare('INSERT INTO sos_alerts (ride_id, reporter_id, role, lat, lng, message, status) VALUES (?, ?, ?, ?, ?, ?, "open")');
+        $s = $pdo->prepare("INSERT INTO sos_alerts (ride_id, reporter_id, role, lat, lng, message, status) VALUES (?, ?, ?, ?, ?, ?, 'open')");
         $s->execute(array($ride_id, $u['id'], $role, $lat, $lng, $message));
-        ok(array('message' => 'Alert sent to ETEL support', 'id' => intval($pdo->lastInsertId())));
+        $sosId = intval($pdo->lastInsertId());
+        /* Tell the staff straight away (push to their phones and browsers), sent after the answer has gone back to the person who pressed the button. */
+        require_once __DIR__ . '/../lib/sos_alert.php';
+        sos_notify($pdo, $sosId, false);
+        ok(array('message' => 'Alert sent to ETEL support', 'id' => $sosId));
     } catch (Exception $e) {
         fail_ex($e, 'Could not send alert', 500);
     }

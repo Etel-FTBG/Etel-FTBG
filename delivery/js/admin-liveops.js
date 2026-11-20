@@ -55,7 +55,8 @@ function view() {
     tile(n.drivers.online, 'Drivers online (' + num(n.drivers.free) + ' free, ' + num(n.drivers.busy) + ' on a trip)') +
     tile(n.orders.waiting, 'Orders waiting for a courier' + (n.orders.oldest_wait_min ? ' (longest ' + n.orders.oldest_wait_min + ' min)' : ''), n.orders.oldest_wait_min >= 15) +
     tile(n.orders.assigned, 'Orders given to a courier') + tile(n.orders.on_the_way, 'Orders on the way to the customer') +
-    tile(n.couriers.online, 'Couriers online (' + num(n.couriers.free) + ' free)') + '</div>' +
+    tile(n.couriers.online, 'Couriers online (' + num(n.couriers.free) + ' free)') +
+    tile(n.sos ? n.sos.open : null, 'Open SOS alerts', n.sos && n.sos.open > 0) + '</div>' +
     '<div class="lo-two"><div class="lo-card"><h3>Ride requests waiting</h3>' + waitR + '</div><div class="lo-card"><h3>Orders waiting for a courier</h3>' + waitO + '</div></div>' +
     '<div class="lo-sec">Dispatch speed</div><div class="ak-seg" role="tablist" style="margin:0 0 10px">' +
     [['today', 'Today'], ['week', 'Last 7 days']].map(function (t) { return '<button type="button" role="tab" aria-selected="' + (S.win === t[0]) + '" class="' + (S.win === t[0] ? 'on' : '') + '" data-lo-win="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +

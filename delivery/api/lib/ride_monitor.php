@@ -293,10 +293,13 @@ function rides_monitor_notify($pdo, $due) {
 
 /* Full cycle for the cron: scan, announce what is new, return a summary. */
 function rides_monitor_run($pdo, $push = true) {
+    // A panic-button alert that is still open is announced to the staff again (lib/sos_alert.php).
+    $sosAgain = 0;
+    try { require_once __DIR__ . '/sos_alert.php'; if ($push) $sosAgain = sos_escalate($pdo); } catch (Exception $e) { error_log('[ETEL][monitor] sos escalate failed: ' . $e->getMessage()); }
     $scan = rides_monitor_scan($pdo);
     $due = rides_monitor_due($pdo, $scan['findings']);
     $sent = $push ? rides_monitor_notify($pdo, $due) : 0;
-    return array('findings' => count($scan['findings']), 'announced' => count($due), 'admins_pushed' => $sent,
+    return array('findings' => count($scan['findings']), 'announced' => count($due), 'admins_pushed' => $sent, 'sos_announced_again' => $sosAgain,
                  'critical' => count(array_filter($scan['findings'], function ($f) { return $f['severity'] === 'critical'; })));
 }
 

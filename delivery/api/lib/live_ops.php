@@ -82,7 +82,10 @@ function live_ops_snapshot($pdo) {
     $waitingN = live_ops_one($pdo, "SELECT COUNT(*) FROM orders WHERE status = 'pending' AND courier_id IS NULL");
     $wr = array(); foreach ($searching as $r) $wr[] = array('id' => intval($r['id']), 'minutes' => max(0, intval($r['min'])), 'where' => (string) $r['pickup_address'], 'who' => (string) $r['passenger']);
     $wo = array(); foreach ($waiting as $r) $wo[] = array('id' => intval($r['id']), 'code' => (string) $r['order_code'], 'minutes' => max(0, intval($r['min'])), 'where' => trim((string) $r['from_zone'] . ' > ' . (string) $r['to_zone']));
+    $sosOpen = live_ops_one($pdo, "SELECT COUNT(*) FROM sos_alerts WHERE status = 'open'");
+    $sosMin = live_ops_one($pdo, "SELECT COALESCE(MAX(TIMESTAMPDIFF(MINUTE, created_at, NOW())), 0) FROM sos_alerts WHERE status = 'open'");
     $alerts = array();
+    if (intval($sosOpen) > 0) $alerts[] = array('level' => 'critical', 'text' => $sosOpen . ' SOS alert(s) are open' . (intval($sosMin) > 0 ? ' (the oldest for ' . intval($sosMin) . ' min)' : '') . '. Open the SOS panel and call the person now.');
     if (intval($searchingN) > 0 && intval($driversOnline) === 0) $alerts[] = array('level' => 'critical', 'text' => $searchingN . ' ride request(s) are waiting and no driver is online.');
     if (intval($waitingN) > 0 && intval($couriersOnline) === 0) $alerts[] = array('level' => 'critical', 'text' => $waitingN . ' order(s) are waiting for a courier and no courier is online.');
     if ($wr && $wr[0]['minutes'] >= 3) $alerts[] = array('level' => $wr[0]['minutes'] >= 6 ? 'critical' : 'warn', 'text' => 'A ride request has waited ' . $wr[0]['minutes'] . ' minutes for a driver.');
@@ -96,6 +99,7 @@ function live_ops_snapshot($pdo) {
             'orders' => array('waiting' => $waitingN, 'assigned' => live_ops_one($pdo, "SELECT COUNT(*) FROM orders WHERE status = 'assigned'"), 'on_the_way' => live_ops_one($pdo, "SELECT COUNT(*) FROM orders WHERE status IN ('picked_up','in_transit')"),
                               'oldest_wait_min' => $wo ? $wo[0]['minutes'] : 0, 'waiting_list' => $wo),
             'couriers' => array('online' => $couriersOnline, 'free' => $couriersFree),
+            'sos' => array('open' => $sosOpen, 'oldest_min' => $sosMin),
         ),
         'alerts' => $alerts,
         'speed' => array(

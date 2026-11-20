@@ -6,12 +6,12 @@ let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fai
 const sp = (r, o) => ({ rides: r, orders: o });
 const snapshot = (waiting) => ({
   generated_at: '2026-11-19 10:00:00', has_order_assign_time: true,
-  alerts: waiting ? [{ level: 'critical', text: 'A ride request has waited 7 minutes for a driver.' }, { level: 'warn', text: 'An order has waited 9 minutes for a courier.' }] : [],
+  alerts: waiting ? [{ level: 'critical', text: '1 SOS alert(s) are open (the oldest for 4 min). Open the SOS panel and call the person now.' }, { level: 'critical', text: 'A ride request has waited 7 minutes for a driver.' }, { level: 'warn', text: 'An order has waited 9 minutes for a courier.' }] : [],
   now: {
     rides: { searching: waiting ? 2 : 0, on_the_way: 3, in_progress: 4, oldest_wait_min: waiting ? 7 : 0, waiting: waiting ? [{ id: 41, minutes: 7, where: 'Stadium gate', who: 'Abel' }, { id: 42, minutes: 1, where: 'Piassa', who: 'Sara' }] : [] },
     drivers: { online: 9, busy: 7, free: 2 },
     orders: { waiting: waiting ? 1 : 0, assigned: 2, on_the_way: 5, oldest_wait_min: waiting ? 9 : 0, waiting_list: waiting ? [{ id: 7, code: 'ET-77', minutes: 9, where: 'Stadium > Piassa' }] : [] },
-    couriers: { online: 6, free: 1 } },
+    couriers: { online: 6, free: 1 }, sos: { open: waiting ? 1 : 0, oldest_min: waiting ? 4 : 0 } },
   speed: {
     today: sp({ requests: 20, taken: 17, taken_pct: 85, gave_up: 2, completed: 12, secs_to_take: { n: 17, typical: 45, slow: 130 } }, { placed: 11, taken: 9, taken_pct: 82, delivered: 6, cancelled: 1, secs_to_take: { n: 9, typical: 200, slow: 600 }, secs_to_deliver: { n: 6, typical: 1800, slow: 3300 } }),
     week: sp({ requests: 140, taken: 120, taken_pct: 86, gave_up: 9, completed: 99, secs_to_take: { n: 120, typical: 60, slow: 185 } }, { placed: 80, taken: 70, taken_pct: 88, delivered: 60, cancelled: 5, secs_to_take: { n: 70, typical: 240, slow: 720 }, secs_to_deliver: { n: 60, typical: 2400, slow: 4000 } }) } });
@@ -33,7 +33,8 @@ const snapshot = (waiting) => ({
     await p.evaluate(() => { const n = document.querySelector('.nav-item[data-page="liveops"]'); if (n) n.classList.remove('etel-cap-hidden'); switchPage('liveops', n); }); await p.waitForTimeout(1500);
     let txt = await p.innerText('#panel-liveops');
     t(mode.n + ': the numbers right now are shown', /Right now/i.test(txt) && /Ride requests waiting/.test(txt) && /Drivers online \(2 free, 7 on a trip\)/.test(txt) && /Couriers online \(1 free\)/.test(txt), txt.slice(0, 300));
-    t(mode.n + ': both alerts are shown, the critical one first', (await p.locator('.lo-alert').count()) === 2 && (await p.locator('.lo-alert').first().getAttribute('class')).indexOf('critical') > 0);
+    t(mode.n + ': both alerts are shown, the critical one first', (await p.locator('.lo-alert').count()) === 3 && (await p.locator('.lo-alert').first().getAttribute('class')).indexOf('critical') > 0);
+    t(mode.n + ': the open SOS alert is the first alert and has its own tile', /SOS alert\(s\) are open/.test(await p.locator('.lo-alert').first().innerText()) && (await p.locator('.lo-tile.hot', { hasText: 'Open SOS alerts' }).count()) === 1);
     t(mode.n + ': the waiting lists show the request, place, person, minutes and the order code', /#41 - Stadium gate \(Abel\)/.test(txt) && /7 min/.test(txt) && /ET-77 - Stadium > Piassa/.test(txt));
     t(mode.n + ': dispatch speed today: typical 45 s, slowest 2 min 10 s, taken 85%', /45 s/.test(txt) && /2 min 10 s/.test(txt) && /17 \(85%\)/.test(txt), txt.slice(txt.indexOf('Dispatch')));
     t(mode.n + ': order times are written in words (3 min 20 s, 30 min, 55 min)', /3 min 20 s/.test(txt) && /30 min/.test(txt) && /55 min/.test(txt));

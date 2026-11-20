@@ -12,11 +12,12 @@ function require_admin($pdo, $cap = null) { $u = require_auth($pdo); if (empty($
 $PDO = new PDO('mysql:host=localhost;dbname=fa_test;charset=utf8mb4', 'root', '', array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false));
 function build() {
     global $PDO;
-    foreach (array('users', 'rides', 'ride_drivers', 'orders', 'couriers') as $t) $PDO->exec('DROP TABLE IF EXISTS `' . $t . '`');
+    foreach (array('users', 'rides', 'ride_drivers', 'orders', 'couriers', 'sos_alerts') as $t) $PDO->exec('DROP TABLE IF EXISTS `' . $t . '`');
     $PDO->exec("CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(120) NOT NULL DEFAULT '', phone VARCHAR(25) NOT NULL DEFAULT '', role VARCHAR(20) NOT NULL DEFAULT 'customer')");
     $PDO->exec("CREATE TABLE rides (id INT AUTO_INCREMENT PRIMARY KEY, passenger_id INT NOT NULL, driver_id INT DEFAULT NULL, pickup_address VARCHAR(255) DEFAULT '', status VARCHAR(20) DEFAULT 'searching', assigned_at DATETIME DEFAULT NULL, created_at DATETIME NOT NULL)");
     $PDO->exec("CREATE TABLE ride_drivers (user_id INT NOT NULL PRIMARY KEY, online TINYINT(1) DEFAULT 0, last_seen DATETIME DEFAULT NULL)");
     $PDO->exec("CREATE TABLE orders (id INT AUTO_INCREMENT PRIMARY KEY, order_code VARCHAR(30) NOT NULL, courier_id INT DEFAULT NULL, from_zone VARCHAR(60) DEFAULT '', to_zone VARCHAR(60) DEFAULT '', status VARCHAR(30) DEFAULT 'pending', placed_at DATETIME DEFAULT CURRENT_TIMESTAMP, courier_assigned_at DATETIME DEFAULT NULL, delivered_at DATETIME DEFAULT NULL)");
+    $PDO->exec("CREATE TABLE sos_alerts (id INT AUTO_INCREMENT PRIMARY KEY, reporter_id INT NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'open', created_at DATETIME NOT NULL)");
     $PDO->exec("CREATE TABLE couriers (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, status VARCHAR(20) DEFAULT 'offline', last_seen DATETIME DEFAULT NULL)");
 }
 function seed() {
@@ -31,6 +32,7 @@ function seed() {
       (101, NULL, 'c', 'cancelled', NULL, NOW()),
       (100, 200, 'd', 'in_progress', DATE_ADD(NOW(), INTERVAL 60 SECOND), NOW()),
       (100, 201, 'old', 'completed', DATE_ADD(DATE_SUB(NOW(), INTERVAL 3 DAY), INTERVAL 100 SECOND), DATE_SUB(NOW(), INTERVAL 3 DAY))");
+    $PDO->exec("INSERT INTO sos_alerts (reporter_id, status, created_at) VALUES (200,'open',DATE_SUB(NOW(), INTERVAL 7 MINUTE)),(201,'open',NOW()),(200,'resolved',DATE_SUB(NOW(), INTERVAL 2 HOUR))");
     $PDO->exec("INSERT INTO couriers (user_id, status, last_seen) VALUES (300,'online',NOW()),(301,'busy',NOW()),(302,'online',DATE_SUB(NOW(), INTERVAL 2 HOUR)),(303,'offline',NOW())");
     $PDO->exec("INSERT INTO orders (order_code, courier_id, from_zone, to_zone, status, placed_at, courier_assigned_at, delivered_at) VALUES
       ('ET-1', NULL, 'Stadium', 'Piassa', 'pending', DATE_SUB(NOW(), INTERVAL 12 MINUTE), NULL, NULL),
@@ -61,6 +63,8 @@ t('drivers: 2 online (one seen 2 hours ago and one offline are not counted), 1 b
 t('orders now: 1 waiting, 1 assigned, 1 on the way', $n['orders']['waiting'] === 1 && $n['orders']['assigned'] === 1 && $n['orders']['on_the_way'] === 1, json_encode($n['orders']));
 t('the waiting order is listed with code, minutes and zones', $n['orders']['oldest_wait_min'] >= 12 && $n['orders']['waiting_list'][0]['code'] === 'ET-1' && $n['orders']['waiting_list'][0]['where'] === 'Stadium > Piassa', json_encode($n['orders']['waiting_list']));
 t('couriers: 2 online (a stale one and an offline one are not counted), 1 free', $n['couriers']['online'] === 2 && $n['couriers']['free'] === 1, json_encode($n['couriers']));
+t('open SOS alerts are counted (2 open, the resolved one is not) with the oldest age', $n['sos']['open'] === 2 && $n['sos']['oldest_min'] >= 7, json_encode($n['sos']));
+t('an open SOS is the FIRST alert and it is critical', $d['alerts'][0]['level'] === 'critical' && strpos($d['alerts'][0]['text'], '2 SOS alert(s) are open') === 0 && strpos($d['alerts'][0]['text'], 'oldest for 7 min') !== false, json_encode($d['alerts'][0]));
 $w = $d['speed']['week']['rides'];
 t('week rides: 7 requests, 4 taken (57 percent), 1 gave up, 2 completed', $w['requests'] === 7 && $w['taken'] === 4 && $w['taken_pct'] === 57 && $w['gave_up'] === 1 && $w['completed'] === 2, json_encode($w));
 t('week time to take a ride: typical 40 s, slowest 1 in 10 is 100 s', $w['secs_to_take']['n'] === 4 && $w['secs_to_take']['typical'] === 40 && $w['secs_to_take']['slow'] === 100, json_encode($w['secs_to_take']));
@@ -85,7 +89,7 @@ t('nobody online: free is 0, not negative', $d['now']['drivers']['online'] === 0
 // an empty system
 build();
 $d = call('admin_live_ops', $ADMIN)['ok'];
-t('an empty system: zeros, no alerts, no percent and no times (null), no error', $d['now']['rides']['searching'] === 0 && $d['alerts'] === array() && $d['speed']['week']['rides']['taken_pct'] === null && $d['speed']['week']['rides']['secs_to_take']['typical'] === null && $d['speed']['week']['orders']['secs_to_deliver']['slow'] === null, json_encode($d['speed']['week']));
+t('an empty system: zeros, no alerts, no SOS, no percent and no times (null), no error', $d['now']['rides']['searching'] === 0 && $d['alerts'] === array() && $d['speed']['week']['rides']['taken_pct'] === null && $d['speed']['week']['rides']['secs_to_take']['typical'] === null && $d['speed']['week']['orders']['secs_to_deliver']['slow'] === null, json_encode($d['speed']['week']));
 // a server without the courier_assigned_at column
 seed(); $PDO->exec("ALTER TABLE orders DROP COLUMN courier_assigned_at");
 $r = call('admin_live_ops', $ADMIN); $d = $r['ok'];
