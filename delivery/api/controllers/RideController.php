@@ -1987,6 +1987,11 @@ case 'driver_go_online': {
     if ($expiredDocs) {
         fail('You cannot go online: your ' . implode(', ', $expiredDocs) . (count($expiredDocs) > 1 ? ' have' : ' has') . ' expired. Open Documents, upload the new receipt and wait for approval.', 403, array('code' => 'docs_expired', 'documents' => $expiredDocs));
     }
+    /* Owner's switch (Admin > Operations > Driver trust): a driver whose phone recently reported a mock location cannot go online. Off by default. */
+    require_once __DIR__ . '/../lib/gps_check.php';
+    if (gps_block_enabled($pdo) && gps_recent_mock($pdo, $u['id'])) {
+        fail('Fake location detected. Turn off any mock-location or fake GPS app in your phone settings. You can go online again in ' . gps_block_hours() . ' hours, or ask ETEL support.', 403, array('code' => 'fake_gps'));
+    }
     list($hexQ, $hexR) = hexgrid_cell_for($lat, $lng);
     $pdo->prepare("UPDATE ride_drivers SET online=1, lat=?, lng=?, last_seen=NOW(), hex_q=?, hex_r=? WHERE user_id=?")
         ->execute(array($lat, $lng, $hexQ, $hexR, $u['id']));
@@ -2030,6 +2035,25 @@ case 'driver_update_location': {
     $explicitRideId = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     if ($lat === null || $lng === null) fail('lat/lng required');
     rides_driver_profile($pdo, $u['id']);
+    /* Fake GPS checks (lib/gps_check.php): recorded for the owner to see; only when the owner switched blocking on is a driver whose phone says
+       the position is mocked put offline. A jump (farther than a vehicle can go since the last ping) only ever warns. Never breaks a ping. */
+    try {
+        require_once __DIR__ . '/../lib/gps_check.php';
+        $pv = $pdo->prepare("SELECT lat, lng, TIMESTAMPDIFF(SECOND, last_seen, NOW()) AS secs FROM ride_drivers WHERE user_id=?");
+        $pv->execute(array($u['id']));
+        $prev = $pv->fetch(PDO::FETCH_ASSOC);
+        if ($prev) {
+            $jump = gps_check_jump($prev['lat'], $prev['lng'], $prev['secs'], $lat, $lng);
+            if ($jump !== null) gps_record($pdo, $u['id'], 'jump', $jump, $lat, $lng);
+        }
+        if (isset($body['mocked']) && ($body['mocked'] === true || $body['mocked'] === 1 || $body['mocked'] === '1' || $body['mocked'] === 'true')) {
+            gps_record($pdo, $u['id'], 'mock', 'the phone reported a mock location', $lat, $lng);
+            if (gps_block_enabled($pdo)) {
+                $pdo->prepare("UPDATE ride_drivers SET online=0 WHERE user_id=?")->execute(array($u['id']));
+                fail('Fake location detected. Turn off any mock-location or fake GPS app in your phone settings, then go online again.', 403, array('code' => 'fake_gps'));
+            }
+        }
+    } catch (Exception $e) { error_log('[ETEL][gps_check] ' . $e->getMessage()); }
     list($hexQ, $hexR) = hexgrid_cell_for($lat, $lng);
     $pdo->prepare("UPDATE ride_drivers SET lat=?, lng=?, last_seen=NOW(), hex_q=?, hex_r=? WHERE user_id=?")
         ->execute(array($lat, $lng, $hexQ, $hexR, $u['id']));

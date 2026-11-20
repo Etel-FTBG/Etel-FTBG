@@ -57,7 +57,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
         last.coords.latitude,
         last.coords.longitude,
         last.coords.accuracy ?? 999,
-        currentRideId
+        currentRideId,
+        last.mocked === true
       );
     }
   } catch (e) {

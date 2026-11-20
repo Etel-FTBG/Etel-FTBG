@@ -86,7 +86,7 @@ function hub_settings_rules() {
         'banner_image_url' => 'image', 'banner_link_app' => 'appkey', 'banner_audience' => 'audience', 'banner_starts_at' => 'date', 'banner_ends_at' => 'date',
         'maint_enabled' => 'flag', 'maint_text_en' => 'text160', 'maint_text_am' => 'text160',
         'min_version_android' => 'version', 'update_text_en' => 'text160', 'update_text_am' => 'text160', 'update_url_android' => 'storeurl',
-        'trust_block_expired_docs' => 'flag',
+        'trust_block_expired_docs' => 'flag', 'trust_block_fake_gps' => 'flag',
     );
 }
 
