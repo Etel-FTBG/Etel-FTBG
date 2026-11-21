@@ -4,6 +4,7 @@ import { featureOn } from '../hub/apps';
 import { loadHubConfigCache } from '../hub/appConfig';
 import { refreshCounts } from './liveCounts';
 import { labelsFor } from './overlayLabels';
+import { wakeMayShowLight } from './lightLogic';
 import {
   canDrawOverlays,
   overlayIsShowing,
@@ -23,7 +24,7 @@ export async function wakeFromPush(): Promise<void> {
     if (!session) return;
     await Promise.all([loadHubConfigCache(), loadAlertPrefs()]);
     const role = session.role;
-    if (!featureOn('light', role) || !canDrawOverlays()) return;
+    if (!wakeMayShowLight(role) || !featureOn('light', role) || !canDrawOverlays()) return;
     const raw = await refreshCounts(true);
     // A push only goes to a driver who is online, so a wake-up counts as online (the in-memory flag is empty in a fresh background run).
     const c = applyAlertPrefs(raw, role, true);
