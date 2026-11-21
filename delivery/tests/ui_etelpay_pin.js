@@ -15,11 +15,18 @@ const API = 'https://ethelmarket.com/Etel.Pay/wallet/api/v2_verify.php';
     await p.goto('http://etel.test/');
     // a fake Etel Pay: wallet = { pin: '1234' | null, fails, locked, twofa } ; every call is recorded
     await p.evaluate(() => {
-      window.CALLS = []; window.W = { pin: '1234', fails: 0, locked: false, twofa: false };
+      window.CALLS = []; window.SWITCH = 'on'; window.W = { pin: '1234', fails: 0, locked: false, twofa: false };
+      try { localStorage.setItem('etel_token', 'DT'); } catch (e) {}
       window.fetch = function (input, init) {
         const url = typeof input === 'string' ? input : input.url; let body = {}; try { body = JSON.parse(init && init.body); } catch (e) {}
         window.CALLS.push({ url, body, headers: init && init.headers });
         const j = (o, s) => Promise.resolve(new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json' } }));
+        if (url.indexOf('boot.php') >= 0 && body.action === 'ride_wallet_status') {
+          if (window.SWITCH === 'off') return j({ success: true, data: { enabled: false } }, 200);
+          if (window.SWITCH === 'error') return j({ success: false, message: 'Server error' }, 500);
+          if (window.SWITCH === 'down') return Promise.reject(new Error('offline'));
+          return j({ success: true, data: { enabled: true } }, 200);
+        }
         if (url.indexOf('/Etel.Pay/') < 0) return j({ success: false, data: { message: 'Enter your PIN to continue.', code: 'pin_required' } }, 400);
         if (url.indexOf('ep_login_etelid') >= 0) {
           if (window.W.twofa && !body.totp_code) return j({ success: false, data: { message: 'Enter the 6-digit code.', requires_2fa: true } }, 401);
@@ -48,7 +55,7 @@ const API = 'https://ethelmarket.com/Etel.Pay/wallet/api/v2_verify.php';
     const host = () => p.locator('[data-etelpay-2fa-host]');
     const dlgText = () => p.evaluate(() => { const h = document.querySelector('[data-etelpay-2fa-host]'); return h ? h.shadowRoot.querySelector('.card').innerText : ''; });
     const setVals = (vals, key) => p.evaluate(([v, k]) => { const s = document.querySelector('[data-etelpay-2fa-host]').shadowRoot; for (const id in v) { const el = s.getElementById(id); el.value = v[id]; } s.getElementById(k || 'go').click(); }, [vals, key]);
-    const waitDlg = () => p.waitForSelector('[data-etelpay-2fa-host]', { state: 'attached' });
+    const waitDlg = () => p.waitForSelector('[data-etelpay-2fa-host]', { state: 'attached', timeout: 6000 });
     const calls = () => p.evaluate(() => window.CALLS);
     const warn = () => p.evaluate(() => { const w = document.querySelector('[data-etelpay-2fa-host]').shadowRoot.getElementById('w'); return w.hidden ? '' : w.textContent; });
     const reset = (w) => p.evaluate((w) => { window.CALLS = []; window.W = Object.assign({ pin: '1234', fails: 0, locked: false, twofa: false }, w || {}); }, w);
@@ -137,7 +144,29 @@ const API = 'https://ethelmarket.com/Etel.Pay/wallet/api/v2_verify.php';
     await setVals({ p: '1234' }); r = await pr;
     t(mode.n + ': ... and the payment is done (this is the sequence that ended in "Enter your PIN to continue")', r.status === 200 && r.j.data.tx_ref === 'TX1', JSON.stringify(r));
 
-    // 9. nothing else is touched
+    // 9. the wallet switch: a ride payment asks ETEL Delivery first, and no money moves while it is off
+    const ridePay = () => p.evaluate((api) => fetch(api + '?action=ep_send', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer TOK' }, body: JSON.stringify({ action: 'ep_send', receiver: '0911', amount: 448, currency: 'ETB', note: 'ETEL Ride #389' }) }).then(async r => ({ status: r.status, j: await r.json() })), API);
+    const reset2 = (sw) => p.evaluate((sw) => { window.CALLS = []; window.SWITCH = sw; window.W = { pin: '1234', fails: 0, locked: false, twofa: false }; try { localStorage.setItem('etel_token', 'DT'); } catch (e) {} }, sw);
+    const moneyCalls = async () => (await calls()).filter(x => x.url.indexOf('/Etel.Pay/') >= 0).length;
+    await reset2('off'); r = await ridePay();
+    t(mode.n + ': switch OFF: the app gets the "coming soon" message and NO call reaches Etel Pay (no money moves)', r.status === 400 && (am ? /በቅርቡ ይመጣል/ : /Wallet payment is coming soon/).test(r.j.data.message) && (await moneyCalls()) === 0 && (await host().count()) === 0, JSON.stringify(r) + ' ' + (await moneyCalls()));
+    t(mode.n + ': the check goes to ETEL Delivery with the rider\'s own token', (await calls()).length === 1 && /boot\.php/.test((await calls())[0].url) && (await calls())[0].body.action === 'ride_wallet_status' && (await calls())[0].headers.Authorization === 'Bearer DT');
+    await reset2('error'); r = await ridePay();
+    t(mode.n + ': the check fails (server error): blocked with a plain message, no money moves', r.status === 400 && (am ? /መፈተሽ አልተቻለም/ : /Could not check wallet payment/).test(r.j.data.message) && (await moneyCalls()) === 0);
+    await reset2('down'); r = await ridePay();
+    t(mode.n + ': the phone is offline for the check: blocked, no money moves', r.status === 400 && (await moneyCalls()) === 0);
+    await reset2('on'); await p.evaluate(() => { localStorage.removeItem('etel_token'); }); r = await ridePay();
+    t(mode.n + ': no ETEL sign-in on the page: blocked, nothing is sent at all', r.status === 400 && (await calls()).length === 0);
+    await reset2('off'); r = await ridePay(); const off1 = r.status === 400 && (await moneyCalls()) === 0;
+    await p.evaluate(() => { window.SWITCH = 'on'; window.CALLS = []; });
+    pr = ridePay(); await waitDlg(); await setVals({ p: '1234' }); r = await pr; c = await calls();
+    t(mode.n + ': a "no" is never remembered: switching it on works at once, and the normal PIN flow carries on to the payment', off1 && r.status === 200 && r.j.data.tx_ref === 'TX1' && c.filter(x => x.body.action === 'ride_wallet_status').length === 1 && (await moneyCalls()) === 2, JSON.stringify(c.map(x => x.body.action + ':' + (x.body.pin || ''))));
+    pr = ridePay(); await waitDlg(); await setVals({ p: '1234' }); r = await pr; c = await calls();
+    t(mode.n + ': a "yes" is remembered for a minute (no second check)', r.status === 200 && c.filter(x => x.body.action === 'ride_wallet_status').length === 1);
+    await reset2('off'); r = await p.evaluate((api) => fetch(api + '?action=ep_send', { method: 'POST', headers: { Authorization: 'Bearer TOK' }, body: JSON.stringify({ action: 'ep_send', receiver: '0911', amount: 10, pin: '1234', note: 'Pay link #5' }) }).then(async r => ({ status: r.status, j: await r.json() })), API);
+    t(mode.n + ': a payment that is not for a ride is not checked at all', r.status === 200 && (await calls()).filter(x => x.body.action === 'ride_wallet_status').length === 0);
+
+    // 10. nothing else is touched
     await reset(); r = await p.evaluate(() => fetch('/delivery/api/boot.php', { method: 'POST', body: JSON.stringify({ action: 'x' }) }).then(async r => ({ status: r.status, j: await r.json() })));
     t(mode.n + ': another site that answers pin_required is not touched', r.status === 400 && (await host().count()) === 0 && (await calls()).length === 1);
     r = await p.evaluate((api) => fetch(api + '?action=ep_balance', { method: 'POST', body: JSON.stringify({ action: 'ep_balance' }) }).then(r => r.json()), API);

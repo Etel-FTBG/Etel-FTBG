@@ -539,6 +539,7 @@ Generated from the source by `tools/gen_api_docs.py` (489 actions). Machine-read
 | `ride_get_vehicle_types` | any signed-in user | `pickup_lat`, `pickup_lng` | `pickup_lat`, `pickup_lng` |
 | `ride_history` | any signed-in user | - | - |
 | `ride_offer_bounds` | any signed-in user | `fare` | - |
+| `ride_wallet_status` | any signed-in user | - | - |
 | `ride_pin_get` | any signed-in user | - | - |
 | `ride_promo_check` | any signed-in user | `code`, `fare` | - |
 | `ride_promo_mine` | any signed-in user | - | - |

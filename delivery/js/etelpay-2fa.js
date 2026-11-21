@@ -8,6 +8,10 @@
       the sign-in the payment ended with "Enter your PIN to continue." Now, when Etel Pay answers pin_required or pin_wrong, a PIN box is shown and the
       same payment is sent again WITH the PIN. When the wallet has no PIN yet (pin_not_set) a "Create your Etel Pay PIN" box takes the Etel-ID password and
       the new PIN twice (and the two-step code when it is asked for), saves it with ep_set_wallet_pin, and then sends the payment.
+   3. The WALLET SWITCH. A ride is paid by sending the money to Etel Pay FIRST and only then confirming it with ETEL Delivery, which refuses it while paying
+      rides from the wallet is switched off (pricing_rules ride_wallet_enabled), which left the rider charged and the ride unpaid. So before a ride payment
+      (ep_send with the note "ETEL Ride #...") this script asks ETEL Delivery (ride_wallet_status); if the answer is no, or cannot be had, the money is
+      not sent and the app shows the message instead. Nothing else is checked.
    - Accounts that are not asked anything are never touched: their answer passes straight through.
    - Up to 3 tries per box; a wrong code or PIN shows the reason Etel Pay gave. Cancel (or Escape) gives the app the original answer, so it shows its usual
      message. "Too many wrong PINs" (pin_locked) is left to the app: it shows Etel Pay's own message.
@@ -24,6 +28,7 @@
     var AM = {
         'Two-step code': 'ባለ ሁለት ደረጃ ኮድ', 'Cancel': 'ተው', 'Confirm': 'አረጋግጥ', 'Two-step code field': 'ባለ ሁለት ደረጃ ኮድ',
         'Etel Pay needs your two-step code to continue. Open your authenticator app and type the 6-digit code (or use a backup code).': 'ኢቴል ፔይ ለመቀጠል ባለ ሁለት ደረጃ ኮድዎን ይፈልጋል። የማረጋገጫ መተግበሪያዎን ከፍተው ባለ 6 አሃዝ ኮዱን ይጻፉ (ወይም የመጠባበቂያ ኮድ ይጠቀሙ)።',
+        'Wallet payment is coming soon. Please pay with cash or Chapa.': 'የቦርሳ ክፍያ በቅርቡ ይመጣል። እባክዎ በጥሬ ገንዘብ ወይም በቻፓ ይክፈሉ።', 'Could not check wallet payment. Please try again, or pay cash.': 'የቦርሳ ክፍያን መፈተሽ አልተቻለም። እባክዎ እንደገና ይሞክሩ ወይም በጥሬ ገንዘብ ይክፈሉ።',
         'Wallet PIN': 'የቦርሳ ፒን', 'Type your 4-digit Etel Pay PIN to send the payment.': 'ክፍያውን ለመላክ ባለ 4 አሃዝ የኢቴል ፔይ ፒንዎን ይጻፉ።', 'Wallet PIN field': 'የቦርሳ ፒን',
         'I have no PIN yet': 'ፒን የለኝም', 'Create your Etel Pay PIN': 'የኢቴል ፔይ ፒንዎን ይፍጠሩ', 'Your wallet has no PIN yet. Type your Etel-ID password and choose a 4-digit PIN. You will use it for every payment.': 'የቦርሳዎ ፒን ገና አልተፈጠረም። የኢቴል-መታወቂያ የይለፍ ቃልዎን ይጻፉና ባለ 4 አሃዝ ፒን ይምረጡ። ለእያንዳንዱ ክፍያ ይጠቀሙበታል።',
         'Etel-ID password': 'የኢቴል-መታወቂያ የይለፍ ቃል', 'New PIN (4 digits)': 'አዲስ ፒን (4 አሃዝ)', 'Repeat the PIN': 'ፒኑን ድገሙ', 'Save PIN and pay': 'ፒን አስቀምጥና ክፈል', 'Continue': 'ቀጥል',
@@ -204,7 +209,44 @@
         });
     }
 
+    /* ---- the wallet switch: ask ETEL Delivery before a ride payment moves any money ---- */
+    var openUntil = 0;   // an answer "yes" is remembered for a minute; a "no" is never remembered, so switching it on works at once
+    function bodyOf(init) { try { return JSON.parse(init.body); } catch (e) { return null; } }
+    function isRidePayment(input, init) {
+        if (!isEtelPay(input) || !init || typeof init.body !== 'string') return false;
+        var b = bodyOf(init); if (!b) return false;
+        var m = /[?&]action=([^&]*)/.exec(urlOf(input));
+        var act = b.action || (m ? m[1] : '');
+        return act === 'ep_send' && typeof b.note === 'string' && b.note.indexOf('ETEL Ride #') === 0;
+    }
+    function deliveryApi() { return (window.ETEL && window.ETEL.api) ? window.ETEL.api : '/delivery/api/boot.php'; }
+    function deliveryToken() { try { return (window.Auth && Auth.getToken) ? Auth.getToken() : (localStorage.getItem('etel_token') || ''); } catch (e) { return ''; } }
+    /* Resolves with '' when the payment may go ahead, else the message to show instead. */
+    function walletBlock() {
+        if (Date.now() < openUntil) return Promise.resolve('');
+        var tok = deliveryToken();
+        if (!tok) return Promise.resolve(T('Could not check wallet payment. Please try again, or pay cash.'));
+        return realFetch.call(window, deliveryApi(), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok }, body: JSON.stringify({ action: 'ride_wallet_status' }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (j && j.success && j.data && j.data.enabled === true) { openUntil = Date.now() + 60000; return ''; }
+                if (j && j.success && j.data && j.data.enabled === false) return T('Wallet payment is coming soon. Please pay with cash or Chapa.');
+                return T('Could not check wallet payment. Please try again, or pay cash.');
+            })
+            .catch(function () { return T('Could not check wallet payment. Please try again, or pay cash.'); });
+    }
+    function refused(msg) {
+        return new Response(JSON.stringify({ success: false, data: { message: msg } }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
     window.fetch = function (input, init) {
+        var self = this, args = arguments;
+        if (isRidePayment(input, init)) {
+            return walletBlock().then(function (msg) {
+                if (msg) return refused(msg);                                  // switched off (or cannot be checked): no money is sent
+                return realFetch.apply(self, args).then(function (res) { return handle(input, init, res, { code: 0, pin: 0, create: 0 }); });
+            });
+        }
         var p = realFetch.apply(this, arguments);
         if (!isEtelPay(input) || !init || typeof init.body !== 'string') return p;
         return p.then(function (res) { return handle(input, init, res, { code: 0, pin: 0, create: 0 }); });
