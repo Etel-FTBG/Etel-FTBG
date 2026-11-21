@@ -36,7 +36,10 @@ import AppLockGate from './src/security/AppLockGate';
 import PermissionGate from './src/permissions/PermissionGate';
 import StatusGate from './src/status/StatusGate';
 import { loadLowData } from './src/data/lowData';
+import { installCrashReporting } from './src/crash/crashReport';
 import './src/location/backgroundLocationTask'; // registers the TaskManager task
+
+installCrashReporting();   // errors and unhandled promises are reported to Admin > System health
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
