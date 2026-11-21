@@ -55,6 +55,7 @@ const snapshot = (waiting) => ({
     fail = false; await p.click('body'); 
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); t(mode.n + ': no sideways page scroll', overflow <= 1, String(overflow));
     waiting = true; await p.evaluate(() => { if (window.ETELLiveOps) window.ETELLiveOps.refresh(); }); await p.waitForTimeout(900);
+    await p.setViewportSize({ width: mode.w, height: 2300 }); await p.waitForTimeout(400);
     await p.screenshot({ path: SHOTS + '/etel-liveops-' + mode.n + '.png' });
     const bad = errs.filter(e => !/favicon|manifest|Failed to load resource|Google Maps/.test(e)); t(mode.n + ': no JS errors', bad.length === 0, bad.join(' | '));
     await ctx.close();
