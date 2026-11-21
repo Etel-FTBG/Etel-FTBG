@@ -51,7 +51,21 @@ function sup_notify_staff_new($pdo, $t) {
     return sup_tg_send($S['tg_staff_chat_id'], $txt);
 }
 
+/* Push to the person's phone or browser: "you have a reply". Always sent (the Telegram notice below stays optional), and it never carries the message text
+   or a phone number, only the request number. A failed push never blocks the reply. */
+function sup_push_user_reply($pdo, $t) {
+    try {
+        if (!function_exists('etel_push_send_async') && defined('APP_VER') && is_file(__DIR__ . '/../push.php')) require_once __DIR__ . '/../push.php';
+        if (!function_exists('etel_push_send_async')) return false;
+        etel_push_send_async($pdo, intval($t['user_id']), 'Reply from ETEL support', 'Request ' . $t['ref'] . ': you have a new reply. Open Help to read it.',
+                             array('type' => 'support_reply', 'ticket_id' => intval($t['id']), 'url' => '/delivery/help/'));
+        return true;
+    } catch (Exception $e) { return false; }
+    catch (Throwable $e) { return false; }
+}
+
 function sup_notify_user_reply($pdo, $t) {
+    sup_push_user_reply($pdo, $t);
     $S = sup_settings($pdo);
     if (empty($S['tg_enabled']) || empty($S['tg_notify_user'])) return false;
     $q = $pdo->prepare('SELECT id, phone FROM users WHERE id = ?'); $q->execute(array(intval($t['user_id']))); $u = $q->fetch(PDO::FETCH_ASSOC);

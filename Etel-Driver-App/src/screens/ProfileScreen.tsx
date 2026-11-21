@@ -12,6 +12,8 @@ import { RootStackParamList } from '../navigation/types';
 import GoldBoxCard from '../components/GoldBoxCard';
 import { PRIVACY_URL, TERMS_URL, DELETE_ACCOUNT_URL } from '../legal/links';
 import { requestAccountDeletion } from '../api/account';
+import { supMeta } from '../api/support';
+import { unreadText } from '../support/supportLogic';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,6 +26,12 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [lockSupported, setLockSupported] = useState(false);
   const [lockOn, setLockOn] = useState(false);
+  const [supUnread, setSupUnread] = useState(0);
+  useEffect(() => {
+    const load = () => supMeta().then((m) => setSupUnread(m.unread)).catch(() => {});
+    load();
+    return navigation.addListener('focus', load);
+  }, [navigation]);
 
   useEffect(() => {
     isLockSupported().then(setLockSupported);
@@ -100,7 +108,7 @@ export default function ProfileScreen() {
             <MenuRow label="Documents" onPress={() => navigation.navigate('Documents')} />
             <MenuRow label="Account & Wallet" onPress={() => navigation.navigate('Wallet')} />
             <MenuRow label="Notifications" onPress={() => navigation.navigate('Notifications')} />
-            <MenuRow label="Help & Support" onPress={() => navigation.navigate('Help')} last />
+            <MenuRow label={'Help & Support' + unreadText(supUnread)} onPress={() => navigation.navigate('Help')} last />
           </GoldBoxCard>
 
           <GoldBoxCard style={styles.sectionWrap}>

@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { supportContacts } from '../hub/hubContent';
 import { useHubConfig } from '../hub/appConfig';
+import { RootStackParamList } from '../navigation/types';
+import { supMeta } from '../api/support';
+import { unreadText } from '../support/supportLogic';
 
 // The support contacts (phone, Telegram, email) are the ones the owner types in Admin > ETEL app > Names, icons and texts. Until the owner sets
 // them, this screen shows no contact (nothing is invented).
 export default function HelpScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    const load = () => supMeta().then((m) => setUnread(m.unread)).catch(() => {});
+    load();
+    return navigation.addListener('focus', load);          // coming back from the support screens refreshes the count
+  }, [navigation]);
   useHubConfig(true, 0);                         // loads the owner's texts and draws this screen again when they arrive
   const c = supportContacts();
   const rows: { icon: string; label: string; url: string }[] = [];
@@ -24,6 +36,15 @@ export default function HelpScreen() {
           For an emergency during a trip, use the SOS button (hold for a second) on the Requests or Active
           Ride screen — it alerts ETEL support immediately with your location.
         </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Message ETEL support</Text>
+        <Text style={styles.cardBody}>Write a request in the app and read the answer here. Staff see it in the Support desk.</Text>
+        <Pressable onPress={() => navigation.navigate('Support')} accessibilityRole="button" accessibilityLabel="Open support requests" style={styles.contact}>
+          <Text style={styles.contactKind}>{'My requests' + unreadText(unread)}</Text>
+          <Text style={styles.contactVal}>Open</Text>
+        </Pressable>
       </View>
 
       <View style={styles.card}>

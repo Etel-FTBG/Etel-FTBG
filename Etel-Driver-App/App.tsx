@@ -19,6 +19,7 @@ import DocumentsScreen from './src/screens/DocumentsScreen';
 import WalletScreen from './src/screens/WalletScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import HelpScreen from './src/screens/HelpScreen';
+import SupportScreen from './src/screens/SupportScreen';
 import HubScreen from './src/screens/HubScreen';
 import WebAppScreen from './src/screens/WebAppScreen';
 import BackgroundBadge from './src/online/BackgroundBadge';
@@ -66,6 +67,7 @@ function RootNavigator() {
             <Stack.Screen name="Wallet" component={WalletScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Help" component={HelpScreen} />
+            <Stack.Screen name="Support" component={SupportScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
