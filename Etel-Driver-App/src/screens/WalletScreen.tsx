@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
-import { Text, TextInput, Alert } from '../i18n';
+import { Text, TextInput, Alert, useLanguage } from '../i18n';
+import { useCalendar } from '../calendar/calendarSetting';
+import { fmtStamp } from '../calendar/dateFormat';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, typography } from '../theme/colors';
 import { getDriverProfile, DriverProfile } from '../api/driver';
@@ -10,6 +12,8 @@ import { ApiError } from '../api/client';
 import GoldBoxCard from '../components/GoldBoxCard';
 
 export default function WalletScreen() {
+  const cal = useCalendar();
+  const { lang } = useLanguage();
   const [driver, setDriver] = useState<DriverProfile | null>(null);
   const [topups, setTopups] = useState<TopupRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +170,7 @@ export default function WalletScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.historyAmount}>ETB {t.amount}</Text>
               <Text style={styles.historyMeta}>
-                {t.source} · {t.created_at}
+                {t.source} · {fmtStamp(t.created_at, cal, lang === 'am')}
               </Text>
             </View>
             <Text

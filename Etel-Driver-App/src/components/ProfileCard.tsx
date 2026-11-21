@@ -8,6 +8,7 @@ import { goOfflineEverywhere } from '../hub/masterOnline';
 import { isLockEnabled, isLockSupported, setLockEnabled } from '../security/appLock';
 import { tap } from '../utils/haptics';
 import { isLowData, setLowData } from '../data/lowData';
+import { setCalendar, useCalendar } from '../calendar/calendarSetting';
 import { useNavigation } from '@react-navigation/native';
 
 // Who is signed in, their role, the fingerprint-lock switch and sign out.
@@ -17,6 +18,7 @@ export default function ProfileCard({ session }: { session: HubSession }) {
   const [lockOn, setLockOn] = useState(false);
   const [lockOk, setLockOk] = useState(false);
   const [lowOn, setLowOn] = useState(isLowData());
+  const cal = useCalendar();
 
   useEffect(() => {
     isLockSupported().then(setLockOk);
@@ -79,6 +81,11 @@ export default function ProfileCard({ session }: { session: HubSession }) {
         <Ionicons name={lowOn ? 'cellular' : 'cellular-outline'} size={20} color={lowOn ? p.gold : p.textMuted} />
         <Text style={[styles.lockText, { color: p.text }]}>Save mobile data</Text>
         <Text style={[styles.lockState, { color: lowOn ? p.gold : p.textMuted }]}>{lowOn ? translate('On') : translate('Off')}</Text>
+      </Pressable>
+      <Pressable onPress={() => { tap(); setCalendar(cal === 'ethiopian' ? 'gregorian' : 'ethiopian'); }} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="button" accessibilityLabel="Calendar">
+        <Ionicons name="calendar-outline" size={20} color={cal === 'ethiopian' ? p.gold : p.textMuted} />
+        <Text style={[styles.lockText, { color: p.text }]}>Calendar</Text>
+        <Text style={[styles.lockState, { color: cal === 'ethiopian' ? p.gold : p.textMuted }]}>{cal === 'ethiopian' ? translate('Ethiopian') : translate('Gregorian')}</Text>
       </Pressable>
       {lockOk ? (
         <Pressable onPress={toggleLock} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="switch">

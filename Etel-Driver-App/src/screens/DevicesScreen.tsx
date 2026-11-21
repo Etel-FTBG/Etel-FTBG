@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Alert, translate, useLanguage } from '../i18n';
+import { useCalendar } from '../calendar/calendarSetting';
+import { fmtDate } from '../calendar/dateFormat';
 import { colors, typography } from '../theme/colors';
 import GoldBoxCard from '../components/GoldBoxCard';
 import { Device, myDevices, signOutDevice, signOutOtherDevices } from '../api/devices';
@@ -11,6 +13,11 @@ import { ago, deviceIcon, ordered, othersCount } from '../devices/devicesLogic';
 export default function DevicesScreen() {
   const { lang } = useLanguage();
   const am = lang === 'am';
+  const cal = useCalendar();
+  const when = (at: string | null) => {
+    const r = ago(at, now, am);
+    return /^\d{4}-\d{2}-\d{2}$/.test(r) ? fmtDate(r, cal, am) : r;   // older than a week: a date, in the chosen calendar
+  };
   const [list, setList] = useState<Device[] | null>(null);
   const [now, setNow] = useState('');
   const [err, setErr] = useState('');
@@ -100,9 +107,9 @@ export default function DevicesScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{d.label}</Text>
               <Text style={styles.sub}>
-                {(d.current ? translate('This phone') + ' - ' : '') + translate('Active') + ' ' + (ago(d.last_seen, now, am) || '-') + (d.ip ? ' - ' + d.ip : '')}
+                {(d.current ? translate('This phone') + ' - ' : '') + translate('Active') + ' ' + (when(d.last_seen) || '-') + (d.ip ? ' - ' + d.ip : '')}
               </Text>
-              <Text style={styles.sub}>{translate('Signed in') + ' ' + (ago(d.signed_in_at, now, am) || '-')}</Text>
+              <Text style={styles.sub}>{translate('Signed in') + ' ' + (when(d.signed_in_at) || '-')}</Text>
             </View>
             {!d.current ? (
               <Pressable disabled={busy} onPress={() => signOutOne(d)} style={styles.out} accessibilityRole="button" accessibilityLabel={'Sign out ' + d.label}>

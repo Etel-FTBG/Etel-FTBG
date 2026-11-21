@@ -36,6 +36,7 @@ import AppLockGate from './src/security/AppLockGate';
 import PermissionGate from './src/permissions/PermissionGate';
 import StatusGate from './src/status/StatusGate';
 import { loadLowData } from './src/data/lowData';
+import { loadCalendar } from './src/calendar/calendarSetting';
 import { installCrashReporting } from './src/crash/crashReport';
 import './src/location/backgroundLocationTask'; // registers the TaskManager task
 
@@ -97,6 +98,7 @@ export default function App() {
   });
   React.useEffect(() => {
     loadLowData();   // the "Save mobile data" switch
+    loadCalendar();  // Gregorian or Ethiopian dates
   }, []);
 
   if (!fontsLoaded) {

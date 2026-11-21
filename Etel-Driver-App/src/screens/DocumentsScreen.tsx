@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
-import { Text, TextInput, Alert } from '../i18n';
+import { Text, TextInput, Alert, useLanguage } from '../i18n';
+import { useCalendar } from '../calendar/calendarSetting';
+import { fmtDate, fmtStamp, toServerDate } from '../calendar/dateFormat';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, typography } from '../theme/colors';
 import {
@@ -76,7 +78,13 @@ function DocRow({
   onToggle: () => void;
   onSubmitted: () => void;
 }) {
+  const cal = useCalendar();
+  const { lang } = useLanguage();
+  const am = lang === 'am';
+  const ethiopian = cal === 'ethiopian';
   const [expiryDate, setExpiryDate] = useState('');
+  // The date is typed in the chosen calendar; the server always gets the Gregorian date. serverDate is null until what is typed is a real date.
+  const serverDate = toServerDate(expiryDate, cal);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -93,8 +101,8 @@ function DocRow({
   }
 
   async function submit() {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) {
-      Alert.alert('Invalid date', 'Enter the expiry date as YYYY-MM-DD.');
+    if (!serverDate) {
+      Alert.alert('Invalid date', ethiopian ? 'Enter the expiry date as YYYY-MM-DD in the Ethiopian calendar (for example 2019-03-12).' : 'Enter the expiry date as YYYY-MM-DD.');
       return;
     }
     if (!photoUri) {
@@ -104,7 +112,7 @@ function DocRow({
     setSubmitting(true);
     try {
       const url = await uploadImage(photoUri);
-      await submitComplianceDocument(docType, expiryDate, url);
+      await submitComplianceDocument(docType, serverDate, url);
       Alert.alert('Submitted', 'Your document was submitted for admin review.');
       setExpiryDate('');
       setPhotoUri(null);
@@ -126,23 +134,24 @@ function DocRow({
         <Text style={styles.docLabel}>{DOC_LABELS[docType]}</Text>
         <Text style={[styles.badge, { color: badgeColor }]}>
           {status?.status === 'valid'
-            ? `Verified · exp ${status.expiry_date}`
+            ? `Verified · exp ${fmtDate(status.expiry_date, cal, am)}`
             : status?.status === 'expired'
               ? 'Expired'
               : 'Not on file'}
         </Text>
       </Pressable>
-      {status?.pending && <Text style={styles.pendingNote}>Pending review since {status.pending.created_at}</Text>}
+      {status?.pending && <Text style={styles.pendingNote}>Pending review since {fmtStamp(status.pending.created_at, cal, am)}</Text>}
 
       {expanded && (
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="Expiry date (YYYY-MM-DD)"
+            placeholder={ethiopian ? 'Expiry date, Ethiopian calendar (YYYY-MM-DD)' : 'Expiry date (YYYY-MM-DD)'}
             placeholderTextColor={colors.textMuted}
             value={expiryDate}
             onChangeText={setExpiryDate}
           />
+          {ethiopian && serverDate ? <Text style={styles.pendingNote}>{'= ' + serverDate + ' (Gregorian)'}</Text> : null}
           <Pressable style={styles.photoButton} onPress={pickPhoto}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={styles.photoPreview} />
