@@ -806,6 +806,18 @@ case 'courier_earnings_summary': {
     ok(etel_courier_earnings($pdo, $courier['id']));
     break;
 }
+case 'courier_get_statement': {
+    // POST: week_start? (any date; the week is Monday to Sunday, default this week, up to 12 weeks back)
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    require_once __DIR__ . '/../lib/courier_statement.php';
+    $res = etel_courier_statement_for($pdo, $courier['id'], isset($body['week_start']) ? trim($body['week_start']) : '');
+    if ($res[0] === null) fail($res[1], 400);
+    ok($res[0]);
+    break;
+}
 case 'rate_order': {
     $pdo      = db();
     $u        = require_auth($pdo);

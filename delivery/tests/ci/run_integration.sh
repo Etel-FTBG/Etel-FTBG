@@ -89,6 +89,7 @@ run python3 tests/post_deploy_check.py "http://127.0.0.1:$PORT" --prefix "" --al
 run python3 tests/week1_hardening_smoke.py
 run python3 tests/stale_assignment_smoke.py
 run python3 tests/courier_earnings_smoke.py
+run python3 tests/courier_statement_smoke.py
 run php tests/pricing_fallback_test.php
 run php tests/courier_pay_test.php
 run php tests/upload_security_test.php
