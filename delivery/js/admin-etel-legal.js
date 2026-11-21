@@ -18,7 +18,7 @@ function css() {
   if (document.getElementById('hg-css')) return;
   var s = document.createElement('style'); s.id = 'hg-css';
   s.textContent = [
-    '.hg-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px}',
+    '.hg-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);animation:none}',
     '.hg-card h3{margin:0;font-size:16px}.hg-note{font-size:12.5px;color:var(--mute);margin:0}.hg-lbl{font-size:12px;color:var(--mute);display:block;margin-bottom:2px}',
     '.hg-ta{width:100%;min-height:260px;font:inherit;font-size:13px;line-height:1.5;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--soft);color:inherit;resize:vertical}',
     '.hg-row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.hg-sec{margin:20px 0 8px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}',
@@ -32,7 +32,7 @@ function changed(k) { var b = (G.docs && G.docs[k]) || { title: '', body: '' }; 
 
 function docCard(d) {
   var k = d[0], b = (G.docs && G.docs[k]) || {};
-  return '<div class="hg-card" data-hg-doc="' + k + '"><div class="hg-row"><h3>' + esc(d[1]) + '</h3><span class="hg-note">' + (b.body ? 'Your text is live. Last saved ' + esc(String(b.updated_at || '').substring(0, 10)) : 'The built-in text is live.') + '</span></div>' +
+  return '<div class="hg-card" data-hg-doc="' + k + '"><div class="hg-row"><h3><span aria-hidden="true">📜</span> ' + esc(d[1]) + '</h3><span class="hg-note">' + (b.body ? 'Your text is live. Last saved ' + esc(String(b.updated_at || '').substring(0, 10)) : 'The built-in text is live.') + '</span></div>' +
     '<label class="hg-lbl">Title (shown at the top)</label><input class="ak-in" data-hg-f="title" maxlength="80" value="' + esc(cur(k, 'title')) + '" placeholder="' + esc(d[1]) + '">' +
     '<label class="hg-lbl">Text. A blank line starts a new paragraph; a line that starts with "# " is a heading. Leave empty to use the built-in text.</label>' +
     '<textarea class="hg-ta" data-hg-f="body" maxlength="60000" spellcheck="true">' + esc(cur(k, 'body')) + '</textarea>' +
@@ -50,7 +50,8 @@ function view() {
   if (G.err) return K.empty('!', G.err, '');
   if (!G.docs || !G.reqs) return K.skeleton(3);
   var waiting = G.reqs.filter(function (q) { return q.status === 'open'; }).length;
-  return '<p class="hg-note">The Privacy policy and Terms are shown on the public pages and linked in the phone app (Profile). Google Play needs both, and an account deletion page.</p>' +
+  var hero = '<div class="ak-hero"><div class="ak-hero-row"><div><h2>Privacy and accounts</h2><p>Policy text, terms and account deletion requests that Google Play needs.</p></div></div><div class="ak-hero-big"><div><b>' + esc(waiting) + '</b><span>Deletion requests waiting</span></div><div><b>' + esc(G.reqs.length) + '</b><span>Requests in total</span></div></div></div>';
+  return hero + '<p class="hg-note">The Privacy policy and Terms are shown on the public pages and linked in the phone app (Profile). Google Play needs both, and an account deletion page.</p>' +
     '<div class="hg-sec">Privacy policy and Terms</div>' + DOCS.map(docCard).join('') +
     '<div class="hg-sec">Delete my account requests' + (waiting ? ' (' + waiting + ' waiting)' : '') + '</div>' +
     '<div class="hg-card"><p class="hg-note">People ask from the app or the web. First confirm it is really them (call the phone number). <b>Delete</b> signs them out for good, replaces the name, phone and email and removes saved addresses, favourites and notification subscriptions. Orders, trips and payments stay without the name, as the law and disputes require. Check there is no open trip, order or wallet balance first.</p>' +
