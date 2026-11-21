@@ -7,7 +7,8 @@ function load(rel, stubs) {
   m.require = (id) => (stubs && id in stubs ? stubs[id] : req(id)); m._compile(js, path.join(root, rel)); return m.exports;
 }
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
-const L = load('src/statement/statementLogic.ts');
+const ETH = load('src/calendar/ethiopic.ts'); const DF = load('src/calendar/dateFormat.ts', { './ethiopic': ETH });
+const L = load('src/statement/statementLogic.ts', { '../calendar/dateFormat': DF });
 t('money groups thousands and keeps two decimals', L.money(1234.5) === 'ETB 1,234.50' && L.money(0) === 'ETB 0.00' && L.money(1234567.891) === 'ETB 1,234,567.89');
 t('money copes with text, nothing and bad values', L.money('12.5') === 'ETB 12.50' && L.money(undefined) === 'ETB 0.00' && L.money('abc') === 'ETB 0.00' && L.money(NaN) === 'ETB 0.00');
 t('a negative amount keeps its sign', L.money(-5) === '-ETB 5.00');

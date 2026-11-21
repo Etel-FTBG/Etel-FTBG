@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput, Alert, useLanguage } from '../i18n';
+import { useCalendar } from '../calendar/calendarSetting';
+import { fmtStamp } from '../calendar/dateFormat';
 import { colors, typography } from '../theme/colors';
 import { useSession } from '../hub/session';
 import GoldBoxCard from '../components/GoldBoxCard';
 import { SupMessage, SupMeta, SupTicket, supClose, supCreate, supGet, supMeta, supMyTickets, supRate, supReply } from '../api/support';
-import { SUPPORT_CATEGORIES, appForRole, canMarkSolved, shortTime, statusLabel, validateReply, validateRequest } from '../support/supportLogic';
+import { SUPPORT_CATEGORIES, appForRole, canMarkSolved, statusLabel, validateReply, validateRequest } from '../support/supportLogic';
 
 type Mode = { kind: 'list' } | { kind: 'new' } | { kind: 'thread'; id: number };
 
@@ -23,6 +25,8 @@ export default function SupportScreen() {
 }
 
 function ListView({ onNew, onOpen }: { onNew: () => void; onOpen: (id: number) => void }) {
+  const cal = useCalendar();
+  const { lang: listLang } = useLanguage();
   const [tickets, setTickets] = useState<SupTicket[] | null>(null);
   const [meta, setMeta] = useState<SupMeta | null>(null);
   const [err, setErr] = useState('');
@@ -81,7 +85,7 @@ function ListView({ onNew, onOpen }: { onNew: () => void; onOpen: (id: number) =
                 <View style={[styles.statusDot, { backgroundColor: t.status === 'solved' || t.status === 'closed' ? colors.success : t.status === 'pending' ? colors.gold : colors.warning }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle}>{t.subject}</Text>
-                  <Text style={styles.rowSub}>{t.ref + ' - ' + statusLabel(t.status) + ' - ' + shortTime(t.updated_at)}</Text>
+                  <Text style={styles.rowSub}>{t.ref + ' - ' + statusLabel(t.status) + ' - ' + fmtStamp(t.updated_at, cal, listLang === 'am')}</Text>
                 </View>
                 {t.unread ? <View style={styles.dot} accessibilityLabel="New reply" /> : null}
               </View>
@@ -142,6 +146,8 @@ function NewView({ onBack, onSent }: { onBack: () => void; onSent: (id: number) 
 }
 
 function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
+  const cal = useCalendar();
+  const { lang: threadLang } = useLanguage();
   const [data, setData] = useState<{ ticket: SupTicket; messages: SupMessage[]; can_rate: boolean; can_reply: boolean } | null>(null);
   const [err, setErr] = useState('');
   const [reply, setReply] = useState('');
@@ -183,7 +189,7 @@ function ThreadView({ id, onBack }: { id: number; onBack: () => void }) {
           <View key={i} style={[styles.bubble, m.from === 'me' ? styles.mine : m.from === 'support' ? styles.theirs : styles.system]}>
             <Text style={styles.bubbleWho}>{m.from === 'me' ? 'You' : m.from === 'support' ? 'ETEL support' : 'Note'}</Text>
             <Text style={styles.bubbleText}>{m.body}</Text>
-            <Text style={styles.bubbleTime}>{shortTime(m.at)}</Text>
+            <Text style={styles.bubbleTime}>{fmtStamp(m.at, cal, threadLang === 'am')}</Text>
           </View>
         ))}
       </View>

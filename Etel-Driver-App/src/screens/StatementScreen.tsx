@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Text } from '../i18n';
+import { Text, useLanguage } from '../i18n';
+import { useCalendar } from '../calendar/calendarSetting';
 import { colors, typography } from '../theme/colors';
 import GoldBoxCard from '../components/GoldBoxCard';
 import { Statement, getStatement } from '../api/statement';
@@ -9,6 +10,9 @@ import { barFraction, dayName, money, payLabel, percent, shareText, shortDate, t
 // "My weekly statement": for one week (Monday to Sunday, up to 12 weeks back) what riders paid, what ETEL kept and what the driver keeps,
 // day by day and trip by trip. It is the same statement the web driver page shows, so the numbers always agree.
 export default function StatementScreen() {
+  const cal = useCalendar();
+  const { lang } = useLanguage();
+  const am = lang === 'am';
   const [st, setSt] = useState<Statement | null>(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(true);
@@ -31,7 +35,7 @@ export default function StatementScreen() {
   }, [load]);
 
   const share = () => {
-    if (st) Share.share({ message: shareText(st) }).catch(() => {});
+    if (st) Share.share({ message: shareText(st, cal, am) }).catch(() => {});
   };
 
   const best = st ? Math.max(0, ...st.days.map((d) => d.you_keep)) : 0;
@@ -50,7 +54,7 @@ export default function StatementScreen() {
             <Pressable disabled={!st.prev_week || busy} onPress={() => st.prev_week && load(st.prev_week)} style={[styles.navBtn, !st.prev_week && styles.navOff]} accessibilityRole="button" accessibilityLabel="Previous week">
               <Text style={styles.navText}>{'<'}</Text>
             </Pressable>
-            <Text style={styles.week}>{weekLabel(st.week_start, st.week_end)}</Text>
+            <Text style={styles.week}>{weekLabel(st.week_start, st.week_end, cal, am)}</Text>
             <Pressable disabled={!st.next_week || busy} onPress={() => st.next_week && load(st.next_week)} style={[styles.navBtn, !st.next_week && styles.navOff]} accessibilityRole="button" accessibilityLabel="Next week">
               <Text style={styles.navText}>{'>'}</Text>
             </Pressable>
@@ -82,7 +86,7 @@ export default function StatementScreen() {
               <Text style={styles.sectionTitle}>Day by day</Text>
               {st.days.map((d) => (
                 <View key={d.date} style={styles.dayRow}>
-                  <Text style={styles.dayName}>{dayName(d.date)}</Text>
+                  <Text style={styles.dayName}>{dayName(d.date, am)}</Text>
                   <View style={styles.track}>
                     <View style={[styles.fill, { width: (Math.round(barFraction(d.you_keep, best) * 100) + '%') as `${number}%` }]} />
                   </View>
@@ -105,7 +109,7 @@ export default function StatementScreen() {
               <GoldBoxCard key={tr.id} style={styles.card} radius={14}>
                 <View style={styles.pad}>
                   <View style={styles.tripTop}>
-                    <Text style={styles.tripTime}>{tripTime(tr.completed_at)}</Text>
+                    <Text style={styles.tripTime}>{tripTime(tr.completed_at, cal, am)}</Text>
                     <Text style={styles.tripKeep}>{money(tr.you_keep)}</Text>
                   </View>
                   <Text style={styles.tripWhere} numberOfLines={1}>{(tr.pickup || '-') + '  >  ' + (tr.dropoff || '-')}</Text>
@@ -121,7 +125,7 @@ export default function StatementScreen() {
             <Text style={styles.primaryText}>Share this statement</Text>
           </Pressable>
           <Text style={styles.foot}>
-            {'Cash collected ' + money(st.totals.cash_collected) + ' - paid through ETEL ' + money(st.totals.etel_collected) + ' - ' + shortDate(st.week_start) + ' to ' + shortDate(st.week_end)}
+            {'Cash collected ' + money(st.totals.cash_collected) + ' - paid through ETEL ' + money(st.totals.etel_collected) + ' - ' + shortDate(st.week_start, cal, am) + ' to ' + shortDate(st.week_end, cal, am)}
           </Text>
         </View>
       ) : null}

@@ -1,8 +1,7 @@
 import type { Statement } from '../api/statement';
+import { Calendar, fmtDate, fmtDateTime, fmtShort, parseServerDate, weekdayName } from '../calendar/dateFormat';
 
 // Small helpers for the weekly statement screen (no React, so they can be tested alone).
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // 1234.5 -> "ETB 1,234.50"; anything that is not a number counts as 0.
 export function money(n: unknown): string {
@@ -19,36 +18,28 @@ export function percent(rate: number): string {
   return Math.round((rate || 0) * 1000) / 10 + '%';
 }
 
-function parts(ymd: string): [number, number, number] | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || '');
-  return m ? [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)] : null;
+// "2026-11-16" -> "16 Nov" (Ethiopian: "7 Hidar"; Amharic: "ኅዳር 7")
+export function shortDate(ymd: string, cal: Calendar = 'gregorian', am = false): string {
+  return fmtShort(ymd, cal, am);
 }
 
-// "2026-11-16" -> "16 Nov"
-export function shortDate(ymd: string): string {
-  const p = parts(ymd);
-  return p ? p[2] + ' ' + MONTHS[p[1] - 1] : ymd || '';
+// ("2026-11-16", "2026-11-22") -> "16 Nov - 22 Nov 2026" (Ethiopian: "7 Hidar - 13 Hidar 2019 EC"). The year is the end date's.
+export function weekLabel(start: string, end: string, cal: Calendar = 'gregorian', am = false): string {
+  const e = parseServerDate(end);
+  if (!e) return shortDate(start, cal, am) + ' - ' + shortDate(end, cal, am);
+  const full = fmtDate(end, cal, am);
+  const year = full.substring(shortDate(end, cal, am).length);   // the part after "22 Nov": " 2026" or " 2019 EC"
+  return shortDate(start, cal, am) + ' - ' + shortDate(end, cal, am) + year;
 }
 
-// ("2026-11-16", "2026-11-22") -> "16 Nov - 22 Nov 2026"
-export function weekLabel(start: string, end: string): string {
-  const e = parts(end);
-  return shortDate(start) + ' - ' + shortDate(end) + (e ? ' ' + e[0] : '');
+// "2026-11-16" -> "Mon" (Amharic: "ሰኞ"); the weekday is the same in both calendars
+export function dayName(ymd: string, am = false): string {
+  return weekdayName(ymd, am);
 }
 
-// "2026-11-16" -> "Mon" (the statement week starts on Monday, but this works for any date)
-export function dayName(ymd: string): string {
-  const p = parts(ymd);
-  if (!p) return '';
-  const d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
-  return DAYS[(d.getUTCDay() + 6) % 7];
-}
-
-// "2026-11-20 09:30:45" -> "20 Nov 09:30"
-export function tripTime(at: string): string {
-  const p = parts(at);
-  const t = /\s(\d{2}:\d{2})/.exec(at || '');
-  return p ? p[2] + ' ' + MONTHS[p[1] - 1] + (t ? ' ' + t[1] : '') : at || '';
+// "2026-11-20 09:30:45" -> "20 Nov 09:30" (Ethiopian: "11 Hidar 09:30")
+export function tripTime(at: string, cal: Calendar = 'gregorian', am = false): string {
+  return fmtDateTime(at, cal, am);
 }
 
 export function payLabel(collectedBy: string): string {
@@ -62,10 +53,10 @@ export function barFraction(value: number, best: number): number {
 }
 
 // The plain text a driver can send to someone (Share button): the week, the totals and one line per day.
-export function shareText(st: Statement): string {
+export function shareText(st: Statement, cal: Calendar = 'gregorian', am = false): string {
   const t = st.totals;
   const lines = [
-    'ETEL weekly statement ' + weekLabel(st.week_start, st.week_end),
+    'ETEL weekly statement ' + weekLabel(st.week_start, st.week_end, cal, am),
     'Trips: ' + t.trips,
     'Riders paid: ' + money(t.rider_paid),
     'Promo codes: -' + money(t.promo),
@@ -77,6 +68,6 @@ export function shareText(st: Statement): string {
   ];
   if (st.per_hour != null) lines.push('Per hour: ' + money(st.per_hour));
   lines.push('');
-  st.days.forEach((d) => lines.push(dayName(d.date) + ' ' + shortDate(d.date) + ': ' + d.trips + (d.trips === 1 ? ' trip, ' : ' trips, ') + money(d.you_keep)));
+  st.days.forEach((d) => lines.push(dayName(d.date, am) + ' ' + shortDate(d.date, cal, am) + ': ' + d.trips + (d.trips === 1 ? ' trip, ' : ' trips, ') + money(d.you_keep)));
   return lines.join('\n');
 }

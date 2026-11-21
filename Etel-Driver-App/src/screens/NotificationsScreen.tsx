@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { Text } from '../i18n';
+import { Text, useLanguage } from '../i18n';
+import { useCalendar } from '../calendar/calendarSetting';
+import { fmtStamp } from '../calendar/dateFormat';
 import { colors, typography } from '../theme/colors';
 import { getAnnouncements, markAnnouncementRead, Announcement } from '../api/extras';
 
 export default function NotificationsScreen() {
+  const cal = useCalendar();
+  const { lang } = useLanguage();
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +63,7 @@ export default function NotificationsScreen() {
             </View>
             <Text style={styles.cardBody}>{a.body}</Text>
             <Text style={styles.cardMeta}>
-              {a.category} · {a.created_at}
+              {a.category} · {fmtStamp(a.created_at, cal, lang === 'am')}
             </Text>
           </Pressable>
         ))
