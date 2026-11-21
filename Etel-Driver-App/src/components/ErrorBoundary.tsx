@@ -3,6 +3,7 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { Text } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '../theme/colors';
+import { reportCrash } from '../crash/crashReport';
 
 interface State {
   failed: boolean;
@@ -19,6 +20,7 @@ export default class ErrorBoundary extends React.Component<{ children: React.Rea
 
   componentDidCatch(error: Error) {
     console.warn('[ErrorBoundary]', error.message);
+    reportCrash('js', error, 'screen');
   }
 
   render() {

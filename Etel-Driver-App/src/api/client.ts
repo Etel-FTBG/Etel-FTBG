@@ -4,7 +4,7 @@ import { reportConnectivity } from '../net/connectivity';
 
 // The whole backend is one endpoint: POST { action, ...fields } to boot.php,
 // with the auth token as a Bearer header. See delivery/api/boot.php.
-const API_BASE_URL: string =
+export const API_BASE_URL: string =
   (Constants.expoConfig?.extra?.etelApiBaseUrl as string) ||
   'https://ethelmarket.com/delivery/api/boot.php';
 
