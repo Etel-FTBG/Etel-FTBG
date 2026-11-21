@@ -44,6 +44,7 @@ const API = 'https://ethelmarket.com/Etel.Pay/wallet/api/v2_verify.php';
     await p.evaluate(() => { window.CALLS = []; });
     let pr = login(); await p.waitForSelector('[data-etelpay-2fa-host]', { state: 'attached' }); 
     t(mode.n + ': two-step on: a dialog asks for the code, with the reason, and nothing is sent twice yet', (await callsN()) === 1 && /two-step code/i.test(await dlg().innerText().catch(() => '') || 'two-step code'));
+    await p.waitForTimeout(150);
     t(mode.n + ': the box is focused and is a one-time-code box', await p.evaluate(() => { const h = document.querySelector('[data-etelpay-2fa-host]'); const i = h.shadowRoot.getElementById('c'); return h.shadowRoot.activeElement === i && i.autocomplete === 'one-time-code'; }));
     await p.evaluate(() => { const i = document.querySelector('[data-etelpay-2fa-host]').shadowRoot.getElementById('c'); i.value = '123 456'; });
     await p.evaluate(() => document.querySelector('[data-etelpay-2fa-host]').shadowRoot.getElementById('go').click());
