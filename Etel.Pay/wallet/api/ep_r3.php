@@ -395,6 +395,24 @@ case 'ep_login_etelid': {
     ep_ok(array('token'=>$token,'expires_at'=>$expires,'phone'=>$user['phone'],'via'=>'etelid_sso'));
 }
 
+/* -- The member's choice: Etel Pay asks for the PIN, not the 6-digit code --
+   Same inputs as the sign-in (phone or code in "phone", the Etel-ID password in "pin") plus mode (status|skip|ask) and totp_code.
+   EtelID checks the password (same lockout as a sign-in) and, for "skip", a valid code; this file only passes it on. */
+case 'ep_pay_code_mode': {
+    $phone = in_str('phone');
+    $pw    = in_str('pin');
+    $mode  = strtolower(in_str('mode'));
+    if (!$phone || !$pw) ep_err('Phone and password required');
+    if (!in_array($mode, array('status', 'skip', 'ask'), true)) ep_err('mode must be status, skip or ask', 400);
+    if (!function_exists('etelid_pay_code_mode')) ep_err('EtelID bridge not installed', 503);
+    $res = etelid_pay_code_mode($phone, $pw, $mode, in_str('totp_code'));
+    http_response_code($res[0]);
+    $out = $res[1];
+    $out['v'] = EP_VER;
+    echo json_encode($out);
+    exit;
+}
+
 /* -- Set the first wallet PIN on a single sign-on wallet ---------
    Needs the session AND the owner's Etel-ID password, so a stolen
    session alone cannot set a PIN. Only works while pin_hash is the
