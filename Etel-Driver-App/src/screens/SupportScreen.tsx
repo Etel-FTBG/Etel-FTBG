@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, V
 import { Text, TextInput, Alert, useLanguage } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { useSession } from '../hub/session';
+import GoldBoxCard from '../components/GoldBoxCard';
 import { SupMessage, SupMeta, SupTicket, supClose, supCreate, supGet, supMeta, supMyTickets, supRate, supReply } from '../api/support';
 import { SUPPORT_CATEGORIES, appForRole, canMarkSolved, shortTime, statusLabel, validateReply, validateRequest } from '../support/supportLogic';
 
@@ -40,9 +41,19 @@ function ListView({ onNew, onOpen }: { onNew: () => void; onOpen: (id: number) =
   useEffect(() => {
     load();
   }, [load]);
+  const unreadCount = (tickets || []).filter((t) => t.unread).length;
   return (
     <View>
-      <Text style={styles.title}>Support</Text>
+      <GoldBoxCard style={styles.hero}>
+        <View style={styles.heroRow}>
+          <View style={styles.heroIcon}><Text style={styles.heroIconText}>🎧</Text></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.heroTitle}>Support</Text>
+            <Text style={styles.heroSub}>We answer here, in the app.</Text>
+          </View>
+          {unreadCount > 0 ? <View style={styles.badge}><Text style={styles.badgeText}>{String(unreadCount)}</Text></View> : null}
+        </View>
+      </GoldBoxCard>
       {meta && !meta.enabled ? (
         <View style={styles.card}>
           <Text style={styles.cardBody}>New requests are paused right now. Please try again later, or use the contacts on the Help page.</Text>
@@ -57,17 +68,24 @@ function ListView({ onNew, onOpen }: { onNew: () => void; onOpen: (id: number) =
       {tickets === null ? (
         <ActivityIndicator color={colors.gold} style={{ marginTop: 20 }} />
       ) : tickets.length === 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.cardBody}>You have no requests yet.</Text>
-        </View>
+        <GoldBoxCard style={styles.empty}>
+          <Text style={styles.emptyIcon}>💬</Text>
+          <Text style={styles.emptyTitle}>You have no requests yet.</Text>
+          <Text style={styles.cardBody}>Tap a request to read the answers.</Text>
+        </GoldBoxCard>
       ) : (
         tickets.map((t) => (
-          <Pressable key={t.id} style={styles.row} onPress={() => onOpen(t.id)} accessibilityRole="button" accessibilityLabel={t.subject}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>{t.subject}</Text>
-              <Text style={styles.rowSub}>{t.ref + ' - ' + statusLabel(t.status) + ' - ' + shortTime(t.updated_at)}</Text>
-            </View>
-            {t.unread ? <View style={styles.dot} accessibilityLabel="New reply" /> : null}
+          <Pressable key={t.id} onPress={() => onOpen(t.id)} accessibilityRole="button" accessibilityLabel={t.subject} style={styles.rowWrap}>
+            <GoldBoxCard radius={14}>
+              <View style={styles.row}>
+                <View style={[styles.statusDot, { backgroundColor: t.status === 'solved' || t.status === 'closed' ? colors.success : t.status === 'pending' ? colors.gold : colors.warning }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowTitle}>{t.subject}</Text>
+                  <Text style={styles.rowSub}>{t.ref + ' - ' + statusLabel(t.status) + ' - ' + shortTime(t.updated_at)}</Text>
+                </View>
+                {t.unread ? <View style={styles.dot} accessibilityLabel="New reply" /> : null}
+              </View>
+            </GoldBoxCard>
           </Pressable>
         ))
       )}
@@ -207,7 +225,20 @@ const styles = StyleSheet.create({
   primaryText: { color: '#1a1200', fontWeight: '700', fontSize: 16 },
   secondary: { borderColor: colors.border, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
   secondaryText: { color: colors.text, fontWeight: '600' },
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 8 },
+  rowWrap: { marginBottom: 10 },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 14 },
+  statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
+  hero: { marginTop: 8, marginBottom: 6 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+  heroIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' },
+  heroIconText: { fontSize: 22 },
+  heroTitle: { ...typography.h1, color: colors.text },
+  heroSub: { color: colors.textSecondary, marginTop: 2 },
+  badge: { minWidth: 26, height: 26, borderRadius: 13, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 7 },
+  badgeText: { color: '#1a1200', fontWeight: '800' },
+  empty: { alignItems: 'center', padding: 24 },
+  emptyIcon: { fontSize: 38, marginBottom: 8 },
+  emptyTitle: { color: colors.text, fontWeight: '700', marginBottom: 4 },
   rowTitle: { color: colors.text, fontWeight: '600' },
   rowSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.gold, marginLeft: 10 },
