@@ -7,7 +7,7 @@
  *   - Navigation    → Network-first, fallback to offline.html
  */
 
-const CACHE_NAME   = 'etel-v234';
+const CACHE_NAME   = 'etel-v235';
 const API_CACHE    = 'etel-api-v7';
 const IMG_CACHE    = 'etel-img-v8';
 

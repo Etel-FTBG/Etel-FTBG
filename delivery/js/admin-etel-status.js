@@ -17,7 +17,7 @@ function css() {
   if (document.getElementById('hs-css')) return;
   var s = document.createElement('style'); s.id = 'hs-css';
   s.textContent = [
-    '.hs-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px}',
+    '.hs-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);animation:none}',
     '.hs-card h3{margin:0;font-size:16px}.hs-note{font-size:12.5px;color:var(--mute);margin:0}.hs-lbl{font-size:12px;color:var(--mute);display:block;margin-bottom:2px}',
     '.hs-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:560px){.hs-two{grid-template-columns:1fr}}',
     '.hs-row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}',
@@ -37,12 +37,13 @@ function view() {
   if (S.err) return K.empty('!', S.err, '');
   if (!S.settings) return K.skeleton(3);
   var on = cur('maint_enabled') === '1';
-  return '<div class="hs-card" data-hs-group="maint"><div class="hs-row"><h3>Maintenance mode</h3><span class="' + (on ? 'hs-on' : 'hs-off') + '">' + (on ? 'ON - phones are blocked' : 'Off') + '</span></div>' +
+  var hero = '<div class="ak-hero"><div class="ak-hero-row"><div><h2>Maintenance and updates</h2><p>Pause the phone app for everyone, or make people update.</p></div></div><div class="ak-hero-big"><div><b>' + (base('maint_enabled') === '1' ? 'ON' : 'Off') + '</b><span>Maintenance</span></div><div><b>' + esc(base('min_version_android') || '-') + '</b><span>Oldest allowed version</span></div></div></div>';
+  return hero + '<div class="hs-card" data-hs-group="maint"><div class="hs-row"><h3><span aria-hidden="true">🛠️</span>Maintenance mode</h3><span class="' + (on ? 'hs-on' : 'hs-off') + '">' + (on ? 'ON - phones are blocked' : 'Off') + '</span></div>' +
     '<p class="hs-note">When it is ON every phone shows a "we are back soon" page instead of the app. Admin accounts can still sign in and use the app, so you can test. Phones check when the app opens and when it comes back to the front.</p>' +
     '<label class="hs-lbl"><input type="checkbox" data-hs-f="maint_enabled" data-hs-flag ' + (on ? 'checked' : '') + '> Maintenance mode is ON</label>' +
     '<div class="hs-two">' + field('maint_text_en', 'Message (English)', 'We are improving ETEL. Back soon.') + field('maint_text_am', 'Message (Amharic)', '') + '</div>' +
     '<div class="hs-row"><span class="hs-note">' + (dirty(G1) ? 'Not saved yet.' : '') + '</span><button type="button" class="ak-btn gold" data-hs-save="maint"' + (dirty(G1) ? '' : ' disabled') + '>Save</button></div></div>' +
-    '<div class="hs-card" data-hs-group="upd"><div class="hs-row"><h3>Minimum app version</h3><span class="' + (base('min_version_android') ? 'hs-on' : 'hs-off') + '">' + (base('min_version_android') ? 'Minimum ' + esc(base('min_version_android')) : 'Not set') + '</span></div>' +
+    '<div class="hs-card" data-hs-group="upd"><div class="hs-row"><h3><span aria-hidden="true">⬆️</span>Minimum app version</h3><span class="' + (base('min_version_android') ? 'hs-on' : 'hs-off') + '">' + (base('min_version_android') ? 'Minimum ' + esc(base('min_version_android')) : 'Not set') + '</span></div>' +
     '<p class="hs-note">A phone with an older version sees an "Update ETEL" page and cannot use the app until it updates. Leave empty to let every version in. Set it only AFTER the new app is on Google Play (or the new APK link works), or people cannot update.</p>' +
     '<div class="hs-two">' + field('min_version_android', 'Oldest allowed version (for example 1.8.0)', '1.8.0', 12) + field('update_url_android', 'Update address (Google Play or Expo link)', 'https://play.google.com/store/apps/details?id=com.etelgroup.driver', 255) + '</div>' +
     '<div class="hs-two">' + field('update_text_en', 'Message (English)', 'Please update ETEL to keep using it.') + field('update_text_am', 'Message (Amharic)', '') + '</div>' +
