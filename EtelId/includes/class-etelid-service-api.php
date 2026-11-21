@@ -49,14 +49,17 @@ class EtelID_Service_API {
         'remove_company_role' => 'remove_company_role',
         'member_count'        => 'member_count',
         'list_companies'      => 'list_companies',
+        'pay_2fa_mode'        => 'pay_2fa_mode',
     );
+    /* a route that is allowed by another route's scope (Etel Pay's key already has "authenticate"; no new key setting is needed) */
+    private static $route_scope = array( 'pay_2fa_mode' => 'authenticate' );
 
     public static function register_routes() {
         foreach ( self::$routes as $scope => $method ) {
             register_rest_route( 'etelid/v1', '/service/' . $scope, array(
                 'methods'             => 'POST',
                 'callback'            => array( __CLASS__, $method ),
-                'permission_callback' => self::permission_for( $scope ),
+                'permission_callback' => self::permission_for( isset( self::$route_scope[ $scope ] ) ? self::$route_scope[ $scope ] : $scope ),
             ));
         }
     }
@@ -223,6 +226,13 @@ class EtelID_Service_API {
         return in_array( $app, self::$limited_apps, true );
     }
 
+    /* Is this call Etel Pay signing a member in to pay? The `app` field is only a claim, so the key that made the call must be Etel Pay's own
+     * (or the shared master key that every Etel app still uses on installs that have not split their keys). */
+    private static function is_pay_signin( $request ) {
+        if ( strtolower( trim( (string) $request->get_param( 'app' ) ) ) !== 'pay' ) return false;
+        return in_array( self::caller_label(), array( 'pay', 'etelpay', 'etel-pay', 'master-key', 'master-key-old' ), true );
+    }
+
     private static function member_payload( $m ) {
         $limited = EtelID_Security::member_is_limited( $m );
         return array(
@@ -315,6 +325,47 @@ class EtelID_Service_API {
         return new WP_Error( 'sso_internal_error', 'EtelID could not complete the sign-in. Please try again; if it keeps happening contact support.', array( 'status' => 500 ) );
     }
 
+    /* ---- POST /service/pay_2fa_mode -------------------------------
+     * { identifier, password, mode: status | skip | ask, totp_code? }, only from Etel Pay (app "pay").
+     *   status - what the member chose (twofa_enabled, pay_skip)
+     *   skip   - Etel Pay will not ask the 6-digit code when this member pays (needs a valid code: requires_2fa / bad_2fa otherwise)
+     *   ask    - Etel Pay asks the code again (needs only the password)
+     * The password is checked like a sign-in (same 8-wrong-passwords lockout), so this cannot be used to guess it. */
+    public static function pay_2fa_mode( $request ) {
+        if ( ! self::is_pay_signin( $request ) ) return new WP_Error( 'forbidden', 'Only Etel Pay can use this.', array( 'status' => 403 ) );
+        $ip  = EtelID_Security::get_ip();
+        $key = 'etelid_svc_auth_' . md5( $ip );
+        $n   = (int) get_transient( $key );
+        if ( $n >= self::RATE_LIMIT ) return new WP_Error( 'rate_limited', 'Too many attempts. Try again in a minute.', array( 'status' => 429 ) );
+        set_transient( $key, $n + 1, 60 );
+        $ident = sanitize_text_field( (string) $request->get_param( 'identifier' ) );
+        $pass  = (string) $request->get_param( 'password' );
+        $mode  = strtolower( trim( (string) $request->get_param( 'mode' ) ) );
+        if ( ! $ident || ! $pass ) return new WP_Error( 'bad_request', 'identifier and password are required.', array( 'status' => 400 ) );
+        if ( ! in_array( $mode, array( 'status', 'skip', 'ask' ), true ) ) return new WP_Error( 'bad_request', 'mode must be status, skip or ask.', array( 'status' => 400 ) );
+        $m = self::find_member( $ident );
+        if ( ! $m ) return new WP_Error( 'not_found', 'No EtelID account found for that identifier.', array( 'status' => 404 ) );
+        if ( $m->status === 'suspended' || $m->status === 'revoked' || empty( $m->pin_hash ) ) return new WP_Error( 'forbidden', 'This EtelID cannot be used.', array( 'status' => 403 ) );
+        $lock_key = 'nfc_acct_' . strtolower( (string) $m->etel_id );
+        if ( EtelID_Security::fail_blocked( $lock_key, 8, 900 ) ) {
+            return new WP_Error( 'rate_limited', 'Too many wrong passwords for this account. Please wait 15 minutes, or reset the password.', array( 'status' => 429 ) );
+        }
+        if ( ! EtelID_Auth::verify_password( $pass, $m->pin_hash ) ) {
+            EtelID_Security::fail_hit( $lock_key, 900 );
+            EtelID_DB::log( $m->id, $m->etel_id, 'login_failed', 'Etel Pay code setting - wrong password' );
+            return new WP_Error( 'wrong_password', 'Incorrect EtelID password.', array( 'status' => 401 ) );
+        }
+        EtelID_Security::fail_clear( $lock_key );
+        $on = class_exists( 'EtelID_2FA' ) && EtelID_2FA::is_enabled( $m->id );
+        if ( $mode === 'skip' || $mode === 'ask' ) {
+            if ( $on ) {
+                $r = EtelID_2FA::set_pay_skip( $m, $mode === 'skip', (string) $request->get_param( 'totp_code' ) );
+                if ( is_wp_error( $r ) ) return $r;
+            }
+        }
+        return rest_ensure_response( array( 'ok' => true, 'twofa_enabled' => $on, 'pay_skip' => $on && EtelID_2FA::pay_skips_code( $m->id ) ) );
+    }
+
     public static function authenticate( $request ) {
         register_shutdown_function( array( __CLASS__, 'capture_fatal' ) );
         try {
@@ -384,11 +435,17 @@ class EtelID_Service_API {
         /* Two-step sign-in (members who switched it on): the calling app passes
          * `totp_code`. Without it the app is told to ask for one. This is after
          * the password check, so it never reveals anything to a stranger. */
-        $twofa_on = false;
+        $twofa_on = false; $twofa_skipped = false;
         if ( class_exists( 'EtelID_2FA' ) && EtelID_2FA::is_enabled( $m->id ) ) {
             $twofa_on = true;
-            $g = EtelID_2FA::gate( $m, (string) $request->get_param( 'totp_code' ) );
-            if ( is_wp_error( $g ) ) return $g;
+            if ( self::is_pay_signin( $request ) && EtelID_2FA::pay_skips_code( $m->id ) ) {
+                /* The member chose "Etel Pay asks for my PIN, not the code" (pay_2fa_mode). Only Etel Pay's sign-in is let through this way; the
+                 * password was verified above, and every payment still needs the wallet PIN. */
+                $twofa_skipped = true;
+            } else {
+                $g = EtelID_2FA::gate( $m, (string) $request->get_param( 'totp_code' ) );
+                if ( is_wp_error( $g ) ) return $g;
+            }
         }
         /* Staff two-step: "enforce" refuses a staff member who has not set it up; "log" only records it. */
         if ( ! $twofa_on && class_exists( 'EtelID_2FA' ) ) {
@@ -418,10 +475,10 @@ class EtelID_Service_API {
         }
 
         self::$stage = 'log_login';
-        EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ', app: ' . self::caller_label() . ')' );
+        EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ', app: ' . self::caller_label() . ')' . ( $twofa_skipped ? ' - two-step code skipped by the member\'s choice for Etel Pay' : '' ) );
 
         self::$stage = 'member_payload';
-        $payload = array( 'ok' => true, 'member' => self::member_payload( $m ), 'twofa_verified' => $twofa_on,
+        $payload = array( 'ok' => true, 'member' => self::member_payload( $m ), 'twofa_verified' => $twofa_on && ! $twofa_skipped, 'twofa_skipped' => $twofa_skipped,
             'twofa_required' => class_exists( 'EtelID_2FA' ) ? EtelID_2FA::required_for( $m ) : false );
 
         $wantSession = filter_var( $request->get_param( 'create_session' ), FILTER_VALIDATE_BOOLEAN );
