@@ -7,10 +7,12 @@ import { HubSession, ROLE_LABEL, hubSignOut } from '../hub/session';
 import { goOfflineEverywhere } from '../hub/masterOnline';
 import { isLockEnabled, isLockSupported, setLockEnabled } from '../security/appLock';
 import { tap } from '../utils/haptics';
+import { useNavigation } from '@react-navigation/native';
 
 // Who is signed in, their role, the fingerprint-lock switch and sign out.
 export default function ProfileCard({ session }: { session: HubSession }) {
   const { p } = useTheme();
+  const navigation = useNavigation<any>();
   const [lockOn, setLockOn] = useState(false);
   const [lockOk, setLockOk] = useState(false);
 
@@ -58,6 +60,11 @@ export default function ProfileCard({ session }: { session: HubSession }) {
           <Ionicons name="log-out-outline" size={18} color={p.textSecondary} />
         </Pressable>
       </View>
+      <Pressable onPress={() => navigation.navigate('Devices')} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="button" accessibilityLabel="Signed-in devices">
+        <Ionicons name="phone-portrait-outline" size={20} color={p.gold} />
+        <Text style={[styles.lockText, { color: p.text }]}>Signed-in devices</Text>
+        <Ionicons name="chevron-forward" size={18} color={p.textMuted} />
+      </Pressable>
       {lockOk ? (
         <Pressable onPress={toggleLock} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="switch">
           <Ionicons name={lockOn ? 'finger-print' : 'lock-open-outline'} size={20} color={lockOn ? p.gold : p.textMuted} />
