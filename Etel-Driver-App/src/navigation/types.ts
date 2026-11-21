@@ -10,6 +10,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Help: undefined;
   Support: undefined;
+  Statement: undefined;
 };
 
 export type TabParamList = {
