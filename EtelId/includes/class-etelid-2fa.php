@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class EtelID_2FA {
 
     const TABLE        = 'etelid_2fa';
-    const DB_VERSION   = '1.0';
+    const DB_VERSION   = '1.1';
     const MAX_FAILURES = 5;
     const FAIL_WINDOW  = 600;
 
@@ -104,6 +104,7 @@ class EtelID_2FA {
             last_step BIGINT NOT NULL DEFAULT 0,
             created_at DATETIME NULL,
             enabled_at DATETIME NULL,
+            pay_skip TINYINT(1) NOT NULL DEFAULT 0,
             PRIMARY KEY  (member_id)
         ) " . $wpdb->get_charset_collate() . ";" );
         update_option( 'etelid_2fa_db_version', self::DB_VERSION );
@@ -119,6 +120,43 @@ class EtelID_2FA {
     public static function is_enabled( $member_id ) {
         $r = self::row( $member_id );
         return $r && (int) $r->enabled === 1;
+    }
+
+    /* ---- "Etel Pay asks for my PIN, not the code" (the member's own choice) ----------------------------------------------
+     * Two-step sign-in stays ON for the portal and every other app. Only when Etel Pay signs the member in to pay, and only when the
+     * member chose it, the 6-digit code is not asked (the wallet PIN still protects every payment). Off by default. Switching it ON needs a
+     * valid code, so someone who only knows the password cannot lower the protection; switching it OFF again needs nothing extra. */
+    /** Kill-switch for the whole choice: define( 'ETELID_PAY_CODE_CHOICE', false ); in wp-config.php and every member is asked the code again. */
+    public static function pay_choice_allowed() {
+        return ! ( defined( 'ETELID_PAY_CODE_CHOICE' ) && ! ETELID_PAY_CODE_CHOICE );
+    }
+
+    public static function pay_skips_code( $member_id ) {
+        if ( ! self::pay_choice_allowed() ) return false;
+        $r = self::row( $member_id );
+        return $r && (int) $r->enabled === 1 && isset( $r->pay_skip ) && (int) $r->pay_skip === 1;
+    }
+
+    /** $skip true = do not ask the code for Etel Pay (needs a current code); false = ask it again (needs none). True or WP_Error. */
+    public static function set_pay_skip( $member, $skip, $code = '' ) {
+        global $wpdb;
+        $row = self::row( $member->id );
+        if ( ! $row || (int) $row->enabled !== 1 ) return new WP_Error( 'no_2fa', 'Two-step sign-in is not on for this account, so there is no code to skip.', array( 'status' => 400 ) );
+        if ( $skip && ! self::pay_choice_allowed() ) return new WP_Error( 'pay_choice_off', 'Etel Pay always asks for the 6-digit code at the moment.', array( 'status' => 403 ) );
+        if ( $skip ) {
+            $code = trim( (string) $code );
+            if ( $code === '' ) return new WP_Error( 'requires_2fa', 'Enter the 6-digit code from your authenticator app (or a backup code).', array( 'status' => 401, 'requires_2fa' => true ) );
+            if ( self::is_locked( $member->id ) ) return new WP_Error( 'twofa_locked', 'Too many wrong codes. Try again in 10 minutes.', array( 'status' => 429 ) );
+            if ( ! self::check_code( $member->id, $code ) ) {
+                self::fail_hit( $member->id );
+                EtelID_DB::log( $member->id, $member->etel_id, 'login_failed', 'Etel Pay code setting: wrong code' );
+                return new WP_Error( 'bad_2fa', 'That code is not right. Check the time on your phone and try again.', array( 'status' => 401, 'requires_2fa' => true ) );
+            }
+            self::fail_clear( $member->id );
+        }
+        $wpdb->update( self::table(), array( 'pay_skip' => $skip ? 1 : 0 ), array( 'member_id' => (int) $member->id ) );
+        EtelID_DB::log( $member->id, $member->etel_id, 'updated', $skip ? 'Etel Pay: the member chose to pay with the PIN, without the 6-digit code' : 'Etel Pay: the member chose to be asked for the 6-digit code again' );
+        return true;
     }
 
     /* ---- backup codes ------------------------------------------------- */
