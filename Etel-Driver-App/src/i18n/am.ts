@@ -97,6 +97,8 @@ export const AM: Record<string, string> = {
   'Support': 'ድጋፍ',
   'Ask for help': 'እርዳታ ጠይቅ',
   'My requests': 'የእኔ ጥያቄዎች',
+  'We answer here, in the app.': 'መልስ የምንሰጠው እዚሁ በመተግበሪያው ውስጥ ነው።',
+  'Tap a request to read the answers.': 'መልሶቹን ለማንበብ ጥያቄውን ይንኩ።',
   'You have no requests yet.': 'እስካሁን ምንም ጥያቄ የለዎትም።',
   'New requests are paused right now. Please try again later, or use the contacts on the Help page.': 'አዳዲስ ጥያቄዎች ለጊዜው ቆመዋል። እባክዎ ቆይተው ይሞክሩ ወይም በእገዛ ገጹ ላይ ያሉትን አድራሻዎች ይጠቀሙ።',
   'What is it about?': 'ስለ ምንድን ነው?',
