@@ -304,7 +304,7 @@ function verify_token($token) {
     $d = @base64_decode($token);
     if (!$d) return null;
     $p = explode(':', $d);
-    if (count($p) < 4) return null; // old 3-part tokens (pre-revocation) fail closed, not open
+    if (count($p) !== 4) return null; // old 3-part tokens (pre-revocation) fail closed, not open; extra parts are refused so a token cannot be re-spelled
     $uid = $p[0]; $ts = $p[1]; $version = $p[2]; $sig = $p[3];
     if ((time() - intval($ts)) > 86400 * 7) return null;
     $expected = hash_hmac('sha256', $uid . ':' . $ts . ':' . $version, TOKEN_SECRET_FINAL);
@@ -364,6 +364,11 @@ function get_auth_user($pdo) {
     // against - fail open on that specific gap rather than locking everyone
     // out, since a missing column is an ops issue, not a compromised token.
     if ($hasVersionCol && intval($u['token_version']) !== $tok['version']) return null;
+    // A device the person signed out (Profile > Signed-in devices) is refused. Fails open if the devices table cannot be read.
+    try {
+        require_once __DIR__ . '/lib/auth_sessions.php';
+        if (!etel_sess_touch($pdo, $u['id'], $t)) return null;
+    } catch (Exception $e) { /* never lock anyone out because of the device list */ }
     /* Limited (Ride-only) EtelID accounts: only Ride is open. Controllers for
        everything else (orders, service givers, equb, courier) set
        $GLOBALS['ETEL_LIMITED_BLOCK'] in the dispatch below before they load,
@@ -952,7 +957,7 @@ switch ($action) {
         ok(array('accounts' => $accounts));
         break;
     }
-    case 'register': case 'login': case 'sg_login': case 'etelid_login': case 'admin_etelid_login': case 'change_password': case 'admin_reset_user_2fa': case 'user_2fa_status': case 'user_2fa_begin': case 'user_2fa_enable': case 'user_2fa_disable': case 'user_2fa_backup_codes': case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case 'admin_2fa_disable': case 'admin_2fa_backup_codes':
+    case 'register': case 'login': case 'sg_login': case 'etelid_login': case 'admin_etelid_login': case 'change_password': case 'admin_reset_user_2fa': case 'user_2fa_status': case 'user_2fa_begin': case 'user_2fa_enable': case 'user_2fa_disable': case 'my_devices': case 'device_sign_out': case 'devices_sign_out_others': case 'user_2fa_backup_codes': case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case 'admin_2fa_disable': case 'admin_2fa_backup_codes':
         require __DIR__ . '/controllers/AuthController.php';
         break;
     case 'set_user_language': {

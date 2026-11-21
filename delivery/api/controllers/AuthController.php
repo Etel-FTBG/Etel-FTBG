@@ -120,6 +120,33 @@ case 'register': {
     ok(array('user_id' => $uid, 'token' => $token, 'role' => $role, 'phone' => $phone, 'courier_approval' => $courier_pending ? 'pending' : 'approved'));
     break;
 }
+case 'my_devices': {
+    // POST: (any signed-in role) -> the devices this account is signed in on, with the one asking marked "current"
+    $pdo = db();
+    $u = require_auth($pdo);
+    require_once __DIR__ . '/../lib/auth_sessions.php';
+    ok(array('devices' => etel_sess_list($pdo, $u['id'], get_bearer()), 'now' => date('Y-m-d H:i:s')));
+    break;
+}
+case 'device_sign_out': {
+    // POST: id (a device id from my_devices). Signs that device out; the others stay signed in.
+    $pdo = db();
+    $u = require_auth($pdo);
+    require_once __DIR__ . '/../lib/auth_sessions.php';
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id <= 0) fail('id required', 400);
+    if (!etel_sess_revoke($pdo, $u['id'], $id)) fail('That device is not signed in any more.', 404);
+    ok(array('signed_out' => $id));
+    break;
+}
+case 'devices_sign_out_others': {
+    // POST: signs every other device out, keeps this one
+    $pdo = db();
+    $u = require_auth($pdo);
+    require_once __DIR__ . '/../lib/auth_sessions.php';
+    ok(array('signed_out' => etel_sess_revoke_others($pdo, $u['id'], get_bearer())));
+    break;
+}
 case 'change_password': {
     // POST: (requires any authenticated role)  current_password, new_password
     // Fixes a real, pre-existing gap - even the admin Settings panel only

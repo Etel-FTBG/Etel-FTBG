@@ -11,6 +11,7 @@ export type RootStackParamList = {
   Help: undefined;
   Support: undefined;
   Statement: undefined;
+  Devices: undefined;
 };
 
 export type TabParamList = {
