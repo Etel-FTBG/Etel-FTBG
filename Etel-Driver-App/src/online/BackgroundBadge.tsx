@@ -20,6 +20,7 @@ import {
 } from '../../modules/etel-overlay';
 import { featureOn } from '../hub/apps';
 import { labelsFor } from './overlayLabels';
+import { shouldShowLight } from './lightLogic';
 import { loadHubConfigCache, refreshHubConfig } from '../hub/appConfig';
 
 const ASKED_KEY = 'etel_overlay_asked';
@@ -27,7 +28,7 @@ const BATTERY_ASKED_KEY = 'etel_battery_asked';
 const POLL_MS = 5000;   // refreshCounts() keeps its own gap (4 s while online, 12 s otherwise), so this is only how often it is asked
 
 // When the user leaves the app, a golden blinking ETEL logo sits at the top-left of the screen (Android). It shows
-// while a driver, courier or service giver is online (a customer: while they have a live trip or order), with the live trip, new request, new order or delivery counts,
+// while the account is online (slid to online; any role), with the live trip, new request, new order or delivery counts,
 // and carries those counts. Tapping it brings the app back. Back in the app it hides.
 export default function BackgroundBadge() {
   const appState = useRef<AppStateStatus>(AppState.currentState);
@@ -42,11 +43,9 @@ export default function BackgroundBadge() {
       const c = applyAlertPrefs(getCounts(), role);
       const away = appState.current !== 'active';
       // The owner can switch the light off, or limit it to admins, in Admin > ETEL app > Features.
-      // Drivers, couriers and service givers get the light only while they are online (slid to online); a customer has no online switch,
-      // so a customer sees it for their own live trip or order.
-      const goesOnline = role === 'driver' || role === 'courier' || role === 'service_giver';
-      const show = goesOnline ? isOnline() : c.total > 0;
-      if (away && featureOn('light', role) && canDrawOverlays() && show) {
+      // One rule for every account: the light shows only while the account is online (slid to online), whatever its role and whatever its counts.
+      // Offline, a live trip or order does not bring it back; online with nothing going on it still shows (with zero counts).
+      if (shouldShowLight({ away, online: isOnline(), featureOn: featureOn('light', role), canDraw: canDrawOverlays() })) {
         const [t, r, o, d] = labelsFor(role);
         setOverlayLabels(t, r, o, d);
         setOverlayAlerts(featureOn('light_alert', role), featureOn('light_alert', role));
