@@ -99,6 +99,6 @@ const API = 'https://ethelmarket.com/Etel.Pay/wallet/api/v2_verify.php';
   // the pages load it
   const ride = fs.readFileSync(path.join(__dirname, '../ride/index.html'), 'utf8'), cust = fs.readFileSync(path.join(__dirname, '../customer.html'), 'utf8');
   t('the Ride page loads the script before its release loader', ride.indexOf('etelpay-2fa.js') > 0 && ride.indexOf('etelpay-2fa.js') < ride.indexOf('release-loader.js'));
-  t('the Customer page loads it', /etelpay-2fa\.js\?v=1/.test(cust));
+  t('the Customer page loads it', /etelpay-2fa\.js\?v=\d+/.test(cust));
   await b.close(); console.log('PASSED: ' + pass + ' FAILED: ' + fails.length); fails.forEach(f => console.log(' - ' + f)); process.exit(fails.length ? 1 : 0);
 })();

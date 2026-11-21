@@ -74,6 +74,7 @@ run python3 tests/hub_content_smoke.py
 run python3 tests/legal_smoke.py
 run python3 tests/devices_smoke.py
 run python3 tests/app_crash_smoke.py
+run python3 tests/ride_wallet_status_smoke.py
 run python3 tests/app_status_smoke.py
 run python3 tests/broadcast_smoke.py
 run python3 tests/live_ops_smoke.py

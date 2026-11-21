@@ -656,6 +656,13 @@ case 'ride_tip_give': {
 
 /* ========== PRICE OFFER AND COUNTER-OFFERS (lib/ride_price_offer.php) ========== */
 
+case 'ride_wallet_status': {
+    // POST: nothing. Is paying a ride from the Etel Pay wallet switched on (pricing_rules ride_wallet_enabled = 1)? The Ride page asks BEFORE it moves
+    // any money, because the payment is sent to Etel Pay first and only then confirmed here, and a confirm that is refused would leave the rider charged.
+    ok(array('enabled' => rides_wallet_enabled($pdo)));
+    break;
+}
+
 case 'ride_offer_bounds': {
     // POST: fare   What a rider may offer for a trip quoted at this fare (the Book screen asks before showing the offer box).
     $fare = isset($body['fare']) ? floatval($body['fare']) : 0;
