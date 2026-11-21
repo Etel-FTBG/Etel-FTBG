@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { useLowData } from '../data/useLowData';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, useLanguage } from '../i18n';
@@ -11,6 +12,7 @@ import { bannerText, getBanner } from '../hub/hubContent';
 export default function HubBanner({ onOpenApp }: { onOpenApp: (appKey: string) => void }) {
   const { lang } = useLanguage();
   const { p } = useTheme();
+  const lowData = useLowData();
   const b = getBanner();
   const [closed, setClosed] = useState<string>('');
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function HubBanner({ onOpenApp }: { onOpenApp: (appKey: string) =
       accessibilityLabel={(title ? title + '. ' : '') + text}
       style={[styles.box, { backgroundColor: p.surface, borderColor: p.gold }]}
     >
-      {b.image_url ? <Image source={{ uri: b.image_url }} style={styles.img} accessibilityIgnoresInvertColors /> : null}
+      {b.image_url && !lowData ? <Image source={{ uri: b.image_url }} style={styles.img} accessibilityIgnoresInvertColors /> : null}
       <View style={styles.body}>
         {title ? <Text style={[styles.title, { color: p.goldStrong }]}>{title}</Text> : null}
         {text ? <Text style={[styles.text, { color: p.text }]}>{text}</Text> : null}

@@ -7,6 +7,7 @@ import { HubSession, ROLE_LABEL, hubSignOut } from '../hub/session';
 import { goOfflineEverywhere } from '../hub/masterOnline';
 import { isLockEnabled, isLockSupported, setLockEnabled } from '../security/appLock';
 import { tap } from '../utils/haptics';
+import { isLowData, setLowData } from '../data/lowData';
 import { useNavigation } from '@react-navigation/native';
 
 // Who is signed in, their role, the fingerprint-lock switch and sign out.
@@ -15,6 +16,7 @@ export default function ProfileCard({ session }: { session: HubSession }) {
   const navigation = useNavigation<any>();
   const [lockOn, setLockOn] = useState(false);
   const [lockOk, setLockOk] = useState(false);
+  const [lowOn, setLowOn] = useState(isLowData());
 
   useEffect(() => {
     isLockSupported().then(setLockOk);
@@ -27,6 +29,14 @@ export default function ProfileCard({ session }: { session: HubSession }) {
     const done = await setLockEnabled(next);
     if (done) setLockOn(next);
     else if (next) RNAlert.alert(translate('Could not turn on the lock'), translate('Check that a fingerprint, face or screen lock is set up on this phone.'));
+  }
+
+  function toggleLow() {
+    tap();
+    const next = !lowOn;
+    setLowOn(next);
+    setLowData(next);
+    if (next) RNAlert.alert(translate('Save mobile data is ON'), translate('The app checks for news less often and skips decorative pictures. Open the app again so every screen uses it.'));
   }
 
   function signOut() {
@@ -64,6 +74,11 @@ export default function ProfileCard({ session }: { session: HubSession }) {
         <Ionicons name="phone-portrait-outline" size={20} color={p.gold} />
         <Text style={[styles.lockText, { color: p.text }]}>Signed-in devices</Text>
         <Ionicons name="chevron-forward" size={18} color={p.textMuted} />
+      </Pressable>
+      <Pressable onPress={toggleLow} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="switch" accessibilityState={{ checked: lowOn }}>
+        <Ionicons name={lowOn ? 'cellular' : 'cellular-outline'} size={20} color={lowOn ? p.gold : p.textMuted} />
+        <Text style={[styles.lockText, { color: p.text }]}>Save mobile data</Text>
+        <Text style={[styles.lockState, { color: lowOn ? p.gold : p.textMuted }]}>{lowOn ? translate('On') : translate('Off')}</Text>
       </Pressable>
       {lockOk ? (
         <Pressable onPress={toggleLock} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="switch">

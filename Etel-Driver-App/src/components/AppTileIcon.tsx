@@ -4,11 +4,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { HubApp } from '../hub/apps';
 import { appIconUri } from '../hub/hubContent';
+import { useLowData } from '../data/useLowData';
 
 // The picture of an app on the hub. The owner's uploaded icon when there is one; if it cannot be loaded (offline, removed) the built-in logo,
 // or the gold badge, is shown instead, so a tile is never empty.
 export default function AppTileIcon({ app }: { app: HubApp }) {
-  const uri = appIconUri(app);
+  const lowData = useLowData();
+  const uri = lowData ? '' : appIconUri(app);   // low-data mode: the built-in logo or gold badge instead of a download
   const [failed, setFailed] = useState('');
   if (uri && failed !== uri) {
     return <Image source={{ uri }} style={styles.custom} onError={() => setFailed(uri)} accessibilityIgnoresInvertColors />;

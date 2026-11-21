@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, ActivityIndicator, Linking } from 'react-native';
 import { Text, Alert } from '../i18n';
+import { pollMs } from '../data/lowData';
 import MapView, { Marker } from 'react-native-maps';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -97,7 +98,7 @@ export default function ActiveRideScreen({ route, navigation }: Props) {
   useEffect(() => {
     setActiveRideIdForLocationTask(rideId);
     refresh();
-    timer.current = setInterval(refresh, STATUS_POLL_MS);
+    timer.current = setInterval(refresh, pollMs(STATUS_POLL_MS));
     tickTimer.current = setInterval(() => setNow(Date.now()), 1000);
     return () => {
       if (timer.current) clearInterval(timer.current);

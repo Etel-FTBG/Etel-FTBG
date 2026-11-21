@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { Text, Alert } from '../i18n';
+import { pollMs } from '../data/lowData';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
@@ -155,8 +156,8 @@ export default function RequestsScreen() {
       await startDriverLocationTracking();
       setOnline(true);
       pollNearby();
-      nearbyTimer.current = setInterval(pollNearby, NEARBY_POLL_MS);
-      activeRideTimer.current = setInterval(pollActiveRide, ACTIVE_RIDE_POLL_MS);
+      nearbyTimer.current = setInterval(pollNearby, pollMs(NEARBY_POLL_MS));
+      activeRideTimer.current = setInterval(pollActiveRide, pollMs(ACTIVE_RIDE_POLL_MS));
     } catch (e) {
       const msg =
         e instanceof ApiError || e instanceof Error ? e.message : 'Could not go online. Check your connection.';

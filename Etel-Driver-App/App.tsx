@@ -35,6 +35,7 @@ import OfflineBanner from './src/components/OfflineBanner';
 import AppLockGate from './src/security/AppLockGate';
 import PermissionGate from './src/permissions/PermissionGate';
 import StatusGate from './src/status/StatusGate';
+import { loadLowData } from './src/data/lowData';
 import './src/location/backgroundLocationTask'; // registers the TaskManager task
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -91,6 +92,9 @@ export default function App() {
     JetBrainsMono_500Medium,
     CormorantGaramond_600SemiBold,
   });
+  React.useEffect(() => {
+    loadLowData();   // the "Save mobile data" switch
+  }, []);
 
   if (!fontsLoaded) {
     return (

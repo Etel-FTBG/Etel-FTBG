@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '../i18n';
+import { pollMs } from '../data/lowData';
 import { colors, typography } from '../theme/colors';
 import { getMyActiveRide } from '../api/ride';
 import { getRideMessages, sendRideMessage, pingTyping, RideMessage } from '../api/chat';
@@ -48,7 +49,7 @@ export default function ChatsScreen() {
     lastIdRef.current = 0;
     setMessages([]);
     poll(rideId);
-    pollTimer.current = setInterval(() => poll(rideId), POLL_MS);
+    pollTimer.current = setInterval(() => poll(rideId), pollMs(POLL_MS));
     return () => {
       if (pollTimer.current) clearInterval(pollTimer.current);
     };

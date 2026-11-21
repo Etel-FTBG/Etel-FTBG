@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Alert, AppState, AppStateStatus } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { subscribeOnline, isOnline } from './onlineState';
+import { pollMs } from '../data/lowData';
 import { getCounts, refreshCounts, resetCounts, subscribeCounts } from './liveCounts';
 import { subscribeSession, getSession } from '../hub/session';
 import { applyAlertPrefs, loadAlertPrefs } from '../hub/companies';
@@ -61,7 +62,7 @@ export default function BackgroundBadge() {
       if (timer || !getSession()) return;
       refreshCounts(true).catch(() => {});
       refreshHubConfig().then(sync).catch(() => {});   // the owner's light / sound switches
-      timer = setInterval(() => refreshCounts().catch(() => {}), POLL_MS);
+      timer = setInterval(() => refreshCounts().catch(() => {}), pollMs(POLL_MS));
     };
     const stopPolling = () => {
       if (timer) clearInterval(timer);

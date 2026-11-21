@@ -1,3 +1,4 @@
+import { isLowData } from '../data/lowData';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -64,7 +65,7 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         ref={web}
         source={{ uri: app.url }}
         style={[styles.web, { backgroundColor: p.bg }]}
-        injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + BRIDGE_JS}
+        injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + (isLowData() ? 'window.ETEL_LOW_DATA=true;' : '') + BRIDGE_JS}
         injectedJavaScript={FIT_JS}
         onMessage={onBridgeMessage}
         onNavigationStateChange={(s: { canGoBack: boolean }) => patchPage(appKey, { canGoBack: s.canGoBack })}
