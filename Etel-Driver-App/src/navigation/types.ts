@@ -9,6 +9,7 @@ export type RootStackParamList = {
   Wallet: undefined;
   Notifications: undefined;
   Help: undefined;
+  Support: undefined;
 };
 
 export type TabParamList = {
