@@ -323,6 +323,7 @@ Generated from the source by `tools/gen_api_docs.py` (489 actions). Machine-read
 | `courier_accept_order` | courier | `order_id` | - |
 | `courier_decline_offer` | courier | `order_id` | - |
 | `courier_earnings_summary` | courier | - | - |
+| `courier_get_statement` | courier | - | `week_start` |
 | `courier_get_available_orders` | courier | - | `pkg` |
 | `courier_get_kpi_summary` | courier | `period` | `period` |
 | `courier_get_my_orders` | courier | - | `offers`, `pkg`, `status` |
