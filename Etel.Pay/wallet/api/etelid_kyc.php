@@ -57,6 +57,31 @@ function etelid_authenticate($phone,$pin,$totp=''){
     if ($totp !== '') $req['totp_code'] = $totp;
     return etelid_call('service/authenticate',$req);
 }
+/* The member's own choice "Etel Pay asks for my PIN, not the 6-digit code" (EtelID service/pay_2fa_mode).
+   mode: status | skip | ask. skip needs the password AND a valid code, ask needs only the password; EtelID checks both.
+   Returns array(http status, array to send back as JSON). A missing code or a wrong one is answered like the sign-in does
+   (401 with requires_2fa) so the payment boxes can ask for it. */
+function etelid_pay_code_mode($phone, $password, $mode, $totp = '') {
+    $req = array('identifier' => $phone, 'password' => $password, 'mode' => $mode, 'app' => 'pay');
+    if ($totp !== '') $req['totp_code'] = $totp;
+    $r = etelid_call('service/pay_2fa_mode', $req);
+    if (empty($r['ok'])) return array(502, array('success' => false, 'data' => array('message' => 'EtelID is not reachable. Try again.')));
+    $d = is_array($r['data']) ? $r['data'] : array();
+    if (!empty($d['ok'])) {
+        return array(200, array('success' => true, 'data' => array('twofa_enabled' => !empty($d['twofa_enabled']), 'pay_skip' => !empty($d['pay_skip'])), 'message' => 'Saved'));
+    }
+    $code = isset($d['code']) ? (string)$d['code'] : '';
+    $msg  = !empty($d['message']) ? (string)$d['message'] : 'Could not change this setting.';
+    if ($code === 'rest_no_route' || (isset($r['http']) && (int)$r['http'] === 404 && $code === 'no_route')) {
+        return array(404, array('success' => false, 'data' => array('message' => 'This option is not available yet. Please try again later.', 'code' => 'not_available')));
+    }
+    if ($code === 'requires_2fa' || $code === 'bad_2fa') {
+        return array(401, array('success' => false, 'data' => array('message' => $msg, 'requires_2fa' => true, 'code' => $code)));
+    }
+    $http = isset($d['data']['status']) ? (int)$d['data']['status'] : 400;
+    if ($http < 400 || $http > 599) $http = 400;
+    return array($http, array('success' => false, 'data' => array('message' => $msg, 'code' => $code)));
+}
 /* True when EtelID refused only because it wants the two-step code (or the code was wrong). */
 function etelid_needs_2fa($auth){
     if (!is_array($auth) || empty($auth['data']) || !is_array($auth['data'])) return false;
