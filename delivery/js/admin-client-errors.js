@@ -29,9 +29,9 @@ function card() {
 }
 function render(rows, days) {
   var el = card(); if (!el) return;
-  var html = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="color:#f0cf5a;font-size:15px;margin:0;flex:1">Browser errors <span style="font-weight:400;opacity:.7;font-size:12px">last ' + esc(days) + ' days</span></h3>' +
+  var html = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="color:#f0cf5a;font-size:15px;margin:0;flex:1">App and browser errors <span style="font-weight:400;opacity:.7;font-size:12px">last ' + esc(days) + ' days</span></h3>' +
     '<button class="rides-filter-btn" data-cerr="refresh">Refresh</button>' + (rows.length ? '<button class="rides-filter-btn" data-cerr="clear">Clear</button>' : '') + '</div>';
-  if (!rows.length) html += '<div style="margin-top:8px;font-size:13px;opacity:.75">Nothing reported. The apps send a note here when a screen breaks.</div>';
+  if (!rows.length) html += '<div style="margin-top:8px;font-size:13px;opacity:.75">Nothing reported. The apps (and the phone app) send a note here when a screen breaks.</div>';
   else {
     html += '<div style="overflow-x:auto;margin-top:8px"><table class="data-table" style="width:100%;font-size:12px"><thead><tr><th>Last seen</th><th>App</th><th>What</th><th>Times</th><th>Request id</th></tr></thead><tbody>' +
       rows.slice(0, 30).map(function (r) {
