@@ -29,10 +29,13 @@
     if (!kind) { n.style.display = 'none'; n.textContent = ''; return; }
     n.style.display = 'block';
     n.textContent = text;
-    // dark text on light box, or light text on dark box: always readable in both themes
-    if (kind === 'ok') { n.style.background = '#DFF5E3'; n.style.color = '#0B3D1A'; n.style.border = '1px solid #2E9B4F'; }
-    else if (kind === 'bad') { n.style.background = '#FDE3E1'; n.style.color = '#6B1410'; n.style.border = '1px solid #C0392B'; }
-    else { n.style.background = '#EEE8D4'; n.style.color = '#3A3217'; n.style.border = '1px solid #B8962E'; }
+    // dark text on light box, or light text on dark box: always readable in both themes.
+    // Set with !important: the driver, ride and courier stylesheets have a page-wide rule "p, span, div ... { color: inherit !important }" that otherwise
+    // turns this dark green text into the dialog's pale text (pale on pale green: unreadable).
+    var c = kind === 'ok' ? ['#DFF5E3', '#0B3D1A', '#2E9B4F'] : kind === 'bad' ? ['#FDE3E1', '#6B1410', '#C0392B'] : ['#EEE8D4', '#3A3217', '#B8962E'];
+    n.style.setProperty('background', c[0], 'important');
+    n.style.setProperty('color', c[1], 'important');
+    n.style.setProperty('border', '1px solid ' + c[2], 'important');
   }
   function check(el) {
     var v = (el.value || '').trim();

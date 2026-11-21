@@ -1,0 +1,3 @@
+/* Driver app: pop-up boxes the app builds in JavaScript must sit ABOVE the floating buttons (help bubble, Hot areas chip, SOS), not under them.
+   The Street Hail box was drawn at layer 500, under the help bubble (900) and the Hot areas chip (9400), so they overlapped its title and text. */
+#hail-modal{z-index:2147483000 !important}
