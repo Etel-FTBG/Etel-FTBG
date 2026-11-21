@@ -106,6 +106,7 @@ export default function ProfileScreen() {
 
           <GoldBoxCard style={styles.sectionWrap}>
             <MenuRow label="Documents" onPress={() => navigation.navigate('Documents')} />
+            <MenuRow label="My weekly statement" onPress={() => navigation.navigate('Statement')} />
             <MenuRow label="Account & Wallet" onPress={() => navigation.navigate('Wallet')} />
             <MenuRow label="Notifications" onPress={() => navigation.navigate('Notifications')} />
             <MenuRow label={'Help & Support' + unreadText(supUnread)} onPress={() => navigation.navigate('Help')} last />
