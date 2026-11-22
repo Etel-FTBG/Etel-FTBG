@@ -756,6 +756,11 @@
         <div><div class="mp-row-label">Two-step sign-in</div><div class="mp-row-sub">A code from your phone when you sign in</div></div>
         <div class="mp-row-arrow">›</div>
       </div>
+      <div class="mp-row" data-etel-paysec-open onclick="closeMyProfile()">
+        <div data-no-emoji-icons class="mp-row-icon">🔐</div>
+        <div><div class="mp-row-label">Payment security</div><div class="mp-row-sub">PIN only, or password and code, when you pay with Etel Pay</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
       <div class="mp-row" data-etel-printer-open onclick="closeMyProfile()">
         <div data-no-emoji-icons class="mp-row-icon">🖨️</div>
         <div><div class="mp-row-label">Receipt printer</div><div class="mp-row-sub" data-etel-printer-sub>Bluetooth thermal printer</div></div>
@@ -1486,7 +1491,7 @@ function useMyCurrentLocationForPickup(btnEl) {
 </script>
 <script src="../js/etel-beacon.js?v=1"></script>
 <script src="../js/etel-sse-poll.js?v=2"></script>
-<script src="../js/etelpay-2fa.js?v=4"></script><script src="../js/etelpay-session.js?v=1"></script><!-- pay with the wallet PIN only (saved Etel Pay session) --><!-- Etel Pay two-step code box (accounts with two-step sign-in can pay with the wallet) -->
+<script src="../js/etelpay-2fa.js?v=4"></script><script src="../js/etelpay-session.js?v=2"></script><!-- pay with the wallet PIN only (saved Etel Pay session) --><!-- Etel Pay two-step code box (accounts with two-step sign-in can pay with the wallet) -->
 <script src="../js/release-loader.js"></script>
 <script src="../js/ride-extra-features.js?v=1.1" defer></script>
 <script src="../js/ride-fare-self-heal.js?v=1.0" defer></script>
