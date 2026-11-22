@@ -80,7 +80,8 @@ function etel_item_extras_parse($text) {
         $part = trim($part);
         if ($part === '') continue;
         $price = 0.0; $name = $part;
-        if (preg_match('/^(.*?)\s*[:=]\s*([0-9]+(?:\.[0-9]{1,2})?)$/u', $part, $m)) { $name = trim($m[1]); $price = (float)$m[2]; }
+        // "Mayonnaise:50" and "Mayonnaise=50"; also "Mayonnaise, 50" and "Mayonnaise; 50" (a comma used to leave the 50 inside the name and the price at 0)
+        if (preg_match('/^(.*?)\s*[:=,;]\s*([0-9]+(?:\.[0-9]{1,2})?)$/u', $part, $m)) { $name = trim($m[1]); $price = (float)$m[2]; }
         $name = function_exists('mb_substr') ? mb_substr($name, 0, 80, 'UTF-8') : substr($name, 0, 80);
         if ($name === '' || $price < 0 || $price > 100000) continue;
         $out[] = array($name, $price);

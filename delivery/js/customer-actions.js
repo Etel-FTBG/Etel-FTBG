@@ -8,6 +8,7 @@ EtelActions.expose([
     "_detailQtyChange",
     "detailCarouselGo",
     "detailToggleExtra",
+    "detailExtraChange",
     "addToCart",
     "applyCuisineFilter",
     "applyPromo",

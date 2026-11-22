@@ -86,16 +86,22 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         if (!is_array($cart_item) || !isset($cart_item['item_id'])) continue;
         $iid = intval($cart_item['item_id']);
         $qty = isset($cart_item['quantity']) ? intval($cart_item['quantity']) : 1;
-        $xs = array();
+        // Ticked extras with how many of each: "extras" is the list of ids (one each, what older apps send); "extras_qty" is {id: how many}
+        // (1 to 9) and wins for the ids it names. The same item with a different mix stays on its own line.
+        $xs = array(); $xkey = array();
         if (isset($cart_item['extras']) && is_array($cart_item['extras'])) {
-            foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $xs[$xid] = $xid; }
-            ksort($xs);
+            foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $xs[$xid] = 1; }
         }
-        $akey = $iid . '|' . implode(',', $xs);
+        if (isset($cart_item['extras_qty']) && is_array($cart_item['extras_qty'])) {
+            foreach ($cart_item['extras_qty'] as $xid => $xn) { $xid = intval($xid); $xn = intval($xn); if ($xid > 0 && $xn >= 1) $xs[$xid] = min(9, $xn); elseif ($xid > 0 && $xn <= 0) unset($xs[$xid]); }
+        }
+        ksort($xs);
+        foreach ($xs as $xid => $xn) $xkey[] = $xid . ':' . $xn;
+        $akey = $iid . '|' . implode(',', $xkey);
         if (isset($aggregated[$akey])) {
             $aggregated[$akey]['quantity'] += $qty;
         } else {
-            $aggregated[$akey] = array('item_id' => $iid, 'quantity' => $qty, 'extras' => array_values($xs));
+            $aggregated[$akey] = array('item_id' => $iid, 'quantity' => $qty, 'extras' => array_keys($xs), 'extras_qty' => $xs);
         }
     }
     $items = array_values($aggregated);
@@ -209,15 +215,15 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             $line_name = $item['name'];
             if (isset($cart_item['extras']) && is_array($cart_item['extras'])) {
                 $picked = array();
-                foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $picked[$xid] = true; }
+                foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $picked[$xid] = isset($cart_item['extras_qty'][$xid]) ? max(1, min(9, intval($cart_item['extras_qty'][$xid]))) : 1; }
                 if (count($picked) > 12) throw new Exception('Too many extras on one item');
                 $xnames = array();
-                foreach (array_keys($picked) as $xid) {
+                foreach ($picked as $xid => $xn) {
                     if (!isset($extras_by_id[$xid]) || intval($extras_by_id[$xid]['item_id']) !== $item_id) {
                         throw new Exception('One of the extras you chose for "' . $item['name'] . '" is no longer available');
                     }
-                    $unit_price += (float)$extras_by_id[$xid]['price'];
-                    $xnames[] = $extras_by_id[$xid]['name'];
+                    $unit_price += (float)$extras_by_id[$xid]['price'] * $xn;   // the price is the shop's, times how many the customer chose
+                    $xnames[] = $extras_by_id[$xid]['name'] . ($xn > 1 ? ' x' . $xn : '');
                 }
                 if ($xnames) $line_name = function_exists('mb_substr') ? mb_substr($item['name'] . ' + ' . implode(', ', $xnames), 0, 250, 'UTF-8') : substr($item['name'] . ' + ' . implode(', ', $xnames), 0, 250);
             }

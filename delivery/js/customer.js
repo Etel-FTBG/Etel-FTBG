@@ -1055,13 +1055,20 @@ function addToCartWithQty(itemId, name, price, sgId, sgName, qty, extras) {
         cart = [];
     }
     // The same item with different ticked extras is a different cart line (Burger vs Burger + Cheese).
-    const xs = (extras || []).map(function(x){ return {id: Number(x.id), name: String(x.name || ''), price: parseFloat(x.price) || 0}; });
-    const xkey = xs.map(function(x){ return x.id; }).sort(function(a, b){ return a - b; }).join(',');
+    const xs = (extras || []).map(function(x){ return {id: Number(x.id), name: String(x.name || ''), price: parseFloat(x.price) || 0, qty: Math.max(1, Math.min(9, parseInt(x.qty, 10) || 1))}; });
+    const xkey = xs.slice().sort(function(a, b){ return a.id - b.id; }).map(function(x){ return x.id + ':' + x.qty; }).join(',');
     const existing = cart.find(function(c){ return c.item_id === itemId && (c.xkey || '') === xkey; });
     if (existing) { existing.quantity += qty; }
     else { cart.push({item_id:itemId, name:name, price:parseFloat(price), quantity:qty, sg_id:sgId, sg_name:sgName, extras:xs, xkey:xkey}); }
     updateCartCount();
-    showToast('Added ' + qty + '× ' + name + (xs.length ? ' + ' + xs.map(function(x){ return x.name; }).join(', ') : ''));
+    showToast('Added ' + qty + '× ' + name + (xs.length ? ' + ' + xs.map(_xLabel).join(', ') : ''));
+}
+// "Mayonnaise" or, for more than one, "Mayonnaise \u00D72"; and one cart line as the server wants it (ids, and how many of each extra).
+function _xLabel(x) { return x.name + (x.qty > 1 ? ' \u00D7' + x.qty : ''); }
+function _cartLine(c) {
+    const xs = c.extras || [], q = {};
+    xs.forEach(function(x){ q[x.id] = x.qty || 1; });
+    return {item_id: c.item_id, quantity: c.quantity, extras: xs.map(function(x){ return x.id; }), extras_qty: q};
 }
 
 // ── ITEM DETAIL MODAL ──────────────────────────────────────────
@@ -1094,13 +1101,19 @@ function openItemDetail(itemId) {
     const xs = item.extras || [];
     const extrasHtml = (available_ => (available_ && xs.length) ?
         '<div style="margin-bottom:18px;"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">' +
-            '<span style="font-size:15px;font-weight:700;color:var(--text);">Extra</span><span style="font-size:11px;color:var(--text-dim);">Optional · pick any</span></div>' +
+            '<span style="font-size:15px;font-weight:700;color:var(--text);">Extra</span><span style="font-size:11px;color:var(--text-dim);">Optional · tap + for how many</span></div>' +
         xs.map(function(x){
             const nm = (ETEL_I18N.current() === 'am' && x.name_am) ? x.name_am : x.name;
-            return '<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer;">' +
-                '<span style="color:var(--text);font-size:14px;">' + escapeHtml(nm) + '</span>' +
-                '<span style="display:flex;align-items:center;gap:12px;"><span style="font-weight:700;color:var(--gold);font-size:13px;">' + (parseFloat(x.price) > 0 ? '+ ETB ' + Math.round(parseFloat(x.price)) : 'Free') + '</span>' +
-                '<input type="checkbox"' + _ea('detailToggleExtra', [Number(x.id), {$: 'checked'}], {event: 'change'}) + ' style="width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;"></span></label>';
+            const pr = parseFloat(x.price) || 0;
+            const btn = 'width:32px;height:32px;border-radius:50%;border:1px solid var(--glass-border);background:var(--glass);color:var(--text);font-size:17px;line-height:1;cursor:pointer;';
+            return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);">' +
+                '<div style="min-width:0"><div style="color:var(--text);font-size:14px;">' + escapeHtml(nm) + '</div>' +
+                    '<div style="font-weight:700;color:var(--gold);font-size:12.5px;margin-top:2px;">' + (pr > 0 ? '+ ETB ' + Math.round(pr) + ' each' : 'Free') + '</div></div>' +
+                '<div style="display:flex;align-items:center;gap:10px;flex:none;">' +
+                    '<button type="button"' + _ea('detailExtraChange', [Number(x.id), -1]) + ' aria-label="Less ' + escapeHtml(nm) + '" style="' + btn + '">\u2212</button>' +
+                    '<span id="dx-qty-' + Number(x.id) + '" style="min-width:18px;text-align:center;font-size:15px;font-weight:600;color:var(--text);">0</span>' +
+                    '<button type="button"' + _ea('detailExtraChange', [Number(x.id), 1]) + ' aria-label="More ' + escapeHtml(nm) + '" style="' + btn + '">+</button>' +
+                '</div></div>';
         }).join('') + '</div>' : '');
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
@@ -1176,16 +1189,22 @@ function detailCarouselGo(dir) {
     const to = (at + dir + n) % n;
     car.scrollTo({left: to * car.clientWidth, behavior: 'smooth'});
 }
-// Extras: ticking one changes the price shown on the Add button right away; the server prices the order from its own list.
-function detailToggleExtra(id, on) {
-    if (on) _detailSel[id] = true; else delete _detailSel[id];
+// Extras: each one has its own - 0 + (up to 9); the price on the Add button follows right away; the server prices the order from its own list.
+function detailExtraChange(id, delta) {
+    id = Number(id);
+    const n = Math.max(0, Math.min(9, (_detailSel[id] || 0) + (parseInt(delta, 10) || 0)));
+    if (n) _detailSel[id] = n; else delete _detailSel[id];
+    const el = document.getElementById('dx-qty-' + id);
+    if (el) el.textContent = n;
     _detailRefreshTotal();
 }
+function detailToggleExtra(id, on) { detailExtraChange(id, on ? 1 - (_detailSel[Number(id)] || 0) : -(_detailSel[Number(id)] || 0)); }   // the old tick box, kept so an old page keeps working
 function _detailChosenExtras() {
-    return ((_detailItem && _detailItem.extras) || []).filter(function(x){ return _detailSel[x.id]; });
+    return ((_detailItem && _detailItem.extras) || []).filter(function(x){ return _detailSel[x.id] > 0; })
+        .map(function(x){ return {id: x.id, name: x.name, name_am: x.name_am, price: x.price, qty: _detailSel[x.id]}; });
 }
 function _detailUnitPrice() {
-    return _detailChosenExtras().reduce(function(s, x){ return s + (parseFloat(x.price) || 0); }, _detailItem ? (parseFloat(_detailItem.price) || 0) : 0);
+    return _detailChosenExtras().reduce(function(s, x){ return s + (parseFloat(x.price) || 0) * x.qty; }, _detailItem ? (parseFloat(_detailItem.price) || 0) : 0);
 }
 function _detailRefreshTotal() {
     const el = document.getElementById('detail-add-total');
@@ -1580,7 +1599,7 @@ function renderCartDrawer() {
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + escapeHtml(c.name) + '</div>' +
-            ((c.extras && c.extras.length) ? '<div style="font-size:11.5px;color:#D4AF37;margin-top:2px">+ ' + escapeHtml(c.extras.map(function(x){ return x.name; }).join(', ')) + '</div>' : '') +
+            ((c.extras && c.extras.length) ? '<div style="font-size:11.5px;color:#D4AF37;margin-top:2px">+ ' + escapeHtml(c.extras.map(_xLabel).join(', ')) + '</div>' : '') +
             '<div style="font-size:11px;color:rgba(247,241,223,.55)">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
             '<div style="display:flex;align-items:center;gap:8px">' +
             '<button' + _ea('changeQty', [i, -1]) + ' style="width:26px;height:26px;border:1.5px solid #ddd;border-radius:50%;background:#fff;cursor:pointer;font-size:14px">-</button>' +
@@ -2089,7 +2108,7 @@ async function placeOrder(zone, name, phone, notes) {
         res = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
             use_points: _usePoints ? 1 : 0, tip: _tip,
-            items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
+            items: cart.map(_cartLine),
             to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
             payment_method: selectedPayment,
             delivery_tier: selectedTier,
@@ -2142,7 +2161,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const btn = document.getElementById('checkout-btn');
     if (btn) btn.disabled = true;
     const template = {
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
+        items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment, delivery_tier: selectedTier,
         delivery_photo_url: _deliveryPhotoUrl, delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
@@ -2168,7 +2187,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
             use_points: _usePoints ? 1 : 0, tip: _tip,
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
+        items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'telebirr',
         delivery_tier: selectedTier,
@@ -2220,7 +2239,7 @@ async function placeOrderThenChapa(zone, name, phone, notes) {
     const orderRes = await api('customer_create_order', {
         promo_code: _promo ? _promo.code : '',
         use_points: _usePoints ? 1 : 0, tip: _tip,
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
+        items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'chapa',
         delivery_tier: selectedTier,
@@ -2285,7 +2304,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
             use_points: _usePoints ? 1 : 0, tip: _tip,
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
+        items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment,
         delivery_tier: selectedTier,
