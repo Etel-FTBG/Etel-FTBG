@@ -9,6 +9,8 @@ import { isLockEnabled, isLockSupported, setLockEnabled } from '../security/appL
 import { tap } from '../utils/haptics';
 import { isLowData, setLowData } from '../data/lowData';
 import { setCalendar, useCalendar } from '../calendar/calendarSetting';
+import { nextPageSize, PAGE_SIZE_LABEL, setPageSize, usePageSize } from '../hub/pageSize';
+import { reloadOpenPages } from '../hub/webHost';
 import { useNavigation } from '@react-navigation/native';
 
 // Who is signed in, their role, the fingerprint-lock switch and sign out.
@@ -19,6 +21,7 @@ export default function ProfileCard({ session }: { session: HubSession }) {
   const [lockOk, setLockOk] = useState(false);
   const [lowOn, setLowOn] = useState(isLowData());
   const cal = useCalendar();
+  const pageSize = usePageSize();
 
   useEffect(() => {
     isLockSupported().then(setLockOk);
@@ -86,6 +89,11 @@ export default function ProfileCard({ session }: { session: HubSession }) {
         <Ionicons name="calendar-outline" size={20} color={cal === 'ethiopian' ? p.gold : p.textMuted} />
         <Text style={[styles.lockText, { color: p.text }]}>Calendar</Text>
         <Text style={[styles.lockState, { color: cal === 'ethiopian' ? p.gold : p.textMuted }]}>{cal === 'ethiopian' ? translate('Ethiopian') : translate('Gregorian')}</Text>
+      </Pressable>
+      <Pressable onPress={() => { tap(); setPageSize(nextPageSize(pageSize)); setTimeout(reloadOpenPages, 50); }} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="button" accessibilityLabel="Page size">
+        <Ionicons name="resize-outline" size={20} color={pageSize === 'normal' ? p.textMuted : p.gold} />
+        <Text style={[styles.lockText, { color: p.text }]}>Page size</Text>
+        <Text style={[styles.lockState, { color: pageSize === 'normal' ? p.textMuted : p.gold }]}>{translate(PAGE_SIZE_LABEL[pageSize])}</Text>
       </Pressable>
       {lockOk ? (
         <Pressable onPress={toggleLock} style={[styles.lockRow, { borderTopColor: p.borderSoft }]} accessibilityRole="switch">

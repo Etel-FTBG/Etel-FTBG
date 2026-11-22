@@ -4,7 +4,8 @@ import { Linking, PixelRatio, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview';
 import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
-import { BRIDGE_JS, FIT_JS, prefsJs } from '../hub/webBridge';
+import { BRIDGE_JS, FIT_JS, pageScaleJs, prefsJs } from '../hub/webBridge';
+import { PAGE_SCALE, usePageSize } from '../hub/pageSize';
 import { getSession, sessionJs, subscribeSession } from '../hub/session';
 import { patchPage, primaryAppFor, registerHandle, resetHost, hostReload, useWebHost, warmApp, knownApp } from '../hub/webHost';
 import BrandLoader from './BrandLoader';
@@ -56,6 +57,7 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
   const web = useRef<WebHandle>(null);
   const { p } = useTheme();
   const { lang } = useLanguage();
+  const pageSize = usePageSize();
   useEffect(() => {
     registerHandle(appKey, web.current);
     return () => registerHandle(appKey, null);
@@ -68,7 +70,7 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         ref={web}
         source={{ uri: app.url }}
         style={[styles.web, { backgroundColor: p.bg }]}
-        injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + (isLowData() ? 'window.ETEL_LOW_DATA=true;' : '') + BRIDGE_JS}
+        injectedJavaScriptBeforeContentLoaded={pageScaleJs(PAGE_SCALE[pageSize]) + (app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + (isLowData() ? 'window.ETEL_LOW_DATA=true;' : '') + BRIDGE_JS}
         injectedJavaScript={FIT_JS}
         onMessage={onBridgeMessage}
         onNavigationStateChange={(s: { canGoBack: boolean }) => patchPage(appKey, { canGoBack: s.canGoBack })}

@@ -50,6 +50,11 @@ export function hostReload(key: string) {
   handles[key]?.reload();
 }
 
+// After the "Page size" choice changes, the pages already open are drawn again so they take it.
+export function reloadOpenPages() {
+  host.opened.forEach((k) => hostReload(k));
+}
+
 export function patchPage(key: string, p: Partial<PageState>) {
   const cur = host.pages[key] || fresh();
   set({ ...host, pages: { ...host.pages, [key]: { ...cur, ...p } } });
