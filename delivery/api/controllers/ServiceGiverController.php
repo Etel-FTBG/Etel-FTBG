@@ -144,7 +144,7 @@ case 'sg_profile': {
     $sg = null;
     if ($ctx) {
         try {
-            $s = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,vehicle_type,vehicle_plate,zone,address,city,bank_account,payout_bank,telebirr_number,cbe_account,abysinia_account,cbe_account_name,abysinia_account_name,telebirr_account_name,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,logo_url,cover_url,opens_at,closes_at,created_at FROM service_givers WHERE id=?');
+            $s = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,vehicle_type,vehicle_plate,zone,address,city,bank_account,payout_bank,telebirr_number,cbe_account,abysinia_account,cbe_account_name,abysinia_account_name,telebirr_account_name,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,logo_url,cover_url,opens_at,closes_at,lat,lng,created_at FROM service_givers WHERE id=?');
             $s->execute(array($ctx['sg_id']));
             $sg = $s->fetch();
         } catch (Exception $e) {
@@ -289,8 +289,10 @@ case 'sg_update_profile': {
     // the moment one is set, and computes the hex cell needed for
     // hex-grid courier matching at the same time.
     if (isset($body['lat']) && isset($body['lng']) && $body['lat'] !== '' && $body['lng'] !== '') {
+        if (!is_numeric($body['lat']) || !is_numeric($body['lng'])) fail('Latitude and longitude must be numbers', 400);
         $sgLat = floatval($body['lat']);
         $sgLng = floatval($body['lng']);
+        if ($sgLat < -90 || $sgLat > 90 || $sgLng < -180 || $sgLng > 180) fail('Latitude must be between -90 and 90 and longitude between -180 and 180', 400);
         $updates['lat'] = $sgLat;
         $updates['lng'] = $sgLng;
         if (function_exists('hexgrid_cell_for')) {
