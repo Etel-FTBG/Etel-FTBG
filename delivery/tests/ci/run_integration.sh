@@ -50,6 +50,7 @@ run python3 tests/package_smoke.py
 run python3 tests/csp_report_smoke.py
 run python3 tests/admin_import_smoke.py
 run python3 tests/sg_claim_smoke.py
+run python3 tests/sg_docs_admin_own_smoke.py
 run python3 tests/item_extras_smoke.py
 run python3 tests/sg_owner_menu_smoke.py
 run python3 tests/people_register_smoke.py
