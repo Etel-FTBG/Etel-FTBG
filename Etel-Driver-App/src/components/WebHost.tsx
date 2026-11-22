@@ -1,6 +1,6 @@
 import { isLowData } from '../data/lowData';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, PixelRatio, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview';
 import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
@@ -21,6 +21,9 @@ import { registerForPushNotifications } from '../notifications/registerPush';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const WebView = RNWebView as unknown as React.ComponentType<any>;
 type WebHandle = { goBack(): void; reload(): void };
+// Text in a web page follows the phone's font-size setting, the same as the page does in Chrome and in the Courier/Driver TWA (it was pinned at 100%, so
+// on a phone set to a smaller font the app drew everything bigger than the TWA, and the Courier top bar no longer fitted). Kept between 85% and 130%.
+const TEXT_ZOOM = Math.max(85, Math.min(130, Math.round(PixelRatio.getFontScale() * 100)));
 
 async function onBridgeMessage(e: WebViewMessageEvent) {
   let msg: { type?: string; token?: string } = {};
@@ -108,7 +111,7 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         cacheMode="LOAD_DEFAULT"
         androidLayerType="hardware"
         overScrollMode="never"
-        textZoom={100}
+        textZoom={TEXT_ZOOM}
         startInLoadingState={false}
         originWhitelist={['https://*', 'http://localhost*']}
       />
