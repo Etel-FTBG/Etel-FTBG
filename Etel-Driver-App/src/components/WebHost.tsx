@@ -101,7 +101,9 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         setSupportMultipleWindows={false}
         // Pull-to-refresh is off: it fought the map and the scrolling sheets, and could reload a page in the middle of a trip. The bar has Reload.
         pullToRefreshEnabled={false}
-        scalesPageToFit={false}
+        // MUST be true: on Android react-native-webview turns this into WebSettings.useWideViewPort. With false the WebView IGNORES the page's viewport meta and always
+        // lays the page out at the phone's own width (about 360 px), so the "Page size" choice (and any width=... in a page) did nothing. Every ETEL page has a viewport meta.
+        scalesPageToFit
         setBuiltInZoomControls={false}
         setDisplayZoomControls={false}
         automaticallyAdjustContentInsets={false}
