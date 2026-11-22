@@ -37,6 +37,7 @@ import PermissionGate from './src/permissions/PermissionGate';
 import StatusGate from './src/status/StatusGate';
 import { loadLowData } from './src/data/lowData';
 import { loadCalendar } from './src/calendar/calendarSetting';
+import { loadPageSize } from './src/hub/pageSize';
 import { installCrashReporting } from './src/crash/crashReport';
 import './src/location/backgroundLocationTask'; // registers the TaskManager task
 
@@ -99,6 +100,7 @@ export default function App() {
   React.useEffect(() => {
     loadLowData();   // the "Save mobile data" switch
     loadCalendar();  // Gregorian or Ethiopian dates
+    loadPageSize();  // how much of a web page fits across the phone
   }, []);
 
   if (!fontsLoaded) {

@@ -40,9 +40,11 @@ export const FIT_JS = `
 (function () {
   try {
     var c = 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover';
+    var ps = window.__etelPageScale;
+    if (ps && ps < 0.999) { var sw = (window.screen && window.screen.width) || window.innerWidth; c = 'width=' + Math.round(sw / ps) + ', initial-scale=' + ps + ', minimum-scale=' + ps + ', maximum-scale=' + ps + ', user-scalable=no, viewport-fit=cover'; }
     var m = document.querySelector('meta[name=viewport]');
     if (!m) { m = document.createElement('meta'); m.name = 'viewport'; document.head.appendChild(m); }
-    if (m.content.indexOf('maximum-scale') < 0) m.content = c;
+    if (ps && ps < 0.999) m.content = c; else if (m.content.indexOf('maximum-scale') < 0) m.content = c;
     document.documentElement.classList.add('etel-in-app');
     if (!document.getElementById('etel-in-app-fit')) {
       var s = document.createElement('style'); s.id = 'etel-in-app-fit';
@@ -53,3 +55,26 @@ export const FIT_JS = `
   true;
 })();
 `;
+
+// The "Page size" choice: how much of the page fits across the phone. 1 is the page at the phone's own width (about 360 px). Chrome and the TWA on the owner's
+// phone drew the same pages about 1.6 times wider (a page-zoom setting of Chrome), so everything looked smaller and fitted; the app, which draws at the phone's
+// width, looked too big. A smaller number lays the page out wider and shrinks it to fit, the way Chrome does. Runs BEFORE the page loads so the first layout is right.
+export function pageScaleJs(scale: number): string {
+  const s = Math.max(0.5, Math.min(1, Number(scale) || 1));
+  return `window.__etelPageScale=${s};` + `
+(function () {
+  var s = window.__etelPageScale;
+  if (!s || s >= 0.999) return;
+  function apply() {
+    var m = document.querySelector('meta[name=viewport]');
+    if (!m) { if (!document.head) return false; m = document.createElement('meta'); m.name = 'viewport'; document.head.appendChild(m); }
+    var sw = (window.screen && window.screen.width) || window.innerWidth;
+    var v = 'width=' + Math.round(sw / s) + ', initial-scale=' + s + ', minimum-scale=' + s + ', maximum-scale=' + s + ', user-scalable=no, viewport-fit=cover';
+    if (m.content !== v) m.content = v;
+    return true;
+  }
+  var n = 0, iv = setInterval(function () { if (apply() || ++n > 300) clearInterval(iv); }, 10);
+  document.addEventListener('DOMContentLoaded', apply);
+})();
+true;`;
+}
