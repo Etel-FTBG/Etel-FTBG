@@ -329,6 +329,7 @@ function ep_auth() {
     $row = $stmt->fetch();
     if (!$row) ep_err('Session expired or invalid', 401);
     if ($row['status'] !== 'active') ep_err('Account suspended', 403);
+    if (function_exists('ep_pd_scope_guard')) ep_pd_scope_guard($pdo, $token);   // a pay-only session (PIN-only sign-in) can only send ETEL payments
     $lastActive = $row['last_active_at'] ? strtotime($row['last_active_at']) : 0;
     if ($lastActive && (time() - $lastActive) > EP_SESSION_IDLE_SECONDS) {
         // Idle too long - revoke this session outright (not just reject
@@ -410,8 +411,9 @@ require_once __DIR__ . '/ep_r1.php';
 require_once __DIR__ . '/ep_r2.php';
 require_once __DIR__ . '/ep_r3.php';
 require_once __DIR__ . '/ep_r4.php';   // admin money tools + top-up reject (capped, atomic, audited)
+require_once __DIR__ . '/ep_r5.php';   // the member's choice: PIN only / password / password + code, remembered phones, pay-only sessions
 
 /* ── Dispatch action ─────────────────────────────────────────── */
-if (!ep_route_part4($action) && !ep_route_part1($action) && !ep_route_part2($action) && !ep_route_part3($action)) {
+if (!ep_route_part4($action) && !ep_route_part5($action) && !ep_route_part1($action) && !ep_route_part2($action) && !ep_route_part3($action)) {
     ep_err('Unknown action: ' . htmlspecialchars($action), 404);
 }

@@ -392,7 +392,9 @@ case 'ep_login_etelid': {
     $expires = date('Y-m-d H:i:s', time() + EP_SESSION_TTL);
     $pdo->prepare('INSERT INTO ' . EP_TBL_SESSIONS . ' (ep_user_id,token,expires_at,created_at) VALUES (?,?,?,NOW())')
         ->execute(array((int)$user['id'], $token, $expires));
-    ep_ok(array('token'=>$token,'expires_at'=>$expires,'phone'=>$user['phone'],'via'=>'etelid_sso'));
+    $login_out = array('token'=>$token,'expires_at'=>$expires,'phone'=>$user['phone'],'via'=>'etelid_sso');
+    if (function_exists('ep_pd_after_login')) { try { $login_out = ep_pd_after_login($pdo, $user, $login_out); } catch (Exception $e) {} }   // the member's pay choice + this phone remembered
+    ep_ok($login_out);
 }
 
 /* -- The member's choice: Etel Pay asks for the PIN, not the 6-digit code --
