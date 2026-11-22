@@ -86,8 +86,13 @@ case 'admin_sg_doc_review': {
 /* Which business a caller may work on: an owner or staff login their own; an admin (service_givers.manage) the one named by sg_id. $write needs owner/admin. */
 function sg_docs_target($pdo, $au, $body, $write) {
     if ($au['role'] === 'admin') {
-        require_admin($pdo, 'service_givers.manage');
         $sg = isset($body['sg_id']) ? intval($body['sg_id']) : (isset($_GET['sg_id']) ? intval($_GET['sg_id']) : 0);
+        /* An admin who also runs a business of their own (the test shop on the ETEL Pro page) opens the page without naming one: it is their own. */
+        $mine = $pdo->prepare('SELECT id FROM service_givers WHERE user_id = ? LIMIT 1');
+        $mine->execute(array(intval($au['id'])));
+        $mineId = intval($mine->fetchColumn());
+        if ($sg <= 0 && $mineId > 0) return $mineId;
+        if ($sg !== $mineId) require_admin($pdo, 'service_givers.manage');   // another business: needs the right to manage them
         if ($sg <= 0) fail('sg_id required', 400);
         $c = $pdo->prepare('SELECT id FROM service_givers WHERE id = ?');
         $c->execute(array($sg));
