@@ -44,6 +44,19 @@ export const FIT_JS = `
     if (!m) { m = document.createElement('meta'); m.name = 'viewport'; document.head.appendChild(m); }
     if (m.content.indexOf('maximum-scale') < 0) m.content = c;
     document.documentElement.classList.add('etel-in-app');
+    // The Courier page inside the app was drawn about 1.5 times too big (a top bar that wraps, buttons pushed off the screen), unlike the same page in the
+    // TWA. When the page is laid out clearly narrower than the screen the phone has zoomed it in: lay it out at the screen's width again. This does nothing when
+    // the two match. Either way a small note (sizes only, no account data) goes to the page-error list (app "inapp", System health) so a wrong guess shows up.
+    setTimeout(function () {
+      try {
+        var sw = window.screen && window.screen.width, iw = window.innerWidth, vv = window.visualViewport, dpr = window.devicePixelRatio || 1, fixed = 0;
+        var before = m ? m.content : '';
+        if (m && sw > 300 && iw > 0 && iw < sw * 0.9 && !window.__etelFitFixed) { window.__etelFitFixed = 1; fixed = 1; m.content = 'width=' + sw + ', viewport-fit=cover'; }
+        var base = location.pathname.split('/delivery/')[0] + '/delivery/api/client-error.php';
+        var msg = 'LAYOUT inner=' + iw + ' screen=' + sw + 'x' + (window.screen && window.screen.height) + ' dpr=' + dpr + ' vv=' + (vv ? Math.round(vv.scale * 100) / 100 + '/' + Math.round(vv.width) : '-') + ' fixed=' + fixed + ' meta=' + before + ' font=' + getComputedStyle(document.body).fontSize;
+        fetch(location.origin + base, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: 'inapp', kind: 'js', page: location.pathname, message: msg, source: 'w' + iw + '-s' + sw, line: Math.round(dpr * 100) }) }).catch(function () {});
+      } catch (e) {}
+    }, 3500);
     if (!document.getElementById('etel-in-app-fit')) {
       var s = document.createElement('style'); s.id = 'etel-in-app-fit';
       s.textContent = 'html,body{max-width:100vw;overflow-x:hidden}html{-webkit-text-size-adjust:100%}';
