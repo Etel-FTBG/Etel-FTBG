@@ -8,6 +8,8 @@ function load(rel, stubs) {
 }
 const W = load('src/hub/webBridge.ts'); const P = load('src/hub/pageSize.ts', { 'expo-secure-store': { getItemAsync: async () => null, setItemAsync: async () => {} }, react: { useState: () => [], useEffect: () => {} } });
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
+const host = fs.readFileSync(path.join(root, 'src/components/WebHost.tsx'), 'utf8');
+t('the WebView honours the page\'s viewport (scalesPageToFit on: Android useWideViewPort), or the Page size choice does nothing', /\n\s+scalesPageToFit\n/.test(host) && !/scalesPageToFit=\{false\}/.test(host));
 t('three choices, in this order', P.PAGE_SIZES.join() === 'normal,smaller,twa');
 t('the default is "Like the TWA" (what the owner asked for)', P.DEFAULT_PAGE_SIZE === 'twa' && P.PAGE_SCALE.twa < P.PAGE_SCALE.smaller && P.PAGE_SCALE.normal === 1);
 t('a saved word is read back; anything else falls back to the default', P.parsePageSize('normal') === 'normal' && P.parsePageSize('smaller') === 'smaller' && P.parsePageSize('x') === 'twa' && P.parsePageSize(null) === 'twa');
