@@ -23,7 +23,7 @@ if '.pay-opt.pay-soon' not in read('css/ride-gold.css'):
     bad.append('css/ride-gold.css must style .pay-opt.pay-soon')
 
 ctl = read('api/controllers/RideController.php')
-if ctl.count("$pm === 'wallet' && !rides_wallet_enabled($pdo)") < 3:
+if ctl.count("$pm === 'wallet' && !rides_wallet_enabled($pdo, $u['id'])") < 3:
     bad.append('book_ride, schedule and customer_confirm_arrival must each refuse wallet while it is coming soon')
 fare = read('api/lib/ride_fare.php')
 if "'ride_wallet_enabled', 0" not in fare:

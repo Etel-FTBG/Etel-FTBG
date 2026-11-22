@@ -126,9 +126,25 @@ function rides_rule_value($pdo, $key, $default) {
     return $val;
 }
 
-/* Paying a ride from the Etel Pay wallet is "coming soon": off unless a pricing_rules row ride_wallet_enabled = 1 is added. */
+/* Paying a ride from the Etel Pay wallet follows the SAME switch as every other place Etel Pay appears (Admin > Settings > Etel Pay:
+   "Live for everyone" in api/etel-features.json, and the per-member Grant / Deny list, table etelpay_user_overrides):
+     1. the member's own Grant or Deny wins (a Deny also beats the rule below);
+     2. otherwise "Live for everyone" decides;
+     3. otherwise a pricing_rules row ride_wallet_enabled = 1 still turns it on for everybody (the older way).
+   Off by default: until one of these says yes, the rider is told it is coming soon. Fails closed: any read error counts as "off". */
 if (!defined('RIDES_WALLET_SOON_MSG')) define('RIDES_WALLET_SOON_MSG', 'Wallet payment is coming soon. Please pay with cash or Chapa.');
-function rides_wallet_enabled($pdo) {
+function rides_wallet_enabled($pdo, $userId = 0) {
+    $uid = intval($userId);
+    if ($uid > 0) {
+        try {
+            $s = $pdo->prepare('SELECT allowed FROM etelpay_user_overrides WHERE user_id = ?');
+            $s->execute(array($uid));
+            $row = $s->fetch(PDO::FETCH_ASSOC);
+            if ($row !== false) return !empty($row['allowed']);
+        } catch (Exception $e) { /* the overrides table may not exist yet: fall through to the global switch */ }
+    }
+    $flags = @json_decode(@file_get_contents(__DIR__ . '/../etel-features.json'), true);
+    if (is_array($flags) && !empty($flags['etelpay_live'])) return true;
     return intval(rides_rule_value($pdo, 'ride_wallet_enabled', 0)) === 1;
 }
 
