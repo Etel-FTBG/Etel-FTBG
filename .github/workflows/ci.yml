@@ -42,7 +42,7 @@ jobs:
         run: php EtelId/tests/etel_code_pay_unit.php
       - name: Etel Pay - the member's choice to pay with the PIN instead of the 6-digit code (real service API, 2FA and TOTP)
         run: php EtelId/tests/pay_2fa_mode_unit.php
-      - name: Etel Pay - how you pay: PIN only after one sign-in, pay-only sessions, remembered phones (real helpers, in-memory database)
+      - name: Etel Pay - how you pay (PIN only after one sign-in, pay-only sessions, remembered phones; real helpers, in-memory database)
         run: php EtelId/tests/ep_pay_auth_unit.php
       - name: Etel Pay - the choice passed on to EtelID (real helper over HTTP to a stand-in EtelID)
         run: php EtelId/tests/etel_pay_code_mode_unit.php
