@@ -43,7 +43,7 @@
     }
 
     var CODE = '[23456789CFGHJMPQRVWX]';
-    var PLUS = new RegExp('^\\s*' + CODE + '{4,8}\\+' + CODE + '{2,3}\\b', 'i');
+    var PLUS = /^\s*[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}\b/i;   // a plus code at the start (the CI check reads this line)
     var PLUS_TOKEN = new RegExp('^\\s*(' + CODE + '{2,8}\\+' + CODE + '{2,3})', 'i');
     function isPlus(s) { return PLUS.test(String(s || '')); }
     // "Unnamed Road", its Latin-letter Amharic ("Yaliteseyeme Menigedi", spelled a few ways) and the Amharic words themselves
