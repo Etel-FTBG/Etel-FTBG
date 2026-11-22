@@ -28,6 +28,11 @@ register_shutdown_function(function () {
             'fatal'   => $e['message'],
             'file'    => basename($e['file']) . ':' . $e['line']
         ));
+        /* Keep the real reason where an admin can read it (client_errors, System health); a failure to write it never matters. */
+        try {
+            require_once __DIR__ . '/lib/server_errors.php';
+            etel_log_server_error('fatal', isset($GLOBALS['action']) ? $GLOBALS['action'] : '', $e['message'], $e['file'], $e['line']);
+        } catch (Exception $logEx) { } catch (Throwable $logEx) { }
     }
 });
 
