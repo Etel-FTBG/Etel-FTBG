@@ -63,6 +63,39 @@ etel_test_db.run_sql("UPDATE pricing_rules SET rule_value = '0' WHERE rule_key =
 st, r = call("ride_wallet_status", {}, rider)
 check("with the rule set to 0: enabled is false again", st == 200 and (r.get("data") or {}).get("enabled") is False, (st, r))
 
+
+# ---- the Admin switch (Settings > Etel Pay): a member's Grant / Deny and "Live for everyone" decide too ----
+FEATURES = os.path.join(HERE, "..", "api", "etel-features.json")
+try:
+    saved = open(FEATURES).read()
+except Exception:
+    saved = None
+
+
+def set_live(on):
+    open(FEATURES, "w").write(json.dumps({"etelpay_live": bool(on), "updated_at": "CI"}))
+
+
+def enabled():
+    st, r = call("ride_wallet_status", {}, rider)
+    return (r.get("data") or {}).get("enabled")
+
+
+etel_test_db.run_sql("DELETE FROM etelpay_user_overrides WHERE user_id = (SELECT id FROM users WHERE phone = '+251911000001' LIMIT 1)")
+set_live(False)
+check("Admin 'Coming Soon' and no grant: off", enabled() is False)
+etel_test_db.run_sql("INSERT INTO etelpay_user_overrides (user_id, allowed, note, updated_by, updated_at) SELECT id, 1, 'CI', 'ci', NOW() FROM users WHERE phone = '+251911000001' LIMIT 1")
+check("a Grant for this member turns it on even while Coming Soon", enabled() is True)
+set_live(True)
+etel_test_db.run_sql("UPDATE etelpay_user_overrides SET allowed = 0 WHERE user_id = (SELECT id FROM users WHERE phone = '+251911000001' LIMIT 1)")
+check("a Deny wins over 'Live for everyone'", enabled() is False)
+etel_test_db.run_sql("DELETE FROM etelpay_user_overrides WHERE user_id = (SELECT id FROM users WHERE phone = '+251911000001' LIMIT 1)")
+check("no override and 'Live for everyone': on", enabled() is True)
+set_live(False)
+check("back to Coming Soon: off again", enabled() is False)
+if saved is not None:
+    open(FEATURES, "w").write(saved)
+
 st, r = call("customer_confirm_arrival", {"ride_id": 999999, "payment_method": "wallet", "wallet_tx_ref": "EP-TEST"}, rider)
 check("the confirm step refuses wallet payment while it is off (this is why the page must ask first)", st == 400 and "coming soon" in json.dumps(r), (st, r))
 
