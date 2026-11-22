@@ -94,7 +94,7 @@ function etel_sg_readiness($g, $items, $claim, $docsDone = null) {
         array('logo', 'Logo', $has('logo_url'), 'Customers see it on the shop card and on items without a photo.'),
         array('cover', 'Cover photo', $has('cover_url'), 'The wide picture at the top of the shop page.'),
         array('hours', 'Opening hours', $has('opens_at') && $has('closes_at'), 'Orders are only taken inside these hours.'),
-        array('location', 'Address and map pin', $has('address') && $has('lat') && $has('lng'), 'Couriers and customers need to find the business.'),
+        array('location', 'Address and map pin', $has('address') && $has('lat') && $has('lng'), 'Couriers and customers need to find the business. Without a map pin customers near you cannot see the shop: set it in Settings > Shop location.'),
         array('owner', 'Owner\'s own phone number', empty($claim['placeholder_phone']), 'A spare number is still in place: the owner claims the account, or you type theirs.'),
         array('payout', 'Payout details', $pay, 'Where the business is paid (bank or Telebirr).'),
         array('documents', 'Papers approved (licence and owner\'s ID)', $docsDone === true, 'The owner hands in a photo of each; you check and approve it.'),
