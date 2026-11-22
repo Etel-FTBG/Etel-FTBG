@@ -33,6 +33,12 @@ case 'customer_create_order': {
         ok($result);
     } catch (Exception $e) {
         fail($e->getMessage(), 400);
+    } catch (Throwable $e) {
+        // A PHP error inside the order code (not a plain refusal) used to end as a blank "Server fatal error". Say what a customer can act on and keep the cause.
+        error_log('[ETEL] customer_create_order error: ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine());
+        require_once __DIR__ . '/../lib/server_errors.php';
+        etel_log_server_error('error', 'customer_create_order', $e->getMessage(), $e->getFile(), $e->getLine());
+        fail('Could not place the order. Please try again in a moment.', 500);
     }
     break;
 }
