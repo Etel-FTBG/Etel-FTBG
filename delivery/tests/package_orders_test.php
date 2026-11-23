@@ -59,6 +59,9 @@ etel_package_ensure_schema($pdo);
 foreach (etel_package_default_rates() as $r) {
     $pdo->prepare('UPDATE package_rates SET label=?, icon=?, base_fee=?, per_km=?, free_kg=?, per_kg_over=?, min_fee=?, max_weight_kg=?, sort_order=?, active=1 WHERE vehicle_class=?')->execute(array($r[1], $r[2], $r[3], $r[4], $r[5], $r[6], $r[7], $r[8], $r[9], $r[0]));
 }
+// Other smoke tests that ran before this one may have added vehicle types (the Bajaj / Qute type is added the first time Admin or the cart lists vehicles).
+// This test is about the four built-in vehicles: switch any other type off for the run.
+$pdo->exec("UPDATE package_rates SET active = 0 WHERE vehicle_class NOT IN ('bike','moto','car','van')");
 check('the four starting rates exist', count(etel_package_rates($pdo, true)) === 4);
 $A = array('address' => 'Tabor, Hawassa', 'zone' => 'Tabor'); $B = array('address' => 'University gate', 'zone' => 'University');
 $opts = function ($size, $kg) use ($pdo, $A, $B) { $q = etel_package_quote($pdo, $A, $B, array('size' => $size, 'weight_kg' => $kg)); if (!$q['ok']) return $q['message']; $o = array(); foreach ($q['options'] as $x) $o[] = $x['vehicle_class']; return $o; };
@@ -145,7 +148,7 @@ check('an unknown vehicle or a zero max weight is refused', etel_package_save_ra
     && etel_package_save_rate($pdo, 'moto', array('label' => 'x', 'base_fee' => 1, 'per_km' => 1, 'free_kg' => 0, 'per_kg_over' => 0, 'min_fee' => 0, 'max_weight_kg' => 0))['ok'] === false);
 etel_package_save_rate($pdo, 'van', array('label' => 'Van / pickup', 'icon' => 'V', 'base_fee' => 350, 'per_km' => 45, 'free_kg' => 100, 'per_kg_over' => 3, 'min_fee' => 450, 'max_weight_kg' => 1000, 'active' => 0));
 check('switching a vehicle off removes it from the options', etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2))['options'][2]['vehicle_class'] === 'car' && count(etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2))['options']) === 3);
-check('but staff still see it in their list', count(etel_package_rates($pdo, false)) === 4);
+check('but staff still see it in their list', count(array_filter(etel_package_rates($pdo, false), function ($r) { return in_array($r['vehicle_class'], array('bike', 'moto', 'car', 'van'), true); })) === 4);
 
 echo "adding a vehicle type of our own (Admin -> Add)\n";
 $pdo->exec("DELETE FROM package_rates WHERE vehicle_class NOT IN ('bike','moto','car','van')"); etel_package_custom_defs(null, true);
