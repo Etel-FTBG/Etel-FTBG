@@ -22,7 +22,7 @@ function etel_package_builtin_names() {
     return array(
         'bike' => array('bicycle', 'bike', 'cycle', 'on_foot', 'foot', 'walking'),
         'moto' => array('motorcycle', 'motorbike', 'moto', 'scooter'),
-        'car'  => array('car', 'sedan', 'taxi', 'vehicle'),
+        'car'  => array('car', 'sedan', 'taxi', 'vehicle', 'ev_car'),
         'van'  => array('van', 'pickup', 'pick-up', 'truck', 'minibus', 'lorry', 'cargo'),
     );
 }

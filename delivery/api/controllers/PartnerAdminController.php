@@ -44,7 +44,10 @@ case 'admin_couriers_board': {
     }
     unset($r);
     $sum['avg_rating'] = $rn ? round($rsum / $rn, 2) : null;
-    ok(array('couriers' => $rows, 'count' => count($rows), 'summary' => $sum));
+    require_once __DIR__ . '/../lib/vehicle_catalog.php';
+    foreach ($rows as &$r) { $r['vehicle_class'] = etel_vehicle_class_of(isset($r['vehicle_type']) ? $r['vehicle_type'] : '', $pdo); }
+    unset($r);
+    ok(array('couriers' => $rows, 'count' => count($rows), 'summary' => $sum, 'vehicles' => etel_vehicle_catalog($pdo), 'vehicle_choices' => etel_vc_choices($pdo)));
     break;
 }
 
@@ -75,7 +78,15 @@ case 'admin_courier_detail': {
     $acc = $one('SELECT active FROM users WHERE id = ?', array($c['user_id']));
     require_once __DIR__ . '/../lib/courier_details.php';
     $details = etel_courier_details_get($pdo, $c['user_id']);   // photo addresses leave as signed, expiring links (private folder)
-    ok(array('courier' => $out, 'details' => $details, 'id_types' => etel_courier_id_types(), 'account_active' => $acc ? intval($acc['active']) !== 0 : true,
+    require_once __DIR__ . '/../lib/vehicle_catalog.php';
+    $vt = isset($out['vehicle_type']) ? $out['vehicle_type'] : '';
+    $vcls = etel_vehicle_class_of($vt, $pdo);
+    $daily = $all("SELECT DATE(delivered_at) AS d, COUNT(*) AS n FROM orders WHERE courier_id = ? AND status = 'delivered' AND delivered_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY) GROUP BY DATE(delivered_at)", array($id));
+    $byDay = array(); foreach ($daily as $dr) { $byDay[$dr['d']] = intval($dr['n']); }
+    $series = array(); for ($i = 13; $i >= 0; $i--) { $k = date('Y-m-d', time() - $i * 86400); $series[] = array('d' => $k, 'n' => isset($byDay[$k]) ? $byDay[$k] : 0); }
+    $zones = array(); foreach (array_keys(etel_zone_centroids()) as $zn) { $zones[] = $zn; }
+    ok(array('vehicle_class' => $vcls, 'vehicle_choices' => etel_vc_choices($pdo), 'vehicles' => etel_vehicle_catalog($pdo), 'daily' => $series, 'zones' => $zones,
+             'courier' => $out, 'details' => $details, 'id_types' => etel_courier_id_types(), 'account_active' => $acc ? intval($acc['active']) !== 0 : true,
              'stats' => array('today' => intval($st['today']), 'd7' => intval($st['d7']), 'd30' => intval($st['d30']), 'cancelled_30d' => intval($st['x30']), 'live' => intval($st['live']),
                               'avg_minutes' => $st['avg_min'] === null ? null : round(floatval($st['avg_min'])), 'fees_30d' => $fees ? round(floatval($fees['f']), 2) : null),
              'recent' => $recent));
