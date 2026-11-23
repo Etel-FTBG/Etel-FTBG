@@ -121,7 +121,7 @@ function rides_pull_for_driver($pdo, $uid, $me) {
     $areas = rides_pull_areas($pdo, true);
     try {
         $s = $pdo->prepare("SELECT r.id, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng, r.pickup_address, r.dropoff_address, r.distance_km, r.fare_final, r.fare_estimate, r.rider_offer,
-                   TIMESTAMPDIFF(SECOND, r.created_at, NOW()) AS age_s, u.name AS passenger_name
+                   r.created_at, u.name AS passenger_name
             FROM rides r JOIN users u ON u.id = r.passenger_id
             WHERE r.status = 'searching' AND r.passenger_id != ? AND (r.expires_at IS NULL OR r.expires_at > NOW())
               AND (LOWER(r.vehicle_type) = LOWER(?) OR r.vehicle_type IS NULL)
@@ -137,15 +137,16 @@ function rides_pull_for_driver($pdo, $uid, $me) {
         if ($myArea) { $ra = etel_area_for_point($pdo, $r['pickup_lat'], $r['pickup_lng']); if (!$ra || $ra['code'] !== $myArea['code']) continue; }
         $dist = rides_haversine_km(floatval($me['lat']), floatval($me['lng']), floatval($r['pickup_lat']), floatval($r['pickup_lng']));
         if ($dist > $set['ride_pull_max_km']) continue;
+        $age = $r['created_at'] ? max(0, time() - strtotime($r['created_at'])) : 0; // PHP clock both sides: the row is written by PHP, so this holds even if the DB session zone is not synced
         $fare = floatval($r['fare_final']) > 0 ? floatval($r['fare_final']) : floatval($r['fare_estimate']);
         $tags = rides_pull_tags($r['pickup_lat'], $r['pickup_lng'], $fare, $areas, $set['ride_vip_min_fare']);
         $row = array('id' => intval($r['id']), 'pickup_address' => $r['pickup_address'], 'dropoff_address' => $r['dropoff_address'],
                      'pickup_lat' => $r['pickup_lat'], 'pickup_lng' => $r['pickup_lng'], 'dropoff_lat' => $r['dropoff_lat'], 'dropoff_lng' => $r['dropoff_lng'],
                      'trip_km' => round(floatval($r['distance_km']), 1), 'fare' => round($fare), 'rider_offer' => floatval($r['rider_offer']) > 0 ? round(floatval($r['rider_offer'])) : 0,
-                     'from_driver_km' => round($dist, 1), 'eta_min' => max(1, (int) round($dist / 25 * 60)), 'waiting_s' => intval($r['age_s']),
+                     'from_driver_km' => round($dist, 1), 'eta_min' => max(1, (int) round($dist / 25 * 60)), 'waiting_s' => $age,
                      'passenger_name' => $r['passenger_name'] ? preg_replace('/\s.*$/', '', $r['passenger_name']) : '', 'tags' => $tags);
         if ($tags) { $out['offers'][] = $row; continue; }
-        if ($set['ride_pull_on'] >= 1 && intval($r['age_s']) >= $set['ride_pull_after_secs'] && $dist >= $set['ride_pull_min_km']) $out['pull'][] = $row;
+        if ($set['ride_pull_on'] >= 1 && $age >= $set['ride_pull_after_secs'] && $dist >= $set['ride_pull_min_km']) $out['pull'][] = $row;
     }
     usort($out['offers'], function ($a, $b) { return $b['fare'] - $a['fare']; });
     usort($out['pull'], function ($a, $b) { return $b['waiting_s'] - $a['waiting_s']; });
