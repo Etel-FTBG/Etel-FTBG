@@ -124,7 +124,7 @@ function card(r) {
   return '<div class="ak-card' + (r.suspended ? ' off' : '') + (pend ? ' alert' : '') + '" tabindex="0" role="button" data-open="' + esc(r.id) + '">' +
     '<div class="ak-top">' + avatar(r) + '<div class="ak-nm"><b>' + esc(r.name || 'Courier') + '</b><small>' + esc(r.courier_code || '') + ' · ' + esc(r.phone || '') + '</small></div>' + pillFor(r) + '</div>' +
     '<div class="ak-chips"><span class="ak-chip">' + vp(r, v[0], 34) + ' ' + esc(v[1]) + '</span>' + (r.plate_number ? '<span class="ak-chip">' + esc(r.plate_number) + '</span>' : '') +
-    ((r.zone || r.home_zone) ? '<span class="ak-chip">📍 ' + esc(r.zone || r.home_zone) + '</span>' : '') + (r.live_jobs ? '<span class="ak-chip">🛵 ' + esc(r.live_jobs) + ' live job' + (r.live_jobs === 1 ? '' : 's') + '</span>' : '') + '</div>' +
+    ((r.zone || r.home_zone) ? '<span class="ak-chip">📍 ' + esc(r.zone || r.home_zone) + '</span>' : '') + (r.ride_driver ? '<span class="ak-chip">🚕 ' + (pend ? 'Ride driver asking for deliveries' : 'Also a ride driver') + '</span>' : '') + (r.live_jobs ? '<span class="ak-chip">🛵 ' + esc(r.live_jobs) + ' live job' + (r.live_jobs === 1 ? '' : 's') + '</span>' : '') + '</div>' +
     '<div class="ak-row"><span>' + esc(stars(r.rating)) + ' · ' + esc(K.num(r.total_deliveries)) + ' total</span><span><b>' + esc(r.today_deliveries) + '</b> today</span></div>' +
     (pend ? '<div class="ak-acts" style="margin-top:10px"><button type="button" class="ak-btn good" data-quick="approved" data-uid="' + esc(r.user_id) + '">✓ Approve</button><button type="button" class="ak-btn danger" data-quick="rejected" data-uid="' + esc(r.user_id) + '">Not approve</button></div>' : '') +
     '</div>';

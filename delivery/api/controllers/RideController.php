@@ -2441,7 +2441,8 @@ case 'driver_get_demand': {
        area (about 700 m cells) and the area's centre - never a rider, address or
        phone. An area is worth showing when it has 2+ requests or someone is
        waiting right now. Score = (requests + 2 x waiting) / (idle drivers + 1). */
-    if ($u['role'] !== 'driver' && ($u['role'] !== 'admin' || etel_is_ride_only(db(), $u))) fail('Drivers only', 403);
+    $isRideDrv = ($u['role'] === 'courier') && (function () use ($u) { try { $q = db()->prepare('SELECT 1 FROM ride_drivers WHERE user_id = ? LIMIT 1'); $q->execute(array(intval($u['id']))); return (bool) $q->fetchColumn(); } catch (Exception $e) { return false; } })();   // a driver whose account also does deliveries
+    if ($u['role'] !== 'driver' && !$isRideDrv && ($u['role'] !== 'admin' || etel_is_ride_only(db(), $u))) fail('Drivers only', 403);
     $size = 700.0;
     $myLat = isset($body['lat']) && is_numeric($body['lat']) ? floatval($body['lat']) : null;
     $myLng = isset($body['lng']) && is_numeric($body['lng']) ? floatval($body['lng']) : null;

@@ -13,8 +13,8 @@ const CLASSES = [
 const CHOICES = [{ value: 'motorcycle', label: 'Motorcycle', icon: '\u{1F3CD}', class: 'moto', class_label: 'Motorbike' }, { value: 'car', label: 'Car', icon: '\u{1F697}', class: 'car', class_label: 'Car' }, { value: 'bajaj', label: 'Bajaj', icon: '\u{1F6FA}', class: '', class_label: '' }];
 const ROWS = [
   { id: 1, user_id: 11, courier_code: 'C-00001', name: 'Etel Admin', phone: '0924445206', status: 'online', vehicle_type: '', vehicle_class: 'moto', plate_number: '1 SD 10181', zone: 'Atote', rating: 0, total_deliveries: 0, active: 1, account_active: 1, approval_status: 'approved', today_deliveries: 0, live_jobs: 0, created_at: '2026-10-27 16:51:00' },
-  { id: 2, user_id: 12, courier_code: 'C-00002', name: 'Bajaj Abel', phone: '0911000002', status: 'offline', vehicle_type: 'bajaj', vehicle_class: '', plate_number: '', zone: '', rating: 4.6, total_deliveries: 31, active: 1, account_active: 1, approval_status: 'approved', today_deliveries: 2, live_jobs: 0, created_at: '2026-10-28 10:00:00' }];
-const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { vehicle_class: c.vehicle_class, vehicle_choices: CHOICES, vehicles: { classes: CLASSES, unmapped: [{ name: 'bajaj', couriers: 1, online: 0 }] },
+  { id: 2, user_id: 12, courier_code: 'C-00002', name: 'Bajaj Abel', phone: '0911000002', status: 'offline', vehicle_type: 'bajaj', vehicle_class: '', plate_number: '', zone: '', rating: 4.6, ride_driver: true, total_deliveries: 31, active: 1, account_active: 1, approval_status: 'approved', today_deliveries: 2, live_jobs: 0, created_at: '2026-10-28 10:00:00' }];
+const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ride_driver: id === 2 ? { vehicle_type: 'bajaj', vehicle_plate: '' } : null, account_role: 'courier', vehicle_class: c.vehicle_class, vehicle_choices: CHOICES, vehicles: { classes: CLASSES, unmapped: [{ name: 'bajaj', couriers: 1, online: 0 }] },
   daily: Array.from({ length: 14 }, (_, i) => ({ d: '2026-11-' + (10 + i), n: i % 4 })), zones: ['Stadium', 'Tabor'],
   courier: Object.assign({}, c), details: null, id_types: {}, account_active: true, stats: { today: 0, d7: 4, d30: 12, cancelled_30d: 2, live: 0, avg_minutes: 24, fees_30d: 640 },
   recent: [{ order_code: 'ETD-1', status: 'delivered', fare_total: 150, from_zone: 'Stadium', to_zone: 'Tabor', placed_at: '2026-11-22 10:00:00' }] }; };
@@ -61,6 +61,7 @@ const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ve
     await p.locator('#cou-pro [data-open="2"]').first().click(); await p.waitForTimeout(900);
     const d2 = await p.innerText('.ak-dr');
     t(mode.n + ': a bajaj courier is told they get no package jobs and where to fix it', /does not match any package vehicle/.test(d2) && /Package prices/.test(d2), d2.slice(0, 500));
+    t(mode.n + ': a courier who is also a ride driver says so in the drawer and on the card', /Also a ride driver \(bajaj\)/.test(d2) && /Also a ride driver/.test(await p.innerText('#cou-pro')) , d2.slice(0, 300));
     t(mode.n + ': no page errors', errs.length === 0, errs.join('|'));
     await ctx.close();
   }
