@@ -6,11 +6,13 @@
 'use strict';
 var T = {
   en: { title: 'Extra job: deliveries', ask: 'Ask for the courier job', again: 'Ask again', open: 'Open Courier', sending: 'Sending…', badge: 'Pending',
+    admin: 'You are signed in as an admin, so you can already open Courier and work deliveries. Drivers ask for the courier job here and you approve them in Admin, Couriers.',
     none: 'Earn more: deliver orders and packages too, with the same account and the same vehicle. An admin approves you first.',
     pending: 'Waiting for the admin. You will see the answer here. Until then you get no delivery jobs.',
     approved: 'You also do deliveries. Sign out and sign in once, then open Courier.',
     rejected: 'The admin did not approve this time.', suspended: 'Your delivery job is paused by the admin.', verify: 'Finish your driver verification first, then you can ask for the courier job.' },
   am: { title: 'ተጨማሪ ሥራ: ማድረስ', ask: 'የኩሪየር ሥራ ጠይቅ', again: 'እንደገና ጠይቅ', open: 'ኩሪየር ክፈት', sending: 'በመላክ ላይ…', badge: 'በመጠባበቅ ላይ',
+    admin: 'በአስተዳዳሪነት ገብተዋል፣ ስለዚህ ኩሪየርን ቀድመው መክፈት ይችላሉ። ሹፌሮች የኩሪየር ሥራ እዚህ ይጠይቃሉ፣ እርስዎ በአስተዳዳሪው ኩሪየርስ ውስጥ ያጸድቃሉ።',
     none: 'ተጨማሪ ያግኙ: በተመሳሳይ መለያና ተሽከርካሪ ትዕዛዞችንና ጥቅሎችን ያደርሱ። መጀመሪያ አስተዳዳሪ ያጸድቅዎታል።',
     pending: 'አስተዳዳሪውን በመጠበቅ ላይ። መልሱን እዚህ ያያሉ። እስከዚያ የማድረስ ሥራ አይደርስዎትም።',
     approved: 'ማድረስም ያደርጋሉ። አንድ ጊዜ ይውጡና ይግቡ፣ ከዚያ ኩሪየርን ይክፈቱ።',
@@ -39,11 +41,12 @@ var last = 0;
 function paint(st) {
   var host = document.querySelector('#page-profile .profile-body'); if (!host) return;
   var el = document.getElementById('drv-xj');
-  if (!st || !st.is_ride_driver || (st.role !== 'driver' && st.role !== 'courier')) { if (el) el.parentNode.removeChild(el); return; }
+  if (!st || !st.is_ride_driver || (st.role !== 'driver' && st.role !== 'courier' && st.role !== 'admin')) { if (el) el.parentNode.removeChild(el); return; }
   css();
   if (!el) { el = document.createElement('div'); el.id = 'drv-xj'; host.insertBefore(el, host.firstChild); }
   var s = st.state, h = '<h4>🛵 ' + esc(tx('title')) + '</h4>';
-  if (s === 'pending') h += '<span class="xj-s pending">⏳ ' + esc(tx('badge')) + '</span><p>' + esc(tx('pending')) + '</p>';
+  if (st.role === 'admin') h += '<span class="xj-s approved">✅</span><p>' + esc(tx('admin')) + '</p><a class="xj-b" href="../courier/">' + esc(tx('open')) + '</a>';
+  else if (s === 'pending') h += '<span class="xj-s pending">⏳ ' + esc(tx('badge')) + '</span><p>' + esc(tx('pending')) + '</p>';
   else if (s === 'approved') {
     h += '<span class="xj-s approved">✅</span><p>' + esc(tx('approved')) + '</p><a class="xj-b" href="../courier/">' + esc(tx('open')) + '</a>';
     if (st.role === 'courier') { try { var u = JSON.parse(localStorage.getItem('etel_user') || 'null'); if (u && u.role !== 'courier') { u.role = 'courier'; localStorage.setItem('etel_user', JSON.stringify(u)); } } catch (e) { /* ignore */ } }

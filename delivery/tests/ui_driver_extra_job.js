@@ -34,6 +34,9 @@ const PAGE = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
   r = await run(Object.assign({}, base, { state: 'approved', role: 'courier', can_apply: false }), null);
   txt = await r.p.innerText('#drv-xj');
   t('approved: says so, links to Courier, and the stored role becomes courier', /also do deliveries/.test(txt) && (await r.p.locator('#drv-xj a[href="../courier/"]').count()) === 1 && await r.p.evaluate(() => JSON.parse(localStorage.getItem('etel_user')).role === 'courier'), txt); await r.ctx.close();
+  r = await run(Object.assign({}, base, { state: 'none', can_apply: false, role: 'admin' }), null);
+  txt = await r.p.innerText('#drv-xj');
+  t('an admin who also drives sees a note and an Open Courier button (no ask button)', /signed in as an admin/.test(txt) && (await r.p.locator('#drv-xj a[href="../courier/"]').count()) === 1 && !(await r.p.locator('#drv-xj [data-xj]').count()), txt); await r.ctx.close();
   r = await run(Object.assign({}, base, { state: 'none', can_apply: false, is_ride_driver: false, role: 'customer' }), null);
   t('someone who is not a ride driver sees no card', (await r.p.locator('#drv-xj').count()) === 0); await r.ctx.close();
   await b.close();
