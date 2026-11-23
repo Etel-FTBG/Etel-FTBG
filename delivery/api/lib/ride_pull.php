@@ -120,6 +120,8 @@ function rides_pull_for_driver($pdo, $uid, $me) {
     $vt = !empty($me['vehicle_type']) ? $me['vehicle_type'] : 'bajaj';
     $areas = rides_pull_areas($pdo, true);
     try {
+        require_once __DIR__ . '/ride_price_offer.php';
+        rides_offer_price_ensure($pdo); // adds rides.rider_offer on a fresh database
         $s = $pdo->prepare("SELECT r.id, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng, r.pickup_address, r.dropoff_address, r.distance_km, r.fare_final, r.fare_estimate, r.rider_offer,
                    r.created_at, u.name AS passenger_name
             FROM rides r JOIN users u ON u.id = r.passenger_id
@@ -129,7 +131,7 @@ function rides_pull_for_driver($pdo, $uid, $me) {
             ORDER BY r.id DESC LIMIT 60");
         $s->execute(array(intval($uid), $vt, intval($uid)));
         $rows = $s->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) { return $out; }
+    } catch (Exception $e) { error_log('[ETEL][pull] list failed: ' . $e->getMessage()); return $out; }
     $myArea = null; $areasOn = etel_areas_enforced($pdo);
     if ($areasOn) { $myArea = etel_area_for_point($pdo, $me['lat'], $me['lng']); if (!$myArea) return $out; }
     foreach ($rows as $r) {
