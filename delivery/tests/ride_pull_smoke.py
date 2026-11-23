@@ -70,6 +70,7 @@ def main():
     for tok, uid, lat in ((near_t, near, 7.0505), (far_t, far, 7.1005)):
         call("driver_get_profile", {}, tok)
         etel_test_db.onboard_driver(uid)
+        etel_test_db.run_sql("UPDATE ride_drivers SET vehicle_type='Bajaj' WHERE user_id=%d" % int(uid))
         call("driver_go_online", {"lat": lat, "lng": 38.49}, tok)
     etel_test_db.run_sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('ride_offer_wave_secs', 0, 'test') ON DUPLICATE KEY UPDATE rule_value=0")
 
