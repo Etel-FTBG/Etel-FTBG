@@ -22,6 +22,11 @@ var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 
 var FIELDS = [['base_fare', 'Base fare'], ['per_km_rate', 'Per km (metered)'], ['per_km_rate_open', 'Per km (open trip)'], ['wait_rate_per_min', 'Waiting / min'], ['min_fare', 'Minimum fare'], ['min_fare_short_trip', 'Minimum (3 km or less)']];
 
 function root() { return document.getElementById('pricing-studio'); }
+/* The Pricing page follows the workspace it was opened from: Ride shows the ride tabs, Delivery the delivery tabs, Company all of them. */
+var RIDE_TABS = ['fares', 'peak', 'goals', 'commission', 'incentives'], DELIVERY_TABS = ['delivery', 'courier', 'banks'];
+function scope() { try { var c = window.AdminWS && window.AdminWS.current && window.AdminWS.current(); return c === 'ride' || c === 'delivery' ? c : ''; } catch (e) { return ''; } }
+function visTabs() { var sc = scope(); return TABS.filter(function (t) { return can(t[2]) && (!sc || (sc === 'ride' ? RIDE_TABS : DELIVERY_TABS).indexOf(t[0]) >= 0); }); }
+function heroTitle() { var sc = scope(); return sc === 'ride' ? 'Ride prices' : sc === 'delivery' ? 'Delivery prices' : 'Pricing'; }
 function f(n) { return parseFloat(n) || 0; }
 function etb(n) { return 'ETB ' + (Math.round(f(n) * 100) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
 function can(cap) { if (cap instanceof Array) return cap.some(can); return S.caps.indexOf('*') !== -1 || S.caps.indexOf(cap) !== -1; }
@@ -93,7 +98,7 @@ function loadAll() {
     if (can(['pricing.manage', 'settings.view'])) job('courier', 'admin_get_courier_pay', function (d) { S.cp = d; });
     return Promise.all(jobs);
   }).then(function () {
-    var vis = TABS.filter(function (t) { return can(t[2]); });
+    var vis = visTabs();
     if (!S.tab || !vis.some(function (t) { return t[0] === S.tab; })) S.tab = vis.length ? vis[0][0] : '';
     var act = S.rules.filter(function (r) { return String(r.active) === '1'; });
     if (!S.calc.vt || !act.some(function (r) { return r.vehicle_type === S.calc.vt; })) S.calc.vt = act.length ? act[0].vehicle_type : '';
@@ -320,14 +325,15 @@ function banksView() {
 
 function paint() {
   var el = root(); if (!el || !S.loaded) return;
-  var vis = TABS.filter(function (t) { return can(t[2]); });
+  var vis = visTabs();
+  if (vis.length && !vis.some(function (t) { return t[0] === S.tab; })) S.tab = vis[0][0];
   if (!vis.length) { el.innerHTML = '<div class="ak">' + K.empty('🔒', 'No pricing access', 'Your role cannot see any pricing settings.') + '</div>'; return; }
   var act = S.rules.filter(function (r) { return String(r.active) === '1'; }).length, az = S.zones.filter(function (z) { return String(z.active) === '1'; }).length;
   var bigs = [];
-  if (can('pricing.manage')) bigs.push(['Vehicle types on', K.num(act)], ['Default surge', '× ' + S.surge], ['Peak windows', K.num(S.windows.length)]);
-  if (can('settings.view')) bigs.push(['Delivery zones', K.num(az)]);
+  if (can('pricing.manage') && scope() !== 'delivery') bigs.push(['Vehicle types on', K.num(act)], ['Default surge', '× ' + S.surge], ['Peak windows', K.num(S.windows.length)]);
+  if (can('settings.view') && scope() !== 'ride') bigs.push(['Delivery zones', K.num(az)]);
   var body = S.tab === 'peak' ? peakView() : S.tab === 'goals' ? goalsView() : S.tab === 'commission' ? commissionView() : S.tab === 'incentives' ? incentivesView() : S.tab === 'delivery' ? deliveryView() : S.tab === 'banks' ? banksView() : S.tab === 'courier' ? courierView() : faresView();
-  el.innerHTML = '<div class="ak">' + K.hero('Pricing', 'What riders, customers and drivers pay — fares, surge, delivery fees and the bank accounts shown at checkout. Changes apply to new trips and orders as soon as you save.', bigs) +
+  el.innerHTML = '<div class="ak">' + K.hero(heroTitle(), scope() === 'ride' ? 'What riders pay and what drivers earn: fares per vehicle, peak hours, driver goals, commission and incentives. Changes apply to new trips as soon as you save.' : scope() === 'delivery' ? 'What customers pay for delivery and what couriers earn: zones, vehicle fees, courier pay and the bank accounts shown at checkout. Changes apply to new orders as soon as you save.' : 'What riders, customers and drivers pay — fares, surge, delivery fees and the bank accounts shown at checkout. Changes apply to new trips and orders as soon as you save.', bigs) +
     '<div class="ps-tabs"><div class="ak-seg" role="group" aria-label="Section">' + vis.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '" class="' + (S.tab === t[0] ? 'on' : '') + '">' + esc(t[1]) + '</button>'; }).join('') + '</div><span style="flex:1"></span><button type="button" class="ak-btn" data-refresh aria-label="Refresh">🔄</button></div>' + body + '</div>';
 }
 
