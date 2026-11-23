@@ -106,6 +106,8 @@ def main():
     row = [x for x in d.get("pull", []) if x["id"] == rid]
     if not row:
         print("   debug ride:", etel_test_db.query_text("SELECT id,status,vehicle_type,pickup_lat,pickup_lng,expires_at,NOW(),created_at,passenger_id FROM rides WHERE id=%d" % int(rid), True)[1])
+        print("   debug ids near/far:", near, far)
+        print("   debug all drivers:", etel_test_db.query_text("SELECT user_id,vehicle_type,lat,lng,online,onboarded FROM ride_drivers ORDER BY user_id DESC LIMIT 6", True)[1])
         print("   debug drivers:", etel_test_db.query_text("SELECT user_id,vehicle_type,lat,lng,online,onboarded FROM ride_drivers WHERE user_id IN (%d,%d)" % (int(near), int(far)), True)[1])
     check("after the wait, the far driver (about 5.5 km away) sees it in Pull with the trip details",
           bool(row) and row[0]["from_driver_km"] > 2 and row[0]["trip_km"] >= 0 and row[0]["pickup_address"] is not None and "fare" in row[0] and "eta_min" in row[0] and not row[0]["tags"], d)
