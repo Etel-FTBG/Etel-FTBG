@@ -23,6 +23,8 @@ case 'admin_couriers_board': {
     foreach (array('vehicle_type', 'plate_number', 'home_zone', 'zone', 'rating', 'total_deliveries', 'active', 'last_seen') as $c) { if (in_array($c, $cc, true)) $cols[] = 'c.' . $c; }
     if (in_array('active', $uc, true)) $cols[] = 'u.active AS account_active';
     if (etel_courier_approval_ready($pdo)) { $cols[] = 'c.approval_status'; $cols[] = 'c.approval_note'; }
+    $cols[] = '(SELECT COUNT(*) FROM ride_drivers rd WHERE rd.user_id = c.user_id) AS ride_driver';
+    $cols[] = 'u.role AS account_role';
     $cols[] = "(SELECT COUNT(*) FROM orders o WHERE o.courier_id = c.id AND o.status = 'delivered' AND o.delivered_at >= CURDATE()) AS today_deliveries";
     $cols[] = "(SELECT COUNT(*) FROM orders o WHERE o.courier_id = c.id AND o.status IN ('assigned','picked_up','in_transit')) AS live_jobs";
     try {
@@ -33,6 +35,7 @@ case 'admin_couriers_board': {
     foreach ($rows as &$r) {
         $r['id'] = intval($r['id']); $r['user_id'] = intval($r['user_id']);
         $r['today_deliveries'] = intval($r['today_deliveries']); $r['live_jobs'] = intval($r['live_jobs']);
+        $r['ride_driver'] = !empty($r['ride_driver']);
         $r['rating'] = isset($r['rating']) ? round(floatval($r['rating']), 2) : 0;
         $r['total_deliveries'] = isset($r['total_deliveries']) ? intval($r['total_deliveries']) : 0;
         $r['suspended'] = (isset($r['active']) && intval($r['active']) === 0) || (isset($r['account_active']) && $r['account_active'] !== null && intval($r['account_active']) === 0);
@@ -85,7 +88,9 @@ case 'admin_courier_detail': {
     $byDay = array(); foreach ($daily as $dr) { $byDay[$dr['d']] = intval($dr['n']); }
     $series = array(); for ($i = 13; $i >= 0; $i--) { $k = date('Y-m-d', time() - $i * 86400); $series[] = array('d' => $k, 'n' => isset($byDay[$k]) ? $byDay[$k] : 0); }
     $zones = array(); foreach (array_keys(etel_zone_centroids()) as $zn) { $zones[] = $zn; }
-    ok(array('vehicle_class' => $vcls, 'vehicle_choices' => etel_vc_choices($pdo), 'vehicles' => etel_vehicle_catalog($pdo), 'daily' => $series, 'zones' => $zones,
+    $rdq = $one('SELECT vehicle_type, vehicle_plate FROM ride_drivers WHERE user_id = ? LIMIT 1', array($c['user_id']));
+    $acr = $one('SELECT role FROM users WHERE id = ?', array($c['user_id']));
+    ok(array('ride_driver' => $rdq ? array('vehicle_type' => $rdq['vehicle_type'], 'vehicle_plate' => $rdq['vehicle_plate']) : null, 'account_role' => $acr ? $acr['role'] : '', 'vehicle_class' => $vcls, 'vehicle_choices' => etel_vc_choices($pdo), 'vehicles' => etel_vehicle_catalog($pdo), 'daily' => $series, 'zones' => $zones,
              'courier' => $out, 'details' => $details, 'id_types' => etel_courier_id_types(), 'account_active' => $acc ? intval($acc['active']) !== 0 : true,
              'stats' => array('today' => intval($st['today']), 'd7' => intval($st['d7']), 'd30' => intval($st['d30']), 'cancelled_30d' => intval($st['x30']), 'live' => intval($st['live']),
                               'avg_minutes' => $st['avg_min'] === null ? null : round(floatval($st['avg_min'])), 'fees_30d' => $fees ? round(floatval($fees['f']), 2) : null),

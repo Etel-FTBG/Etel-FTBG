@@ -208,14 +208,22 @@ case 'admin_courier_set_approval': {
     $note = isset($body['note']) ? trim(substr((string) $body['note'], 0, 200)) : '';
     if (!in_array($status, array('approved', 'rejected', 'pending'), true)) fail('status must be approved, rejected or pending', 400);
     $t = etel_people_target($pdo, $u, $id, false);
-    if ($t['role'] !== 'courier') fail('That account is not a courier', 400);
+    // A ride driver who asked for the courier job (a courier row waiting for approval) is approved here too.
+    $asDriver = false;
+    if ($t['role'] === 'driver') {
+        $hc = $pdo->prepare('SELECT 1 FROM couriers WHERE user_id = ? LIMIT 1'); $hc->execute(array($id));
+        if (!$hc->fetchColumn()) fail('That driver has not asked for the courier job', 400);
+        $asDriver = true;
+    } elseif ($t['role'] !== 'courier') fail('That account is not a courier', 400);
     if (!etel_courier_approval_ready($pdo)) fail('Courier approval is not available on this install yet', 500);
     try {
         $pdo->prepare('UPDATE couriers SET approval_status = ?, approval_note = ?, approval_at = NOW() WHERE user_id = ?')->execute(array($status, $note !== '' ? $note : null, $id));
         if ($status !== 'approved') $pdo->prepare("UPDATE couriers SET status = 'offline' WHERE user_id = ?")->execute(array($id));
     } catch (PDOException $e) { fail_ex($e, 'Could not update the courier', 500); }
+    $promoted = false;
+    if ($asDriver && $status === 'approved') { require_once __DIR__ . '/../lib/driver_courier.php'; $promoted = etel_dc_promote($pdo, $id); }
     error_log('[ETEL][admin] courier ' . $id . ' ' . $status . ' by admin ' . intval($u['id']) . ($note !== '' ? ' (' . $note . ')' : ''));
-    ok(array('id' => $id, 'approval_status' => $status));
+    ok(array('id' => $id, 'approval_status' => $status, 'now_courier' => $promoted));
     break;
 }
 

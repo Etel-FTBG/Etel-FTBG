@@ -101,7 +101,8 @@ function render(d, row, dr, H) {
 
   h += '<div class="ak-sec"><div class="acd-hero">' + ring(pct, col) + '<div style="min-width:0"><h3>' + (need.length ? esc(need.length) + ' thing' + (need.length === 1 ? '' : 's') + ' left before this courier is ready' : 'Ready to work') + '</h3>' +
     '<p>' + (need.length ? esc(need.slice(0, 3).map(function (x) { return x[0]; }).join(', ')) + (need.length > 3 ? ' and more' : '') : 'Everything needed is on file.') + '</p>' +
-    '<p>' + (c.last_seen ? 'Last seen ' + esc(K.ago(c.last_seen)) : 'Never seen online') + '</p></div></div>' +
+    '<p>' + (c.last_seen ? 'Last seen ' + esc(K.ago(c.last_seen)) : 'Never seen online') + '</p>' +
+    (d.ride_driver ? '<p>🚕 ' + (c.approval_status === 'pending' && d.account_role === 'driver' ? '<b>A ride driver asking for the courier job.</b> Approve to let the same account deliver too.' : 'Also a ride driver (' + esc(String(d.ride_driver.vehicle_type || 'vehicle').replace(/_/g, ' ')) + ').') + '</p>' : '') + '</div></div>' +
     '<div class="acd-quick"><a class="ak-btn" href="tel:' + esc(c.phone) + '">📞 Call</a><a class="ak-btn" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">💬 WhatsApp</a>' +
     '<button type="button" class="ak-btn" data-copy="' + esc(c.courier_code || '') + '">📋 Copy code</button><button type="button" class="ak-btn" data-slip>🖨 ID slip</button></div></div>';
 
