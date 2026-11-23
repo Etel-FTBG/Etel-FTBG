@@ -18,7 +18,7 @@ var WS = [
     sections: [['Run the day', ['dispatch', 'orders', 'packages', 'orderchats']], ['Couriers and shops', ['couriers', 'servicegivers', 'ratings']],
                ['Menu and prices', ['items', 'menucat', 'pricing', 'promos']], ['Money and reports', ['money', 'telebirr', 'reports']]] },
   { id: 'ride', label: 'Ride', icon: '🚕', accent: '#3B82F6', blurb: 'Ride requests, drivers, safety and ride payments.',
-    sections: [['Run the day', ['liveops', 'rides', 'rideoffers']], ['Drivers and safety', ['ridedrivers', 'trust', 'agents']], ['Money and prices', ['ridepay', 'pricing']]] },
+    sections: [['Run the day', ['liveops', 'rides', 'rideoffers']], ['Drivers and safety', ['ridedrivers', 'trust', 'agents']], ['Money and prices', ['pricing', 'ridepay']]] },
   { id: 'company', label: 'Company', icon: '🏢', accent: '#8B5CF6', blurb: 'People, money, support and settings that both systems share.',
     sections: [['Overview', ['dashboard']], ['People', ['users', 'customers']], ['Money', ['finance', 'equb', 'integrations']],
                ['Support and records', ['supportdesk', 'support', 'documents', 'launch']],
@@ -38,6 +38,10 @@ var DESC = {
   branding: 'Logos, colours, names.', roles: 'Who may do what (staff roles).', releases: 'App releases.', etelapp: 'What the ETEL phone app shows (owner).', updater: 'Upload files.',
   danger: 'Careful: reset and delete tools.', '#2fa': 'Two-step sign-in for your account.', '#display': 'Make text and buttons bigger or smaller.'
 };
+var LBL = { ride: { pricing: 'Ride prices' }, delivery: { pricing: 'Delivery prices' } };   // the Pricing page shows the tabs of the workspace it is opened from
+var WDESC = { ride: { pricing: 'Ride fares per vehicle, peak hours, driver goals, commission, incentives.' }, delivery: { pricing: 'Delivery fees and zones, vehicle fees, courier pay, bank accounts.' } };
+function wlabel(w, k) { return (LBL[w.id] && LBL[w.id][k]) || label(k); }
+function wdesc(w, k) { return (WDESC[w.id] && WDESC[w.id][k]) || DESC[k] || ''; }
 var OWNER = {};   // page -> the workspaces that list it (a page such as Pricing can be in two)
 WS.forEach(function (w) { w.sections.forEach(function (s) { s[1].forEach(function (p) { (OWNER[p] = OWNER[p] || []).push(w.id); }); }); });
 var STORE = 'aws-ws';
@@ -208,7 +212,7 @@ function home() {
   w.sections.forEach(function (s) {
     var keys = s[1].filter(usable); if (!keys.length) return; any = true;
     h += '<h3 class="aws-sec">' + esc(s[0]) + '</h3><div class="aws-grid">' + keys.map(function (k) {
-      return '<button type="button" class="aws-tile" data-go="' + esc(k) + '">' + badge(w, k) + '<span class="ic" aria-hidden="true">' + esc(icon(k)) + '</span><b>' + esc(label(k)) + '</b><small>' + esc(DESC[k] || '') + '</small></button>';
+      return '<button type="button" class="aws-tile" data-go="' + esc(k) + '">' + badge(w, k) + '<span class="ic" aria-hidden="true">' + esc(icon(k)) + '</span><b>' + esc(wlabel(w, k)) + '</b><small>' + esc(wdesc(w, k)) + '</small></button>';
     }).join('') + '</div>';
   });
   if (!any) h += '<div class="aws-empty">Nothing here is open to your role.</div>';
@@ -230,7 +234,7 @@ function rows(q) {
   q = String(q || '').trim().toLowerCase(); var out = [];
   WS.forEach(function (w) {
     w.sections.forEach(function (s) { s[1].forEach(function (k) {
-      if (!usable(k)) return; var t = label(k), d = DESC[k] || '';
+      if (!usable(k)) return; var t = wlabel(w, k), d = wdesc(w, k);
       if (q && (' ' + (t + ' ' + d).toLowerCase()).indexOf(' ' + q) < 0 && w.label.toLowerCase().indexOf(q) !== 0) return;   // a workspace name finds all its pages when typed from the start
       out.push({ k: k, w: w, t: t, d: d });
     }); });
