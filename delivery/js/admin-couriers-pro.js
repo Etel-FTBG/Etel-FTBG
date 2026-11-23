@@ -16,7 +16,7 @@ var esc = K.esc;
 var VEH = { motorcycle: ['🏍️', 'Motorcycle'], bicycle: ['🚲', 'Bicycle'], car: ['🚗', 'Car'], bajaj: ['🛺', 'Bajaj'], qute: ['🛺', 'Qute'], minibus: ['🚐', 'Minibus'], ev_car: ['🚗', 'Electric car (EV)'], on_foot: ['🚶', 'On foot'] };
 var STATUS = { online: ['Online', 'green'], busy: ['On a job', 'amber'], offline: ['Offline', 'grey'] };
 var GRAD = { online: ['#3ad08a', '#1fa463'], busy: ['#f0b429', '#d98e04'], offline: ['#9a95a8', '#6d6880'], pending: ['#a875d6', '#7b3fb0'], off: ['#d6364a', '#8f1f2e'] };
-var V = { filter: '', q: '', veh: '', sort: 'recent', mode: 'cards', rows: [], sum: null, loaded: false, busy: false, openId: null, needApproval: null, canManage: true };
+var V = { vehicles: null, choices: [], filter: '', q: '', veh: '', sort: 'recent', mode: 'cards', rows: [], sum: null, loaded: false, busy: false, openId: null, needApproval: null, canManage: true };
 try { var m = localStorage.getItem('cou-mode'); if (m === 'table' || m === 'cards') V.mode = m; } catch (e) { /* private window */ }
 
 function root() { return document.getElementById('cou-pro'); }
@@ -35,7 +35,12 @@ function idBox(d) {
     ['Driving licence', x.licence_number ? esc(x.licence_number) + ' ' + link(x.licence_photo_url, 'View') : '', true],
     ['Emergency contact', x.emergency_name ? esc(x.emergency_name) + ' · <a href="tel:' + esc(x.emergency_phone) + '">' + esc(x.emergency_phone) + '</a>' : '', true], ['Address', x.address || '']]) + '</div>';
 }
-function veh(r) { return VEH[r.vehicle_type] || ['🛵', r.vehicle_type ? String(r.vehicle_type).replace(/_/g, ' ') : 'No vehicle']; }
+function veh(r) {
+  var t = String(r.vehicle_type || '').toLowerCase(), i;
+  if (!t) return [VEH.motorcycle[0], 'Not set (counts as motorbike)'];
+  for (i = 0; i < V.choices.length; i++) { if (V.choices[i].value === t) return [V.choices[i].icon || '🛵', V.choices[i].label]; }
+  return VEH[t] || ['🛵', t.replace(/_/g, ' ')];
+}
 function pillFor(r) {
   if (r.suspended) return K.pill('Suspended', 'red');
   if (r.approval_status === 'pending') return K.pill('Waiting approval', 'amber');
@@ -53,7 +58,7 @@ function load(quiet) {
   return K.api('admin_couriers_board', {}).then(function (res) {
     V.busy = false;
     if (!K.okRes(res)) { if (!V.loaded) el.innerHTML = '<div class="ak">' + K.empty('⚠️', 'Could not load couriers', K.failText(res)) + '</div>'; else K.toast(K.failText(res), true); return; }
-    var d = K.data(res); V.rows = d.couriers || []; V.sum = d.summary || {}; V.loaded = true;
+    var d = K.data(res); V.rows = d.couriers || []; V.sum = d.summary || {}; V.loaded = true; V.vehicles = d.vehicles || null; V.choices = d.vehicle_choices || [];
     try { couriersData = V.rows; } catch (e) { /* admin.js missing: Export CSV has no data */ }
     return mode.then(function (mr) { if (K.okRes(mr)) V.needApproval = !!K.data(mr).require; paint(); });
   });
@@ -64,7 +69,7 @@ function visibleRows() {
     if (V.filter === 'pending' && r.approval_status !== 'pending') return false;
     if (V.filter === 'suspended' && !r.suspended) return false;
     if ((V.filter === 'online' || V.filter === 'busy' || V.filter === 'offline') && (r.suspended || r.approval_status === 'pending' || r.status !== V.filter)) return false;
-    if (V.veh && r.vehicle_type !== V.veh) return false;
+    if (V.veh && (V.veh === '_none' ? r.vehicle_class : r.vehicle_class !== V.veh)) return false;
     if (q && (String(r.name || '') + ' ' + String(r.phone || '') + ' ' + String(r.courier_code || '') + ' ' + String(r.plate_number || '') + ' ' + String(r.zone || r.home_zone || '')).toLowerCase().indexOf(q) < 0) return false;
     return true;
   });
@@ -84,7 +89,8 @@ function paint() {
     { key: 'pending', icon: '🕒', label: 'Waiting approval', value: K.num(s.pending), warn: true },
     { key: 'suspended', icon: '⛔', label: 'Suspended', value: K.num(s.suspended) }
   ];
-  var vopts = '<option value="">All vehicles</option>' + Object.keys(VEH).map(function (k) { return '<option value="' + k + '"' + (V.veh === k ? ' selected' : '') + '>' + VEH[k][1] + '</option>'; }).join('');
+  var vcl = (V.vehicles && V.vehicles.classes) || [];
+  var vopts = '<option value="">All vehicles</option>' + vcl.map(function (k) { return '<option value="' + esc(k.class) + '"' + (V.veh === k.class ? ' selected' : '') + '>' + esc((k.icon ? k.icon + ' ' : '') + k.label + ' (' + k.online + ' online / ' + k.couriers + ')') + '</option>'; }).join('') + '<option value="_none"' + (V.veh === '_none' ? ' selected' : '') + '>No package vehicle (bajaj, qute...)</option>';
   var sopts = [['recent', 'Newest'], ['today', 'Most deliveries today'], ['deliveries', 'Most deliveries ever'], ['rating', 'Best rated'], ['name', 'Name A–Z']].map(function (o) { return '<option value="' + o[0] + '"' + (V.sort === o[1] || V.sort === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
   var rows = visibleRows();
   var h = '<div class="ak">' +
@@ -144,6 +150,7 @@ function openCourier(id) {
   });
 }
 function drawer(d, row, dr) {
+  if (window.AdminCourierDrawer) return window.AdminCourierDrawer.render(d, row, dr, { avatar: avatar, pillFor: pillFor, vp: vp, veh: veh, stars: stars, idBox: idBox });
   var c = d.courier, s = d.stats || {}, r = Object.assign({}, row || {}, c, { suspended: !(Number(c.active) !== 0 && d.account_active) });
   var v = veh(r);
   var head = avatar(r, 'lg') + '<div class="ak-nm"><b>' + esc(c.name) + '</b><small>' + esc(c.courier_code || '') + ' · joined ' + esc(K.fullDate(c.created_at)) + '</small></div>' + pillFor(r);
@@ -194,7 +201,7 @@ function onDrawerClick(e) {
     });
   } else if (t.closest('[data-save]')) {
     var body = { courier_id: c.id };
-    Array.prototype.forEach.call(dr.querySelectorAll('[data-f]'), function (f) { body[f.getAttribute('data-f')] = f.value; });
+    Array.prototype.forEach.call(dr.querySelectorAll('[data-f]'), function (f) { if (f.getAttribute('data-f') === 'vehicle_type' && !f.value) return; body[f.getAttribute('data-f')] = f.value; });
     K.api('admin_update_courier', body).then(function (res) { done(res, 'Courier updated'); });
   }
 }

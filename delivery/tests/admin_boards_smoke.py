@@ -113,6 +113,18 @@ def main():
         s, r = call("admin_courier_detail", {"id": cr["id"]}, admin)
         dd = r.get("data") or {}
         check("courier detail has the profile, stats and recent jobs", s == 200 and dd.get("courier", {}).get("id") == cr["id"] and "stats" in dd and isinstance(dd.get("recent"), list), r)
+        check("courier detail names the package vehicle, the real vehicle choices, a 14-day series and the zones",
+              dd.get("vehicle_class") in ("bike", "moto", "car", "van", "") and len(dd.get("daily") or []) == 14 and isinstance(dd.get("zones"), list)
+              and any(o.get("value") == "motorcycle" and o.get("class") == "moto" for o in dd.get("vehicle_choices") or [])
+              and any(o.get("value") == "ev_car" and o.get("class") == "car" for o in dd.get("vehicle_choices") or []), dd.get("vehicle_choices"))
+        classes = (dd.get("vehicles") or {}).get("classes") or []
+        check("the vehicle catalog lists every package vehicle with counts and the 5 km price",
+              {"bike", "moto", "car", "van"} <= set(c.get("class") for c in classes) and all("couriers" in c and "online" in c and "price_5km" in c for c in classes), classes)
+        check("bajaj and qute are offered as courier vehicles that match no package vehicle",
+              any(o.get("value") == "bajaj" and o.get("class") == "" for o in dd.get("vehicle_choices") or []), dd.get("vehicle_choices"))
+        s, r = call("admin_couriers_board", {}, admin)
+        bd = r.get("data") or {}
+        check("the board carries the catalog and the vehicle class of every courier", "vehicles" in bd and "vehicle_choices" in bd and all("vehicle_class" in c for c in bd.get("couriers") or []), list(bd.keys()))
         s, r = call("admin_update_courier", {"courier_id": cr["id"], "zone": "Board Zone"}, admin)
         check("admin can edit a courier's zone", s == 200, r)
         s, r = call("admin_courier_detail", {"id": cr["id"]}, admin)
