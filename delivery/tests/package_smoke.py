@@ -71,11 +71,11 @@ def main():
     check("options need a sign-in", r.get("success") is False)
     s, r = call("customer_package_options", {}, token=cust)
     d = r.get("data") or {}
-    check("options list vehicles, sizes and the prohibited-items notice", r.get("success") and len(d.get("vehicles", [])) == 4 and len(d.get("sizes", [])) == 4 and "weapons" in d.get("prohibited", "").lower(), r)
+    check("options list vehicles, sizes and the prohibited-items notice", r.get("success") and {"bike", "moto", "car", "van"} <= set(v["vehicle_class"] for v in d.get("vehicles", [])) and len(d.get("sizes", [])) == 4 and "weapons" in d.get("prohibited", "").lower(), r)
     s, r = call("customer_package_quote", pkg, token=cust)
     d = r.get("data") or {}
     prices = [o["price"] for o in d.get("options", [])]
-    check("quote gives distance, time and four rising prices", r.get("success") and d.get("distance_km", 0) > 1 and prices == sorted(prices) and len(prices) == 4, r)
+    check("quote gives distance, time and at least the four built-in vehicles, cheapest first (the Bajaj / Qute type is added too)", r.get("success") and d.get("distance_km", 0) > 1 and prices == sorted(prices) and len(prices) >= 4 and set(["bike", "moto", "car", "van"]) <= set(o["vehicle_class"] for o in d.get("options", [])), r)
     s, r = call("customer_package_quote", dict(pkg, weight_kg=0), token=cust)
     check("a quote with no weight is refused", r.get("success") is False)
 
@@ -206,7 +206,7 @@ def main():
     check("a customer cannot read the price rules", r.get("success") is False)
     s, r = call("admin_package_rates_get", {}, token=admin)
     rates = {x["vehicle_class"]: x for x in (r.get("data") or {}).get("rates", [])}
-    check("admin sees all four vehicles", r.get("success") and set(rates) == set(["bike", "moto", "car", "van"]), r)
+    check("admin sees the four built-in vehicles (and the Bajaj / Qute type added for the three-wheelers)", r.get("success") and set(["bike", "moto", "car", "van"]) <= set(rates) and len(rates) <= 5, r)
     m = dict(rates["moto"]); old = float(m["base_fee"])
     s, r = call("admin_package_rates_save", dict(m, base_fee=old + 25), token=cust)
     check("a customer cannot change prices", r.get("success") is False)

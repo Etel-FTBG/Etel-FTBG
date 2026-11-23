@@ -21,6 +21,27 @@ function etel_vc_courier_types() {
     );
 }
 
+// Bajaj and qute (three-wheelers) are real courier vehicles that no built-in package vehicle covers. Once, on first use, add them as one vehicle
+// type "Bajaj / Qute" (sized like a motorbike) so their couriers get package and delivery jobs. Staff can edit, switch off or delete it in
+// Admin -> Package prices; it is never added a second time (a flag in package_settings remembers). Never throws.
+function etel_vc_seed_three_wheelers($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        etel_package_ensure_schema($pdo);
+        $q = $pdo->prepare('SELECT setting_value FROM package_settings WHERE setting_key = ?');
+        $q->execute(array('seeded_threewheel'));
+        if ($q->fetchColumn() !== false) return;
+        if (etel_vehicle_class_of('bajaj', $pdo) === '' && etel_vehicle_class_of('qute', $pdo) === '') {
+            etel_package_add_type($pdo, array('label' => 'Bajaj / Qute', 'icon' => "\xF0\x9F\x9B\xBA", 'size_like' => 'moto', 'courier_names' => 'bajaj, qute',
+                'base_fee' => 60, 'per_km' => 12, 'free_kg' => 5, 'per_kg_over' => 6, 'min_fee' => 80, 'max_weight_kg' => 100, 'active' => true));
+        }
+        $pdo->prepare("INSERT IGNORE INTO package_settings (setting_key, setting_value, updated_at) VALUES ('seeded_threewheel', '1', NOW())")->execute();
+        etel_package_custom_defs(null, true);
+    } catch (Exception $e) { error_log('[ETEL] seed three-wheelers: ' . $e->getMessage()); }
+}
+
 // Count couriers by the vehicle name they have. Returns array(name => array('total' => n, 'online' => n)); '' = no vehicle set.
 function etel_vc_courier_counts($pdo) {
     $out = array();
@@ -41,6 +62,7 @@ function etel_vc_courier_counts($pdo) {
 // The catalog. Each class: class, label, icon, rank, active, max_weight_kg, names[], couriers, online, price_5km (what a 5 km, 3 kg package costs).
 // unmapped = courier vehicle names that no class serves (they get no package jobs), with their courier count.
 function etel_vehicle_catalog($pdo) {
+    etel_vc_seed_three_wheelers($pdo);
     $classes = array(); $unmapped = array();
     $counts = etel_vc_courier_counts($pdo);
     $builtin = etel_package_builtin_names();
