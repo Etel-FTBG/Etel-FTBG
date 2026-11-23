@@ -136,12 +136,13 @@
       '.eta-chip svg{width:14px;height:14px;flex:none}.eta-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.eta-chip.warn{border-color:#e0795a;color:#ffd9cf}' +
       '.eta-ov{position:fixed;inset:0;z-index:99995;background:rgba(5,10,22,.6);display:flex;align-items:flex-end;justify-content:center}' +
       '.eta-sh{width:100%;max-width:460px;background:#0f1c33;color:#eef2fb;border-radius:20px 20px 0 0;padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;border-top:2px solid #c9a227;box-shadow:0 -12px 40px rgba(0,0,0,.4)}' +
-      '.eta-sh h3{margin:0 0 4px;font-size:17px;color:#f6e7b0}.eta-sh p{margin:0 0 12px;color:#aab6cf;font-size:13px}' +
+      '.eta-sh h3{margin:0 0 4px;font-size:17px !important;color:#f6e7b0 !important}.eta-sh p{margin:0 0 12px;color:#aab6cf !important;font-size:13px}' +   // !important: a page-wide h3 / p colour (Courier) made the title dark on dark
+      
       '.eta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;margin:0 0 8px;padding:13px 14px;min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit;font:600 15px system-ui,sans-serif;cursor:pointer}' +
       '.eta-row.on{border-color:#c9a227;background:rgba(201,162,39,.14)}.eta-row small{color:#aab6cf;font-weight:500}' +
       '.eta-btn{width:100%;min-height:46px;margin-top:4px;border-radius:12px;border:0;background:#c9a227;color:#1a1405;font:700 15px system-ui,sans-serif;cursor:pointer}' +
       '.eta-btn.ghost{background:transparent;color:#aab6cf;border:1px solid rgba(255,255,255,.18)}.eta-note{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(224,121,90,.14);color:#ffd9cf;font-size:13px}' +
-      'html[data-theme="light"] .eta-sh,body.light .eta-sh{background:#fff;color:#12203a}html[data-theme="light"] .eta-sh h3{color:#7a5a00}html[data-theme="light"] .eta-row{border-color:#d7dde8;background:#f5f7fb}';
+      'html[data-theme="light"] .eta-sh,body.light .eta-sh{background:#fff;color:#12203a}html[data-theme="light"] .eta-sh h3{color:#7a5a00 !important}html[data-theme="light"] .eta-row{border-color:#d7dde8;background:#f5f7fb}';
     (document.head || document.documentElement).appendChild(s);
   }
   function place() {
