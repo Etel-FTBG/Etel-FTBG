@@ -142,7 +142,10 @@
       '.eta-row.on{border-color:#c9a227;background:rgba(201,162,39,.14)}.eta-row small{color:#aab6cf;font-weight:500}' +
       '.eta-btn{width:100%;min-height:46px;margin-top:4px;border-radius:12px;border:0;background:#c9a227;color:#1a1405;font:700 15px system-ui,sans-serif;cursor:pointer}' +
       '.eta-btn.ghost{background:transparent;color:#aab6cf;border:1px solid rgba(255,255,255,.18)}.eta-note{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(224,121,90,.14);color:#ffd9cf;font-size:13px}' +
-      'html[data-theme="light"] .eta-sh,body.light .eta-sh{background:#fff;color:#12203a}html[data-theme="light"] .eta-sh h3{color:#7a5a00 !important}html[data-theme="light"] .eta-row{border-color:#d7dde8;background:#f5f7fb}';
+      '.eta-ov .eta-sh h3{color:#f6e7b0 !important}.eta-ov .eta-sh p,.eta-ov .eta-sh .eta-note{color:#aab6cf !important}.eta-ov .eta-sh button.eta-row,.eta-ov .eta-sh button.eta-row span{color:#eef2fb !important}.eta-ov .eta-sh button.eta-row small{color:#f6e7b0 !important}' +
+      '.header .eta-chip,.header .eta-chip *,.header-info .eta-chip,.header-info .eta-chip *{color:#f6e7b0 !important;text-transform:none !important}.header .eta-chip.warn,.header .eta-chip.warn *{color:#ffd9cf !important}' +
+      'html[data-theme="light"] .eta-ov .eta-sh p{color:#5a6785 !important}html[data-theme="light"] .eta-ov .eta-sh button.eta-row,html[data-theme="light"] .eta-ov .eta-sh button.eta-row span{color:#12203a !important}html[data-theme="light"] .eta-ov .eta-sh button.eta-row small{color:#7a5a00 !important}' +
+      'html[data-theme="light"] .eta-sh,body.light .eta-sh{background:#fff;color:#12203a}html[data-theme="light"] .eta-ov .eta-sh h3{color:#7a5a00 !important}html[data-theme="light"] .eta-row{border-color:#d7dde8;background:#f5f7fb}';
     (document.head || document.documentElement).appendChild(s);
   }
   function place() {
