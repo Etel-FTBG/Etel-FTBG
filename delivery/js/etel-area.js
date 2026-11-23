@@ -8,6 +8,8 @@
   var KEY = 'etel_area_v1', LKEY = 'etel_area_list_v1';
   var script = document.currentScript;
   var noChip = script && script.getAttribute('data-chip') === 'off';
+  // data-chip-in=".header-info": the page has a top bar with room for the city, so the chip sits INSIDE it (small, under the title) instead of floating over the middle of the top bar, where it hid buttons (Courier's language switch).
+  var chipIn = script && script.getAttribute('data-chip-in');
   var state = { area: null, areas: [], enforced: true, outside: false, nearest: null, ready: false, manual: false };
   var listeners = [];
 
@@ -130,6 +132,7 @@
     if (document.getElementById('etel-area-css')) return;
     var s = document.createElement('style'); s.id = 'etel-area-css';
     s.textContent = '.eta-chip{position:fixed;z-index:99990;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;max-width:70vw;padding:6px 12px 6px 9px;border-radius:999px;border:1px solid rgba(201,162,39,.55);background:rgba(10,20,40,.88);color:#f6e7b0;font:600 12.5px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.2px;box-shadow:0 6px 20px rgba(0,0,0,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;min-height:32px}' +
+      '.eta-chip.eta-in{position:static;transform:none;z-index:auto;max-width:100%;margin-top:3px;padding:3px 9px 3px 7px;font-size:11px;box-shadow:none}.eta-chip.eta-in svg{width:12px;height:12px}' +
       '.eta-chip svg{width:14px;height:14px;flex:none}.eta-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.eta-chip.warn{border-color:#e0795a;color:#ffd9cf}' +
       '.eta-ov{position:fixed;inset:0;z-index:99995;background:rgba(5,10,22,.6);display:flex;align-items:flex-end;justify-content:center}' +
       '.eta-sh{width:100%;max-width:460px;background:#0f1c33;color:#eef2fb;border-radius:20px 20px 0 0;padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;border-top:2px solid #c9a227;box-shadow:0 -12px 40px rgba(0,0,0,.4)}' +
@@ -141,6 +144,15 @@
       'html[data-theme="light"] .eta-sh,body.light .eta-sh{background:#fff;color:#12203a}html[data-theme="light"] .eta-sh h3{color:#7a5a00}html[data-theme="light"] .eta-row{border-color:#d7dde8;background:#f5f7fb}';
     (document.head || document.documentElement).appendChild(s);
   }
+  function place() {
+    if (!chip || !chipIn) return;
+    var host = null;
+    try { host = document.querySelector(chipIn); } catch (e) {}
+    if (!host) return;                                              // no such bar on this page (yet): the chip stays where it floats
+    if (chip.parentNode !== host) host.appendChild(chip);
+    chip.className += ' eta-in';
+    var sub = host.querySelector('.header-subtitle'); if (sub) sub.style.display = 'none';   // the chip takes the line under the title
+  }
   var PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>';
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function paint() {
@@ -150,9 +162,11 @@
       chip = document.createElement('button'); chip.type = 'button'; chip.className = 'eta-chip'; chip.setAttribute('aria-haspopup', 'dialog');
       chip.addEventListener('click', openSheet); document.body.appendChild(chip);
     }
+    place();
     if (!state.ready) { chip.innerHTML = PIN + '<span>' + esc(tx('detecting')) + '</span>'; return; }
     var warn = !state.area && (state.outside || state.needChoice);
     chip.className = 'eta-chip' + (warn ? ' warn' : '');
+    place();
     chip.setAttribute('aria-label', tx('chip') + ': ' + (state.area ? nm(state.area) : tx('choose')));
     chip.innerHTML = PIN + '<span>' + esc(state.area ? nm(state.area) : (state.outside ? tx('notyet') : tx('choose'))) + '</span>';
     if (!state.area && (state.outside || state.needChoice) && !state.shownOnce && state.areas.length) { state.shownOnce = true; openSheet(); }
