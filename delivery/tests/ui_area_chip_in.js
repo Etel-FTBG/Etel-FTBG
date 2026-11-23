@@ -34,10 +34,11 @@ const page = (attr) => '<!doctype html><html><head><meta name="viewport" content
     const ctx = await b.newContext({ viewport: { width: 360, height: 700 } }); const p = await ctx.newPage();
     await ctx.addInitScript((d) => { localStorage.setItem('etel_area_list_v1', JSON.stringify({ t: Date.now(), areas: d.areas, enforced: true })); localStorage.setItem('etel_area_v1', JSON.stringify({ code: 'hawassa', manual: true, t: Date.now() })); }, AREAS.data);
     await p.route('http://etel.test/delivery/api/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(AREAS) }));
-    await p.route('http://etel.test/', r => r.fulfill({ contentType: 'text/html', body: page('').replace('</head>', '<style>h3,p{color:#1a1200 !important;font-size:30px !important}</style></head>') }));
+    await p.route('http://etel.test/', r => r.fulfill({ contentType: 'text/html', body: page('').replace('</head>', '<style>h3,p,button,button *{color:#1a1200 !important;font-size:30px !important;background:linear-gradient(120deg,#123,#345) !important;-webkit-background-clip:text !important;-webkit-text-fill-color:transparent !important}.header *{color:#1a1200 !important;-webkit-text-fill-color:transparent !important}</style></head>') }));
     await p.goto('http://etel.test/'); await p.waitForTimeout(600); await p.click('.eta-chip'); await p.waitForTimeout(200);
-    const c = await p.evaluate(() => { const h = document.querySelector('.eta-sh h3'), q = document.querySelector('.eta-sh p'); return { h: getComputedStyle(h).color, p: getComputedStyle(q).color, fs: getComputedStyle(h).fontSize }; });
+    const c = await p.evaluate(() => { const h = document.querySelector('.eta-sh h3'), q = document.querySelector('.eta-sh p'); return { h: getComputedStyle(h).color, p: getComputedStyle(q).color, fs: getComputedStyle(h).fontSize, hf: getComputedStyle(h).webkitTextFillColor, pf: getComputedStyle(q).webkitTextFillColor, rf: getComputedStyle(document.querySelector('.eta-row span')).webkitTextFillColor, cf: getComputedStyle(document.querySelector('.eta-chip span')).webkitTextFillColor }; });
     t('the chooser title and hint stay readable (light on the dark sheet) even when the page sets every h3 / p dark', c.h === 'rgb(246, 231, 176)' && c.p === 'rgb(170, 182, 207)' && c.fs === '17px', JSON.stringify(c));
+    t('... and the text fill is not transparent either (gradient text on the page): title, hint, city rows and the pill all show', c.hf === 'rgb(246, 231, 176)' && c.pf === 'rgb(170, 182, 207)' && c.rf === 'rgb(238, 242, 251)' && c.cf === 'rgb(246, 231, 176)', JSON.stringify(c));
     await ctx.close();
   }
   t('no page errors', r.errs.length === 0, r.errs.join('|'));
