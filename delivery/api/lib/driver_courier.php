@@ -58,6 +58,7 @@ function etel_dc_apply($pdo, $u) {
     if (!$st['onboarded']) return array('ok' => false, 'message' => 'Finish your driver verification first (vehicle, selfie, licence). Then you can ask for the courier job.');
     if ($st['state'] === 'pending') return array('ok' => false, 'message' => 'Your request is already waiting for the admin.');
     if (!etel_courier_approval_ready($pdo)) return array('ok' => false, 'message' => 'The courier job is not available on this system yet. Contact support.');
+    require_once __DIR__ . '/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
     $rd = etel_dc_ride_driver($pdo, $uid);
     $veh = etel_dc_vehicle_name($rd ? $rd['vehicle_type'] : '');
     $plate = $rd && !empty($rd['vehicle_plate']) ? substr(trim($rd['vehicle_plate']), 0, 30) : '';
