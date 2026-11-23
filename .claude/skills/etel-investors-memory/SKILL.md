@@ -164,3 +164,6 @@ Profit Share / share = ድርሻ (የትርፍ ድርሻ); investor pool = የ�
 - **Etel Code** (member-chosen login code E1616): #801-#807, #810 (see `etel-working-method` section 4 for where it works and where it does not yet).
 - **ETEL app hub:** sign-in only when signed out, premium sign-in card (#808); EtelID first, coming-soon apps hidden, Investor/Equb/Agent apps for members (#809).
 - **Review of EtelID and Delivery/Ride on 17 Nov 2026:** findings and open items are in `etel-working-method` section 8.
+
+## 17. Later work (Nov 2026, PRs #821-#892)
+The Delivery, Ride, ETEL app, Etel Pay and vehicle work after #820 is written up in `etel-delivery-ride-memory` section 11 and the new gotchas in `etel-working-method` section 5. Short list: proof before opening (#821), Agent app dashboard and Admin controls (#824-#825), owner-controlled ETEL app and Google Play readiness (#826-#843), Live operations and Driver trust (#839-#845), Etel Pay PIN-only payment and the payment security switch (#844, #855-#866), shop location and extras (#870-#872), ETEL app page size (#873-#876), real vehicle types, courier drawer, package prices studio, cart vehicles and the driver extra job (#883-#892).
