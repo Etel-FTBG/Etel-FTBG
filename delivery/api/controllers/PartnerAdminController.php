@@ -24,6 +24,7 @@ case 'admin_couriers_board': {
     if (in_array('active', $uc, true)) $cols[] = 'u.active AS account_active';
     if (etel_courier_approval_ready($pdo)) { $cols[] = 'c.approval_status'; $cols[] = 'c.approval_note'; }
     $cols[] = '(SELECT COUNT(*) FROM ride_drivers rd WHERE rd.user_id = c.user_id) AS ride_driver';
+    $cols[] = '(SELECT rd.vehicle_type FROM ride_drivers rd WHERE rd.user_id = c.user_id LIMIT 1) AS ride_vehicle';
     $cols[] = 'u.role AS account_role';
     $cols[] = "(SELECT COUNT(*) FROM orders o WHERE o.courier_id = c.id AND o.status = 'delivered' AND o.delivered_at >= CURDATE()) AS today_deliveries";
     $cols[] = "(SELECT COUNT(*) FROM orders o WHERE o.courier_id = c.id AND o.status IN ('assigned','picked_up','in_transit')) AS live_jobs";
