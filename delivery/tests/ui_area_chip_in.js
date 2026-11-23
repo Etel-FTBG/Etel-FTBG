@@ -41,6 +41,17 @@ const page = (attr) => '<!doctype html><html><head><meta name="viewport" content
     t('... and the text fill is not transparent either (gradient text on the page): title, hint, city rows and the pill all show', c.hf === 'rgb(246, 231, 176)' && c.pf === 'rgb(170, 182, 207)' && c.rf === 'rgb(238, 242, 251)' && c.cf === 'rgb(246, 231, 176)', JSON.stringify(c));
     await ctx.close();
   }
+  {
+    const ctx = await b.newContext({ viewport: { width: 360, height: 700 } }); const p = await ctx.newPage();
+    await ctx.addInitScript((d) => { localStorage.setItem('etel_area_list_v1', JSON.stringify({ t: Date.now(), areas: d.areas, enforced: true })); localStorage.setItem('etel_area_v1', JSON.stringify({ code: 'hawassa', manual: true, t: Date.now() })); }, AREAS.data);
+    await p.route('http://etel.test/delivery/api/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(AREAS) }));
+    const css = '<style>body.etel-light .header *:not(button):not([class*="btn"]):not(.active){color:#1A1200 !important;-webkit-text-fill-color:#1A1200 !important;text-shadow:none !important}</style>';
+    await p.route('http://etel.test/', r => r.fulfill({ contentType: 'text/html', body: page(' data-chip-in=".header-info"').replace('</head>', css + '</head>').replace('<body>', '<body class="etel-light">') }));
+    await p.goto('http://etel.test/'); await p.waitForTimeout(600);
+    const c = await p.evaluate(() => { const s = document.querySelector('.eta-chip span'), k = document.querySelector('.eta-chip'); return { c: getComputedStyle(s).color, f: getComputedStyle(s).webkitTextFillColor, up: getComputedStyle(s).textTransform, bg: getComputedStyle(k).backgroundColor }; });
+    t('light theme (body.etel-light dark-text rule): the pill text is gold, capitals, on the dark pill, like the driver pill', c.c === 'rgb(246, 231, 176)' && c.f === 'rgb(246, 231, 176)' && c.up === 'uppercase', JSON.stringify(c));
+    await ctx.close();
+  }
   t('no page errors', r.errs.length === 0, r.errs.join('|'));
   await b.close();
   console.log(fails.length ? 'FAILED:\n' + fails.join('\n') : 'ok'); console.log('PASSED: ' + pass + ' FAILED: ' + fails.length); process.exit(fails.length ? 1 : 0);
