@@ -34,6 +34,11 @@ const PAGE = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewp
   r = await run(Object.assign({}, base, { state: 'approved', role: 'courier', can_apply: false }), null);
   txt = await r.p.innerText('#drv-xj');
   t('approved: says so, links to Courier, and the stored role becomes courier', /also do deliveries/.test(txt) && (await r.p.locator('#drv-xj a[href="../courier/"]').count()) === 1 && await r.p.evaluate(() => JSON.parse(localStorage.getItem('etel_user')).role === 'courier'), txt); await r.ctx.close();
+  r = await run(Object.assign({}, base, { state: 'none', can_apply: true }), null);
+  await r.p.addStyleTag({ content: 'h4{color:#fff3c4 !important;-webkit-text-fill-color:transparent !important;background:linear-gradient(90deg,#f3d36b,#fff3c4) !important;-webkit-background-clip:text !important}p{color:#999 !important}' });
+  await r.p.evaluate(() => document.body.classList.add('light-mode')); await r.p.waitForTimeout(100);
+  const lc = await r.p.evaluate(() => { const h = getComputedStyle(document.querySelector('#drv-xj h4')), q = getComputedStyle(document.querySelector('#drv-xj p')); return { h: h.color, hf: h.webkitTextFillColor, hb: h.backgroundImage, p: q.color }; });
+  t('light theme with a page that paints every h4 pale gold: the title and text stay dark and readable', lc.h === 'rgb(107, 78, 0)' && lc.hf === 'rgb(107, 78, 0)' && lc.hb === 'none' && lc.p === 'rgb(42, 33, 16)', JSON.stringify(lc)); await r.ctx.close();
   r = await run(Object.assign({}, base, { state: 'none', can_apply: false, role: 'admin' }), null);
   txt = await r.p.innerText('#drv-xj');
   t('an admin who also drives sees a note and an Open Courier button (no ask button)', /signed in as an admin/.test(txt) && (await r.p.locator('#drv-xj a[href="../courier/"]').count()) === 1 && !(await r.p.locator('#drv-xj [data-xj]').count()), txt); await r.ctx.close();
