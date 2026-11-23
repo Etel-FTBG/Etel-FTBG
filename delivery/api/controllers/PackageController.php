@@ -59,7 +59,8 @@ case 'customer_package_create': {
 case 'admin_package_rates_get': {
     $pdo = db();
     require_admin($pdo, 'orders.view');
-    ok(array('rates' => etel_package_rates($pdo, false), 'settings' => etel_package_settings($pdo)));
+    require_once __DIR__ . '/../lib/vehicle_catalog.php';
+    ok(array('rates' => etel_package_rates($pdo, false), 'settings' => etel_package_settings($pdo), 'vehicles' => etel_vehicle_catalog($pdo)));
     break;
 }
 
