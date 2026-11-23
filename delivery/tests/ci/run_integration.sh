@@ -49,6 +49,7 @@ run python3 tests/auditor_findings_smoke.py
 run python3 tests/package_smoke.py
 run python3 tests/cart_vehicle_smoke.py
 run python3 tests/driver_courier_smoke.py
+run python3 tests/ride_pull_smoke.py
 run python3 tests/courier_vehicle_column_smoke.py
 run python3 tests/csp_report_smoke.py
 run python3 tests/admin_import_smoke.py
