@@ -124,5 +124,15 @@ def main():
     return 1 if FAIL else 0
 
 
+def give_back_rate_limit_budget():
+    """This test signs up three accounts from one address; sign-up is limited to 60 an hour per address, and the
+    smoke tests that run after it would find the budget used up. Test database only."""
+    etel_test_db.run_sql("DELETE FROM login_attempts WHERE identifier LIKE 'register:%' OR identifier LIKE 'upload:%'")
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        rc = main()
+    finally:
+        give_back_rate_limit_budget()
+    sys.exit(rc)
