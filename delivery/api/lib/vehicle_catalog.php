@@ -85,3 +85,38 @@ function etel_vc_choices($pdo) {
     }
     return $out;
 }
+
+// Shop delivery: which delivery tier (Admin -> Pricing -> delivery tiers: moto / car / express_cargo) prices a vehicle class.
+// A class key that already is a tier key (moto, car, express_cargo) stays; bicycle rides like a moto, a van like express cargo,
+// and a vehicle staff added follows the size it was set closest to. Unknown keys come back as ''.
+function etel_vc_shop_tier($pdo, $key) {
+    $key = strtolower(trim((string) $key));
+    if ($key === 'moto' || $key === 'car' || $key === 'express_cargo') return $key;
+    if ($key === 'bike') return 'moto';
+    if ($key === 'van') return 'express_cargo';
+    $classes = etel_package_classes($pdo);
+    if (!isset($classes[$key])) return '';
+    $rank = intval($classes[$key]);
+    return $rank <= 2 ? 'moto' : ($rank === 3 ? 'car' : 'express_cargo');
+}
+
+// The vehicles a customer can pick in the cart: every package vehicle that is switched on, with the shop-delivery multiplier and time of its tier,
+// and how many couriers are online / registered for it. available = at least one courier online now. Smallest vehicle first.
+function etel_vc_cart_vehicles($pdo) {
+    $cat = etel_vehicle_catalog($pdo);
+    $tiers = array();
+    try {
+        foreach ($pdo->query('SELECT tier_key, label, icon, multiplier, eta_delta_min FROM delivery_tiers WHERE active = 1')->fetchAll(PDO::FETCH_ASSOC) as $t) { $tiers[$t['tier_key']] = $t; }
+    } catch (Exception $e) { /* table missing: the fixed fallback below */ }
+    if (!$tiers) { $tiers = array('moto' => array('multiplier' => 1.00, 'eta_delta_min' => 0), 'car' => array('multiplier' => 1.12, 'eta_delta_min' => -2), 'express_cargo' => array('multiplier' => 1.60, 'eta_delta_min' => 5)); }
+    $out = array();
+    foreach ($cat['classes'] as $c) {
+        if (!$c['active']) continue;
+        $tk = etel_vc_shop_tier($pdo, $c['class']);
+        if ($tk === '' || !isset($tiers[$tk])) continue;
+        $out[] = array('tier_key' => $c['class'], 'vehicle_class' => $c['class'], 'label' => $c['label'], 'icon' => $c['icon'], 'rank' => $c['rank'],
+            'multiplier' => floatval($tiers[$tk]['multiplier']), 'eta_delta_min' => intval($tiers[$tk]['eta_delta_min']), 'max_weight_kg' => $c['max_weight_kg'],
+            'couriers' => $c['couriers'], 'online' => $c['online'], 'available' => $c['online'] > 0);
+    }
+    return $out;
+}

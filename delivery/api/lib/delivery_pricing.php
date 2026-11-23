@@ -36,6 +36,13 @@ function delivery_calc_fee($pdo, $to_zone, $delivery_tier) {
     }
     if ($zone_base_fee === null) return null; // unknown zone - let the caller decide how to handle that
 
+    // A vehicle class from the cart (bike, moto, car, van, or one staff added) is priced by its delivery tier.
+    try {
+        require_once __DIR__ . '/vehicle_catalog.php';
+        $mapped = etel_vc_shop_tier($pdo, $delivery_tier);
+        if ($mapped !== '') $delivery_tier = $mapped;
+    } catch (Exception $e) { /* keep the key as sent */ }
+
     // Delivery tier (moto / car / express cargo) - same DB-first pattern.
     $tier_multiplier = null;
     try {

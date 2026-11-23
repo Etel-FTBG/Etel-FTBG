@@ -1317,12 +1317,23 @@ let _deliveryTiers = [
     { tier_key: 'express_cargo', label: 'Express Cargo',    icon: '🚚', multiplier: 1.60, eta_delta_min: 5 }
 ];
 let _deliveryTiersLoaded = false;
+let _deliveryIsVehicles = false; // true once the picker shows the real vehicle types (each tier_key is then a vehicle class)
+function _vehKey() { return _deliveryIsVehicles ? selectedTier : ''; }
 async function loadDeliveryTiers() {
     if (_deliveryTiersLoaded) return;
     _deliveryTiersLoaded = true; // only try once per page load, even on failure
     const res = await api('get_delivery_tiers', {});
     if (res && res.success && res.data && Array.isArray(res.data.tiers) && res.data.tiers.length) {
         _deliveryTiers = res.data.tiers;
+        // The real vehicle types (admin: Package prices) with how many couriers are online for each: the picker shows these when the server sends them.
+        if (Array.isArray(res.data.vehicles) && res.data.vehicles.length) {
+            _deliveryTiers = res.data.vehicles; _deliveryIsVehicles = true;
+            const cur = _deliveryTiers.find(function(x){ return x.tier_key === selectedTier; });
+            if (!cur || !cur.available) {
+                const first = _deliveryTiers.find(function(x){ return x.available; });
+                if (first) selectedTier = first.tier_key; else if (!cur) selectedTier = _deliveryTiers[0].tier_key;
+            }
+        }
         renderCartDrawer();
     }
 }
@@ -1646,9 +1657,9 @@ function renderCartDrawer() {
         '<div style="margin-top:16px">' +
         '<!-- DELIVERY TIER (moto / car / express cargo) -->' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">🚚 Delivery Speed</label>' +
-        '<div style="display:grid;grid-template-columns:repeat(' + _deliveryTiers.length + ',1fr);gap:8px;margin-bottom:16px">' +
+        '<div style="display:grid;grid-template-columns:repeat(' + (_deliveryTiers.length > 3 ? 'auto-fit,minmax(98px,1fr)' : _deliveryTiers.length + ',1fr') + ');gap:8px;margin-bottom:' + (_deliveryIsVehicles ? '8' : '16') + 'px">' +
         _deliveryTiers.map(function(t) { return tierOptionBtn(t, selectedZone); }).join('') +
-        '</div>' +
+        '</div>' + tierHint() +
         '<!-- SCHEDULE FOR LATER: real schedule_order/get_scheduled_orders backend action -->' +
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:12px;margin-bottom:14px">' +
         '<div><div style="font-size:13px;font-weight:700;color:var(--text)">🕐 Schedule for later</div><div style="font-size:11px;color:rgba(247,241,223,.5);margin-top:2px">Choose a date &amp; time for this order</div></div>' +
@@ -1844,9 +1855,20 @@ function tierOptionBtn(tier, zone) {
     const eta = Math.max(3, baseTime + Number(tier.eta_delta_min));
     return '<button data-tier="'+tier.tier_key+'"' + _ea('selectTier', [String(tier.tier_key)]) + ' style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
         '<span style="display:flex;justify-content:center;align-items:center;height:34px;font-size:20px;margin-bottom:2px">'+vpic(tier.tier_key, 52, tier.icon||'📦')+'</span>' +
-        '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+tier.label+'</span>' +
+        '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+escapeHtml(tier.label)+'</span>' +
         '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+eta+' min · ETB '+fee+'</span>' +
+        (_deliveryIsVehicles ? '<span style="display:block;font-size:9.5px;margin-top:3px;font-weight:700;color:' + (tier.available ? '#2ECC71' : '#E0A33A') + '">' + (tier.available ? '● ' + Number(tier.online) + ' online' : '○ none online') + '</span>' : '') +
         '</button>';
+}
+// Under the vehicle picker: tells the customer when nobody with the chosen vehicle is online (the order still waits for one).
+function tierHint() {
+    if (!_deliveryIsVehicles) return '';
+    const t = _deliveryTiers.find(function(x){ return x.tier_key === selectedTier; });
+    if (!t) return '';
+    const msg = t.available
+        ? Number(t.online) + ' ' + escapeHtml(t.label) + ' courier' + (t.online === 1 ? '' : 's') + ' online now'
+        : 'No ' + escapeHtml(t.label) + ' courier is online right now. Your order is kept until one is, or pick another vehicle.';
+    return '<div style="font-size:11px;margin:0 0 14px;color:' + (t.available ? 'rgba(247,241,223,.6)' : '#E0A33A') + '">' + msg + '</div>';
 }
 
 function selectTier(tierKey) {
@@ -2111,7 +2133,7 @@ async function placeOrder(zone, name, phone, notes) {
             items: cart.map(_cartLine),
             to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
             payment_method: selectedPayment,
-            delivery_tier: selectedTier,
+            delivery_tier: selectedTier, vehicle_class: _vehKey(),
         delivery_photo_url: _deliveryPhotoUrl,
         delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
         });
@@ -2163,7 +2185,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const template = {
         items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
-        payment_method: selectedPayment, delivery_tier: selectedTier,
+        payment_method: selectedPayment, delivery_tier: selectedTier, vehicle_class: _vehKey(),
         delivery_photo_url: _deliveryPhotoUrl, delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
     };
     const res = await api('schedule_order', {scheduled_at: scheduledAt, order_template: template});
@@ -2190,7 +2212,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
         items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'telebirr',
-        delivery_tier: selectedTier,
+        delivery_tier: selectedTier, vehicle_class: _vehKey(),
         delivery_photo_url: _deliveryPhotoUrl,
         delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
     });
@@ -2242,7 +2264,7 @@ async function placeOrderThenChapa(zone, name, phone, notes) {
         items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'chapa',
-        delivery_tier: selectedTier,
+        delivery_tier: selectedTier, vehicle_class: _vehKey(),
         delivery_photo_url: _deliveryPhotoUrl,
         delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
     });
@@ -2307,7 +2329,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
         items: cart.map(_cartLine),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment,
-        delivery_tier: selectedTier,
+        delivery_tier: selectedTier, vehicle_class: _vehKey(),
         delivery_photo_url: _deliveryPhotoUrl,
         delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
     });

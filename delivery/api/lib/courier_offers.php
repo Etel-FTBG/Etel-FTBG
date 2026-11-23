@@ -192,6 +192,8 @@ function etel_offer_next($pdo, $order_id) {
         if ($ord['pickup_lat'] && $ord['pickup_lng']) { $lat = (float)$ord['pickup_lat']; $lng = (float)$ord['pickup_lng']; }
         list($vehSql, $vehParams) = etel_vehicle_sql($ord['vehicle_class'], 'c', $pdo);
         $vehSql .= etel_package_capable_sql('c');   // only couriers whose app can run a package (pickup address, PINs)
+    } elseif (!empty($ord['vehicle_class'])) {
+        list($vehSql, $vehParams) = etel_vehicle_sql($ord['vehicle_class'], 'c', $pdo);   // a shop order where the customer picked a vehicle in the cart
     }
     $vehSql .= etel_not_own_order_sql($ord['customer_id'], 'c');   // never the courier who placed it
 

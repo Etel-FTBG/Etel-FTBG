@@ -945,7 +945,9 @@ switch ($action) {
                 );
             }
         }
-        ok(array('tiers' => $tiers));
+        $vehicles = array();
+        try { require_once __DIR__ . '/lib/vehicle_catalog.php'; $vehicles = etel_vc_cart_vehicles(db()); } catch (Exception $e) { error_log('[ETEL] cart vehicles: ' . $e->getMessage()); }
+        ok(array('tiers' => $tiers, 'vehicles' => $vehicles));
         break;
     }
     case 'get_bank_accounts': {
