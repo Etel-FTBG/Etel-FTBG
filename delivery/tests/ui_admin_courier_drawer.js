@@ -21,7 +21,7 @@ const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ri
 (async () => {
   await new Promise(r => srv.listen(0, r)); const HOST = 'http://127.0.0.1:' + srv.address().port;
   const b = await chromium.launch();
-  for (const mode of [{ n: 'desktop', w: 1300, h: 900 }, { n: 'mobile', w: 390, h: 844 }]) {
+  for (const mode of [{ n: 'desktop', w: 1300, h: 900 }, { n: 'mobile', w: 390, h: 844 }, { n: 'old admin.html without the drawer tag', w: 1300, h: 900, strip: true }]) {
     const ctx = await b.newContext({ viewport: { width: mode.w, height: mode.h }, serviceWorkers: 'block' });
     await ctx.addInitScript(() => { window.ETEL_CAPS = ['*']; try { localStorage.setItem('etel_token', 't'); localStorage.setItem('etel_user', JSON.stringify({ id: 1, name: 'Owner', role: 'admin', phone: '0900000000' })); } catch (e) {} });
     const p = await ctx.newPage(); const errs = []; let saved = null;
@@ -35,6 +35,7 @@ const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ri
       else if (a === 'admin_update_courier') { saved = d; data = { message: 'Courier updated' }; }
       r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
     });
+    if (mode.strip) await p.route('**/delivery/admin.html', async r => { const resp = await r.fetch(); let html = await resp.text(); html = html.replace(/<script src="js\/admin-courier-drawer\.js[^>]*><\/script>/, ''); r.fulfill({ response: resp, body: html }); });
     await p.goto(HOST + '/delivery/admin.html', { waitUntil: 'load' }); await p.waitForTimeout(1200);
     await p.evaluate(() => { const n = document.querySelector('.nav-item[data-page="couriers"]'); if (n) n.classList.remove('etel-cap-hidden'); switchPage('couriers', n); }); await p.waitForTimeout(1500);
     const opts = await p.locator('#cou-pro select option').allInnerTexts();

@@ -150,7 +150,15 @@ function openCourier(id) {
   });
 }
 function drawer(d, row, dr) {
-  if (window.AdminCourierDrawer) return window.AdminCourierDrawer.render(d, row, dr, { avatar: avatar, pillFor: pillFor, vp: vp, veh: veh, stars: stars, idBox: idBox });
+  var H = { avatar: avatar, pillFor: pillFor, vp: vp, veh: veh, stars: stars, idBox: idBox };
+  if (window.AdminCourierDrawer) { try { return window.AdminCourierDrawer.render(d, row, dr, H); } catch (e) { K.toast('Courier drawer problem: ' + (e && e.message ? e.message : e), true); } }
+  if (!V.libTried) {   // the page did not load the premium drawer (an old admin.html): load it here once, then draw again
+    V.libTried = true;
+    var sc = document.createElement('script'); sc.src = 'js/admin-courier-drawer.js?v=3';
+    sc.onload = function () { if (K.drawerEl() === dr || K.drawerEl()) drawer(d, row, dr); };
+    sc.onerror = function () { /* the older drawer below stays */ };
+    document.head.appendChild(sc);
+  }
   var c = d.courier, s = d.stats || {}, r = Object.assign({}, row || {}, c, { suspended: !(Number(c.active) !== 0 && d.account_active) });
   var v = veh(r);
   var head = avatar(r, 'lg') + '<div class="ak-nm"><b>' + esc(c.name) + '</b><small>' + esc(c.courier_code || '') + ' · joined ' + esc(K.fullDate(c.created_at)) + '</small></div>' + pillFor(r);
