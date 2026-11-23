@@ -29,6 +29,17 @@ const page = (attr) => '<!doctype html><html><head><meta name="viewport" content
   t('a bar that is not on the page: the chip stays floating (never lost)', r.o && !r.o.inHeader && r.o.pos === 'fixed', JSON.stringify(r.o));
   r = await run(' data-chip="off" data-chip-in=".header-info"');
   t('data-chip="off" still means no chip at all', r.o === null);
+  // the chooser sheet next to a page that colours every h3 / p dark with !important (Courier does)
+  {
+    const ctx = await b.newContext({ viewport: { width: 360, height: 700 } }); const p = await ctx.newPage();
+    await ctx.addInitScript((d) => { localStorage.setItem('etel_area_list_v1', JSON.stringify({ t: Date.now(), areas: d.areas, enforced: true })); localStorage.setItem('etel_area_v1', JSON.stringify({ code: 'hawassa', manual: true, t: Date.now() })); }, AREAS.data);
+    await p.route('http://etel.test/delivery/api/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(AREAS) }));
+    await p.route('http://etel.test/', r => r.fulfill({ contentType: 'text/html', body: page('').replace('</head>', '<style>h3,p{color:#1a1200 !important;font-size:30px !important}</style></head>') }));
+    await p.goto('http://etel.test/'); await p.waitForTimeout(600); await p.click('.eta-chip'); await p.waitForTimeout(200);
+    const c = await p.evaluate(() => { const h = document.querySelector('.eta-sh h3'), q = document.querySelector('.eta-sh p'); return { h: getComputedStyle(h).color, p: getComputedStyle(q).color, fs: getComputedStyle(h).fontSize }; });
+    t('the chooser title and hint stay readable (light on the dark sheet) even when the page sets every h3 / p dark', c.h === 'rgb(246, 231, 176)' && c.p === 'rgb(170, 182, 207)' && c.fs === '17px', JSON.stringify(c));
+    await ctx.close();
+  }
   t('no page errors', r.errs.length === 0, r.errs.join('|'));
   await b.close();
   console.log(fails.length ? 'FAILED:\n' + fails.join('\n') : 'ok'); console.log('PASSED: ' + pass + ' FAILED: ' + fails.length); process.exit(fails.length ? 1 : 0);
