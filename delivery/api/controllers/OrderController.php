@@ -263,7 +263,7 @@ case 'courier_get_available_orders': {
     $my_class = etel_vehicle_class_of($vc->fetchColumn(), $pdo);
     if (!empty($_GET['pkg'])) etel_package_mark_capable($pdo, $courier['id']);   // this app can run package jobs
     // An app that cannot run packages (no pickup address, no PIN step) is never shown one: it would accept it and be stuck.
-    $pkg_filter = etel_package_courier_capable($pdo, $courier['id']) ? " AND (o.order_kind <> 'package' OR o.vehicle_class = ?)" : " AND (o.order_kind <> 'package' OR o.vehicle_class = ? AND 1 = 0)";
+    $pkg_filter = etel_package_courier_capable($pdo, $courier['id']) ? " AND (o.vehicle_class IS NULL OR o.vehicle_class = '' OR o.vehicle_class = ?)" : " AND (o.vehicle_class IS NULL OR o.vehicle_class = '' OR (o.order_kind <> 'package' AND o.vehicle_class = ?))";
     $pkg_filter .= ' AND o.customer_id <> ' . intval($courier_user['id']);   // a courier never sees an order they placed themselves
     $pkg_cols = ', o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km';
 
@@ -378,7 +378,7 @@ case 'courier_accept_order': {
     $pk = $pdo->prepare('SELECT o.order_kind, o.vehicle_class, c.vehicle_type FROM orders o JOIN couriers c ON c.id = ? WHERE o.id = ?');
     $pk->execute(array($courier['id'], $order_id));
     $pkr = $pk->fetch();
-    if ($pkr && $pkr['order_kind'] === 'package' && etel_vehicle_class_of($pkr['vehicle_type'], $pdo) !== $pkr['vehicle_class']) fail('This package needs a different vehicle.', 403);
+    if ($pkr && !empty($pkr['vehicle_class']) && etel_vehicle_class_of($pkr['vehicle_type'], $pdo) !== $pkr['vehicle_class']) fail($pkr['order_kind'] === 'package' ? 'This package needs a different vehicle.' : 'This order needs a different vehicle.', 403);
     if ($pkr && $pkr['order_kind'] === 'package' && !etel_package_courier_capable($pdo, $courier['id'])) fail('Update your courier app to take package jobs.', 403);
     $own = $pdo->prepare('SELECT customer_id FROM orders WHERE id = ?'); $own->execute(array($order_id));
     if (intval($own->fetchColumn()) === intval($courier_user['id'])) fail('You cannot deliver an order you placed yourself.', 403);

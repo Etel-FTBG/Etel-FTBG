@@ -76,6 +76,8 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
         if ($o['pickup_lat'] && $o['pickup_lng']) $pickup_coord = array((float)$o['pickup_lat'], (float)$o['pickup_lng']);
         list($vehSql, $vehParams) = etel_vehicle_sql($o['vehicle_class'], 'c', $pdo);
         $vehSql .= etel_package_capable_sql('c');   // only couriers whose app can run a package (pickup address, PINs)
+    } elseif (!empty($o['vehicle_class'])) {
+        list($vehSql, $vehParams) = etel_vehicle_sql($o['vehicle_class'], 'c', $pdo);   // a shop order where the customer picked a vehicle in the cart
     }
     $vehSql .= etel_not_own_order_sql($o['customer_id'], 'c');   // never the courier who placed it
     // A package is NOT handed to one courier. Every online courier with the chosen vehicle sees it in the Jobs tab, is told, and the first

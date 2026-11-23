@@ -32,6 +32,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
     $notes           = isset($body['notes'])           ? trim($body['notes'])              : '';
     $payment_method  = isset($body['payment_method'])  ? trim($body['payment_method'])     : 'cash';
     $delivery_tier   = isset($body['delivery_tier'])   ? trim($body['delivery_tier'])      : 'moto';
+    $cart_vehicle    = isset($body['vehicle_class'])   ? strtolower(trim((string) $body['vehicle_class'])) : '';   // the vehicle picked in the cart (bike, moto, car, van, or one staff added)
     $delivery_lat    = isset($body['delivery_lat'])    && is_numeric($body['delivery_lat'])  ? floatval($body['delivery_lat'])  : null;
     $delivery_lng    = isset($body['delivery_lng'])    && is_numeric($body['delivery_lng'])  ? floatval($body['delivery_lng'])  : null;
     // Optional photo of the gate/entrance/landmark, uploaded separately via
@@ -363,6 +364,17 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         }
         
         $order_id = $pdo->lastInsertId();
+
+        // The vehicle the customer picked: only couriers of that vehicle get the order (dispatch, the job list and accept all check it).
+        if ($cart_vehicle !== '') {
+            try {
+                require_once __DIR__ . '/package_orders.php';
+                etel_package_ensure_schema($pdo);
+                $ok_class = false;
+                foreach (etel_package_rates($pdo, true) as $vr) { if ($vr['vehicle_class'] === $cart_vehicle) $ok_class = true; }
+                if ($ok_class) $pdo->prepare('UPDATE orders SET vehicle_class = ? WHERE id = ?')->execute(array($cart_vehicle, $order_id));
+            } catch (Exception $e) { error_log('[ETEL] order vehicle for ' . $order_id . ': ' . $e->getMessage()); }
+        }
 
         if ($tip > 0) {
             try { $pdo->prepare('UPDATE orders SET courier_tip = ? WHERE id = ?')->execute(array($tip, $order_id)); }
