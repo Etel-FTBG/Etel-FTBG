@@ -154,7 +154,7 @@ function drawer(d, row, dr) {
   if (window.AdminCourierDrawer) { try { return window.AdminCourierDrawer.render(d, row, dr, H); } catch (e) { K.toast('Courier drawer problem: ' + (e && e.message ? e.message : e), true); } }
   if (!V.libTried) {   // the page did not load the premium drawer (an old admin.html): load it here once, then draw again
     V.libTried = true;
-    var sc = document.createElement('script'); sc.src = 'js/admin-courier-drawer.js?v=3';
+    var sc = document.createElement('script'); sc.src = 'js/admin-courier-drawer.js?v=4';
     sc.onload = function () { if (K.drawerEl() === dr || K.drawerEl()) drawer(d, row, dr); };
     sc.onerror = function () { /* the older drawer below stays */ };
     document.head.appendChild(sc);
@@ -210,7 +210,16 @@ function onDrawerClick(e) {
   } else if (t.closest('[data-save]')) {
     var body = { courier_id: c.id };
     Array.prototype.forEach.call(dr.querySelectorAll('[data-f]'), function (f) { if (f.getAttribute('data-f') === 'vehicle_type' && !f.value) return; body[f.getAttribute('data-f')] = f.value; });
-    K.api('admin_update_courier', body).then(function (res) { done(res, 'Courier updated'); });
+    var sb = t.closest('[data-save]'); sb.disabled = true; sb.textContent = 'Saving…';
+    K.api('admin_update_courier', body).then(function (res) {
+      sb.disabled = false; sb.textContent = 'Save changes';
+      if (!K.okRes(res)) { K.toast('Not saved: ' + K.failText(res), true); return; }
+      return K.api('admin_courier_detail', { id: c.id }).then(function (r2) {   // check the server really kept it
+        var kept = K.okRes(r2) ? String(((K.data(r2).courier || {}).vehicle_type) || '').toLowerCase() : null;
+        if (body.vehicle_type && kept !== null && kept !== String(body.vehicle_type).toLowerCase()) K.toast('The server said saved but still has "' + (kept || 'no vehicle') + '", not "' + body.vehicle_type + '". Upload the latest server files.', true);
+        done(res, 'Courier updated');
+      });
+    });
   }
 }
 

@@ -22,9 +22,10 @@ const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ri
   await new Promise(r => srv.listen(0, r)); const HOST = 'http://127.0.0.1:' + srv.address().port;
   const b = await chromium.launch();
   for (const mode of [{ n: 'desktop', w: 1300, h: 900 }, { n: 'mobile', w: 390, h: 844 }, { n: 'old admin.html without the drawer tag', w: 1300, h: 900, strip: true }]) {
+    ROWS[0].vehicle_type = ''; ROWS[0].vehicle_class = 'moto';
     const ctx = await b.newContext({ viewport: { width: mode.w, height: mode.h }, serviceWorkers: 'block' });
     await ctx.addInitScript(() => { window.ETEL_CAPS = ['*']; try { localStorage.setItem('etel_token', 't'); localStorage.setItem('etel_user', JSON.stringify({ id: 1, name: 'Owner', role: 'admin', phone: '0900000000' })); } catch (e) {} });
-    const p = await ctx.newPage(); const errs = []; let saved = null;
+    const p = await ctx.newPage(); const errs = []; let saved = null; let ignoreSave = false;
     p.on('pageerror', e => { if (!/admin-home\.js/.test(e.stack || '')) errs.push(e.message); });
     await p.route('**/api/boot.php**', r => {
       let d = {}; try { d = JSON.parse(r.request().postData() || '{}'); } catch (e) {} const a = d.action; let data = {};
@@ -32,7 +33,7 @@ const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ri
       else if (a === 'admin_couriers_board') data = { couriers: ROWS, count: 2, summary: { total: 2, online: 1, busy: 0, offline: 1, pending: 0, suspended: 0, deliveries_today: 2, avg_rating: 4.6 }, vehicles: { classes: CLASSES, unmapped: [{ name: 'bajaj', couriers: 1, online: 0 }] }, vehicle_choices: CHOICES };
       else if (a === 'admin_courier_detail') data = detail(d.id);
       else if (a === 'admin_courier_approval_mode') data = { require: false };
-      else if (a === 'admin_update_courier') { saved = d; data = { message: 'Courier updated' }; }
+      else if (a === 'admin_update_courier') { saved = d; if (!ignoreSave) ROWS.filter(r => r.id === d.courier_id).forEach(r => { if (d.vehicle_type) r.vehicle_type = d.vehicle_type; }); data = { message: 'Courier updated' }; }
       r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
     });
     if (mode.strip) await p.route('**/delivery/admin.html', async r => { const resp = await r.fetch(); let html = await resp.text(); html = html.replace(/<script src="js\/admin-courier-drawer\.js[^>]*><\/script>/, ''); r.fulfill({ response: resp, body: html }); });
@@ -52,11 +53,16 @@ const detail = (id) => { const c = ROWS.filter(r => r.id === id)[0]; return { ri
     t(mode.n + ': the vehicle card shows the package class, the 5 km price and online / registered', /Counts as Motorbike/.test(dr) && /ETB 100/.test(dr) && /2 online \/ 6 registered/.test(dr));
     t(mode.n + ': numbers: completion rate 86% (12 of 14), average time, fees', /86%/.test(dr) && /Completion/.test(dr) && /Fees \(30 d\)/.test(dr));
     t(mode.n + ': the 14-day chart, the checklist and the quick buttons are there', (await p.locator('.acd-bars i').count()) === 14 && (await p.locator('.acd-chk li').count()) >= 10 && (await p.locator('.acd-quick a[href^="tel:"]').count()) === 1 && (await p.locator('.acd-quick a[href^="https://wa.me/251924445206"]').count()) === 1);
-    const vopts = await p.locator('.ak-dr select[data-f="vehicle_type"] option').allInnerTexts();
-    t(mode.n + ': the vehicle choices are the real types, grouped by package vehicle', vopts.some(o => /Motorcycle/.test(o)) && vopts.some(o => /Bajaj/.test(o)) && (await p.locator('.ak-dr select optgroup').count()) >= 2, vopts.join('|'));
+    const tiles = await p.locator('.ak-dr .acd-vt').allInnerTexts();
+    t(mode.n + ': the vehicle choice is real vehicle pictures (one tile per real type, with what package vehicle it counts as)', tiles.length === 3 && /Motorcycle/.test(tiles[0]) && /Motorbike/.test(tiles[0]) && tiles.some(o => /Bajaj/.test(o) && /No package jobs/.test(o)) && (await p.locator('.ak-dr .acd-vt img.etel-vpic').count()) >= 2, tiles.join('|'));
     await p.screenshot({ path: SHOTS + '/courier_drawer_' + mode.n + '.png' }); await p.evaluate(() => { const b = document.querySelector('.ak-dr-body'); b.scrollTop = 620; }); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/courier_drawer_' + mode.n + '_2.png' }); await p.evaluate(() => { const b = document.querySelector('.ak-dr-body'); b.scrollTop = 1300; }); await p.waitForTimeout(200); await p.screenshot({ path: SHOTS + '/courier_drawer_' + mode.n + '_3.png' });
-    await p.selectOption('.ak-dr select[data-f="vehicle_type"]', 'car'); await p.locator('.ak-dr [data-save]').click(); await p.waitForTimeout(500);
+    await p.locator('.ak-dr [data-vt="car"]').click();
+    t(mode.n + ': tapping a vehicle selects it and says what to do', /Selected: Car/.test(await p.innerText('.ak-dr [data-vsel]')) && (await p.getAttribute('.ak-dr [data-vt="car"]', 'aria-pressed')) === 'true' && (await p.inputValue('.ak-dr input[data-f="vehicle_type"]')) === 'car');
+    await p.locator('.ak-dr [data-save]').click(); await p.waitForTimeout(500);
     t(mode.n + ': saving sends the chosen vehicle', saved && saved.vehicle_type === 'car' && saved.courier_id === 1, JSON.stringify(saved));
+    t(mode.n + ': a normal save shows no warning, and the drawer now shows the saved vehicle as chosen', !/still has/.test(await p.innerText('body')) && (await p.getAttribute('.ak-dr [data-vt="car"]', 'aria-pressed')) === 'true');
+    ignoreSave = true; await p.locator('.ak-dr [data-vt="motorcycle"]').click(); await p.locator('.ak-dr [data-save]').click(); await p.waitForTimeout(700);
+    t(mode.n + ': if the server says saved but keeps the old vehicle, the admin is told in words', /still has "car", not "motorcycle"/.test(await p.innerText('body')), (await p.innerText('body')).slice(-300)); ignoreSave = false;
     // a courier whose vehicle matches no package vehicle gets a clear warning
     await p.evaluate(() => { const x = document.querySelector('.ak-x'); if (x) x.click(); }); await p.waitForTimeout(400);
     await p.locator('#cou-pro [data-open="2"]').first().click(); await p.waitForTimeout(900);
