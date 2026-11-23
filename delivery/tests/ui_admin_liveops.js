@@ -30,6 +30,7 @@ const snapshot = (waiting) => ({
     });
     await p.goto(HOST + '/delivery/admin.html', { waitUntil: 'load' }); await p.waitForTimeout(1500);
     t(mode.n + ': the menu has Live operations next to Rides', (await p.locator('.nav-item[data-page="liveops"]').count()) === 1);
+    calls = 0;   // the workspace Home (js/admin-workspaces.js) also asks once for its own numbers; count only this page's calls
     await p.evaluate(() => { const n = document.querySelector('.nav-item[data-page="liveops"]'); if (n) n.classList.remove('etel-cap-hidden'); switchPage('liveops', n); }); await p.waitForTimeout(1500);
     let txt = await p.innerText('#panel-liveops');
     t(mode.n + ': the numbers right now are shown', /Right now/i.test(txt) && /Ride requests waiting/.test(txt) && /Drivers online \(2 free, 7 on a trip\)/.test(txt) && /Couriers online \(1 free\)/.test(txt), txt.slice(0, 300));
