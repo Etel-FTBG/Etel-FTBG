@@ -2598,6 +2598,16 @@ case 'driver_get_nearby_requests': {
     break;
 }
 
+case 'driver_get_pull_requests': {
+    // The Pull tab and the special offers (lib/ride_pull.php). Read only: taking a trip still goes through driver_accept_ride.
+    rides_require_onboarded($pdo, $u['id']);
+    $me = rides_driver_profile($pdo, $u['id']);
+    rides_ensure_exclusions_table($pdo);
+    require_once __DIR__ . '/../lib/ride_pull.php';
+    ok(rides_pull_for_driver($pdo, $u['id'], $me));
+    break;
+}
+
 case 'driver_get_commission': {
     // What this driver pays Etel on each trip today, and until when (shown as a small note in the driver app).
     require_once __DIR__ . '/../lib/ride_commission.php';
