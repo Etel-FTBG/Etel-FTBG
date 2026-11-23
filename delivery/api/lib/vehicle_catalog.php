@@ -62,6 +62,7 @@ function etel_vc_courier_counts($pdo) {
 // The catalog. Each class: class, label, icon, rank, active, max_weight_kg, names[], couriers, online, price_5km (what a 5 km, 3 kg package costs).
 // unmapped = courier vehicle names that no class serves (they get no package jobs), with their courier count.
 function etel_vehicle_catalog($pdo) {
+    require_once __DIR__ . '/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
     etel_vc_seed_three_wheelers($pdo);
     $classes = array(); $unmapped = array();
     $counts = etel_vc_courier_counts($pdo);

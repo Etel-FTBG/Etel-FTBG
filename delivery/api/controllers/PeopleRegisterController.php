@@ -95,7 +95,9 @@ case 'admin_register_person': {
             if (in_array('active', $cc, true)) { $cf[] = 'active'; $cm[] = '1'; }
             if (in_array('approval_status', $cc, true)) { $cf[] = 'approval_status'; $cm[] = "'approved'"; }
             if (in_array('created_at', $cc, true)) { $cf[] = 'created_at'; $cm[] = 'NOW()'; }
-            $pdo->prepare('INSERT INTO couriers (' . implode(',', $cf) . ') VALUES (' . implode(',', $cm) . ')')->execute($cv);
+            require_once __DIR__ . '/../lib/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
+            require_once __DIR__ . '/../lib/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
+        $pdo->prepare('INSERT INTO couriers (' . implode(',', $cf) . ') VALUES (' . implode(',', $cm) . ')')->execute($cv);
         } elseif ($role === 'driver') {
             $pdo->prepare('INSERT INTO ride_drivers (user_id, online, last_seen, vehicle_type, vehicle_make, vehicle_color, vehicle_year, vehicle_plate) VALUES (?, 0, NOW(), ?, ?, ?, ?, ?)
                            ON DUPLICATE KEY UPDATE vehicle_type = VALUES(vehicle_type), vehicle_make = VALUES(vehicle_make), vehicle_color = VALUES(vehicle_color), vehicle_year = VALUES(vehicle_year), vehicle_plate = VALUES(vehicle_plate)')

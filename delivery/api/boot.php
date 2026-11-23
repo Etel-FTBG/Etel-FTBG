@@ -1353,6 +1353,7 @@ switch ($action) {
         // confusing "required" error if the value was actually sent
         // as a query param instead.
         $pdo = db(); require_admin($pdo, 'users.manage');
+        require_once __DIR__ . '/lib/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
         $courierId = isset($body['courier_id']) ? intval($body['courier_id']) : (isset($_GET['courier_id']) ? intval($_GET['courier_id']) : 0);
         if ($courierId <= 0) fail('courier_id is required', 400);
         $fields = array(); $params = array();

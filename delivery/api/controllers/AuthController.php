@@ -83,6 +83,7 @@ case 'register': {
         if (in_array('total_deliveries', $courierCols, true)) { $cFields[] = 'total_deliveries'; $cMarks[] = '0'; }
         if (in_array('active', $courierCols, true))           { $cFields[] = 'active';           $cMarks[] = '1'; }
         if (in_array('created_at', $courierCols, true))       { $cFields[] = 'created_at';       $cMarks[] = 'NOW()'; }
+        require_once __DIR__ . '/../lib/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
         $cSql = 'INSERT INTO couriers (' . implode(',', $cFields) . ') VALUES (' . implode(',', $cMarks) . ')';
         try {
             $pdo->prepare($cSql)->execute($cValues);
