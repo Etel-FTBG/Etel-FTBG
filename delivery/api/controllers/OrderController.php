@@ -391,9 +391,9 @@ case 'courier_accept_order': {
         if (!etel_claim_order($pdo, $order_id, $courier['id'])) { $pdo->rollBack(); fail('Another courier already took this job.', 409); }
         try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offer_mark_accepted($pdo, $order_id); } catch (Exception $oe) {} catch (Throwable $oe) {}
 
-        // Mark assignment as courier-assigned (distinct from SG-accepted)
-        $upd_asgn = $pdo->prepare('UPDATE order_assignments SET status="assigned" WHERE order_id=?');
-        $upd_asgn->execute(array($order_id));
+        // The courier taking the job is saved on the ORDER (orders.courier_id, orders.status). The assignment status is the SHOP's own step
+        // (pending -> preparing -> ready): it used to be overwritten with "assigned" here, which threw away "preparing" / "ready" (the
+        // customer's tracking went backwards, a customer could cancel after the shop had started) and left the shop with no button to press.
         
         $pdo->commit();
         if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
@@ -964,7 +964,7 @@ case 'track_order': {
     $statusOrder = array('pending', 'assigned', 'preparing', 'accepted', 'picked_up', 'in_transit', 'delivered');
     $labels = array(
         'pending'    => 'Order placed',
-        'assigned'   => 'Assigned to service giver',
+        'assigned'   => 'Courier assigned',
         'preparing'  => 'Being prepared',
         'accepted'   => 'Ready for pickup',
         'picked_up'  => 'Courier picked up',
@@ -976,16 +976,40 @@ case 'track_order': {
         $statusOrder = array('pending', 'assigned', 'picked_up', 'in_transit', 'delivered');
         $labels = array('pending' => 'Package booked', 'assigned' => 'Courier on the way to pick it up', 'picked_up' => 'Package picked up', 'in_transit' => 'On the way to the recipient', 'delivered' => 'Delivered');
     }
-    $currentIdx  = array_search($order['status'], $statusOrder);
+    // The shop's own steps (started preparing, ready for pickup) are saved on the assignment, not on orders.status (orders.status moves when a
+    // courier takes the job). The customer should see them, so the stage is the further of the two. "Courier assigned" only ticks when a courier
+    // really has the order (orders.status is no longer 'pending').
+    $stage = $order['status'];
+    if (!$is_package && ($stage === 'pending' || $stage === 'assigned')) {
+        $asg = isset($order['assignment_status']) ? (string) $order['assignment_status'] : '';
+        if ($asg === 'accepted') $stage = 'accepted';
+        elseif ($asg === 'preparing') $stage = 'preparing';
+    }
+    $order['stage'] = $stage;
+    $currentIdx  = array_search($stage, $statusOrder);
+    $courierIn   = ($order['status'] !== 'pending');
     $timeline = array();
     foreach ($statusOrder as $idx => $st) {
         $timeline[] = array(
             'status'    => $st,
             'label'     => $labels[$st],
-            'done'      => $idx <= $currentIdx,
+            'done'      => ($idx <= $currentIdx) && !(!$is_package && $st === 'assigned' && !$courierIn),
             'current'   => $idx === $currentIdx,
         );
     }
+    // What was ordered, for the customer's order-details card. The money lines are only for the person who placed the order
+    // (someone tracking by the recipient's phone sees the items but not the prices).
+    try {
+        $it = $pdo->prepare('SELECT item_name, quantity FROM order_items WHERE order_id = ? ORDER BY id');
+        $it->execute(array($order['id']));
+        $order['items'] = $it->fetchAll(PDO::FETCH_ASSOC);
+        if ((int) $order['_cid'] === (int) $u['id']) {
+            $mq = $pdo->prepare('SELECT * FROM orders WHERE id = ?'); $mq->execute(array($order['id'])); $mr = $mq->fetch(PDO::FETCH_ASSOC);
+            $money = array();
+            foreach (array('subtotal', 'delivery_fee', 'service_charge', 'discount', 'courier_tip', 'fare_total') as $mk) { if ($mr && isset($mr[$mk])) $money[$mk] = round(floatval($mr[$mk]), 2); }
+            $order['money'] = $money;
+        }
+    } catch (Exception $de) { error_log('[ETEL] track details: ' . $de->getMessage()); }
 
     // arrival estimate + hides a courier pin that has gone stale (api/lib/track_eta.php)
     try { require_once __DIR__ . '/../lib/track_eta.php'; $order = etel_track_eta_apply($pdo, $order); } catch (Exception $te) {} catch (Throwable $te) {}

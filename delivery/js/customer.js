@@ -70,7 +70,7 @@ ETEL_I18N.register('customer', {
         payments_title:'💳 Wallet & Payments',
         cart_title:'My Cart',
         courier_qr_title:"Scan Courier's QR Code", cancel_btn:'Cancel',
-        lbl_subtotal:'Subtotal', lbl_delivery_fee:'Delivery Fee', lbl_service_charge:'Service Charge', lbl_free:'Free', lbl_total:'Total',
+        lbl_subtotal:'Subtotal', lbl_delivery_fee:'Delivery Fee', lbl_service_charge:'Service Charge', lbl_free:'Free', lbl_total:'Total', trk_details:'Order details', trk_for:'For', trk_note:'Note', trk_pay:'Payment',
         lbl_tip:'Courier tip', tip_title:'Tip your courier', tip_sub:'100% of your tip goes to the courier.', tip_none:'No tip', tip_custom:'Custom', tip_custom_ph:'Amount in ETB',
         saved_places:'Your saved places', save_this_addr:'★ Save this address', saved_addr_ok:'Address saved', saved_addr_fail:'Could not save the address', lbl_delivery_address:'Delivery Address *', lbl_recipient_name:'Recipient Name *', lbl_recipient_phone:'Recipient Phone *',
         lbl_notes:'Notes (optional)', lbl_payment_method:'Payment Method', btn_place_order:'Place Order',
@@ -103,7 +103,7 @@ ETEL_I18N.register('customer', {
         payments_title:'💳 ቦርሳ እና ክፍያዎች',
         cart_title:'የእኔ ጋሪ',
         courier_qr_title:'የተላላኪውን QR ኮድ ይቃኙ', cancel_btn:'ይቅር',
-        lbl_subtotal:'ንዑስ ድምር', lbl_delivery_fee:'የማድረስ ክፍያ', lbl_service_charge:'የአገልግሎት ክፍያ', lbl_free:'ነፃ', lbl_total:'ጠቅላላ',
+        lbl_subtotal:'ንዑስ ድምር', lbl_delivery_fee:'የማድረስ ክፍያ', lbl_service_charge:'የአገልግሎት ክፍያ', lbl_free:'ነፃ', lbl_total:'ጠቅላላ', trk_details:'የትዕዛዙ ዝርዝር', trk_for:'ለ', trk_note:'ማስታወሻ', trk_pay:'ክፍያ',
         lbl_tip:'የአስረካቢ ጉርሻ', tip_title:'ለአስረካቢው ጉርሻ ይስጡ', tip_sub:'ጉርሻዎ 100% ለአስረካቢው ይሄዳል።', tip_none:'ጉርሻ የለም', tip_custom:'ሌላ መጠን', tip_custom_ph:'መጠን በብር',
         saved_places:'የተቀመጡ አድራሻዎቼ', save_this_addr:'★ ይህን አድራሻ አስቀምጥ', saved_addr_ok:'አድራሻው ተቀምጧል', saved_addr_fail:'አድራሻውን ማስቀመጥ አልተቻለም', lbl_delivery_address:'የማድረሻ አድራሻ *', lbl_recipient_name:'የተቀባይ ስም *', lbl_recipient_phone:'የተቀባይ ስልክ *',
         lbl_notes:'ማስታወሻ (አማራጭ)', lbl_payment_method:'የክፍያ ዘዴ', btn_place_order:'ትዕዛዝ ያስገቡ',
@@ -696,7 +696,8 @@ async function refreshTrackOrder() {
     if (!res || !res.success) return;
     const o = res.data.order, timeline = res.data.timeline || [];
     document.getElementById('track-order-code').textContent = o.order_code || ('Order #' + _trackOrderId);
-    document.getElementById('track-order-status').textContent = (o.status || '').replace('_', ' ');
+    const _cur = timeline.filter(function(t) { return t.current; })[0];
+    document.getElementById('track-order-status').textContent = (_cur && _cur.label) ? _cur.label : (o.stage || o.status || '').replace('_', ' ');
     document.getElementById('track-timeline').innerHTML =
         '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:16px">' +
         timeline.map(function(t, i) {
@@ -713,11 +714,43 @@ async function refreshTrackOrder() {
           (o.courier_phone ? '<a href="tel:' + escapeHtml(o.courier_phone) + '" style="width:38px;height:38px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-size:16px;text-decoration:none;flex-shrink:0">📞</a>' : '') +
           '</div>'
         : '';
+    renderTrackDetails(o);
     renderTrackEta(o);
     renderTrackChat(o);
     renderTrackCancel(o);
     if (window.renderTrackPackage) window.renderTrackPackage(o);
     updateTrackMap(o);
+}
+// What was ordered: the items, who it is for, the note and the address; the money lines only when the server sent them (the person who ordered).
+function renderTrackDetails(o) {
+    const el = document.getElementById('track-details');
+    if (!el) return;
+    const items = Array.isArray(o.items) ? o.items : [];
+    const T = function(k) { return ETEL_I18N.t(k); };
+    const row = function(a, b, strong) { return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:' + (strong ? '14' : '12.5') + 'px;' + (strong ? 'font-weight:800;color:var(--text);margin-top:6px' : 'color:var(--text-muted)') + '"><span>' + a + '</span><span>' + b + '</span></div>'; };
+    const m = o.money || null;
+    let h = '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:14px;padding:14px;margin-top:14px">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">' + escapeHtml(T('trk_details')) + '</div>';
+    h += items.length ? items.map(function(it) {
+        return '<div style="display:flex;gap:8px;font-size:13.5px;color:var(--text);padding:4px 0"><b>' + escapeHtml(String(parseInt(it.quantity, 10) || 1)) + ' ×</b><span>' + escapeHtml(it.item_name || '') + '</span></div>';
+    }).join('') : '<div style="font-size:12.5px;color:var(--text-muted)">—</div>';
+    const who = [o.recipient_name, o.recipient_phone].filter(Boolean).join(' · ');
+    const where = o.recipient_address || o.to_zone || '';
+    if (who || where) h += '<div style="border-top:1px solid var(--glass-border);margin-top:10px;padding-top:10px;font-size:12.5px;color:var(--text-muted)">' +
+        (who ? escapeHtml(T('trk_for')) + ': <span style="color:var(--text)">' + escapeHtml(who) + '</span><br>' : '') + (where ? '📍 <span style="color:var(--text)">' + escapeHtml(where) + '</span>' : '') + '</div>';
+    if (o.notes) h += '<div style="margin-top:8px;font-size:12.5px;color:var(--text-muted)">' + escapeHtml(T('trk_note')) + ': <span style="color:var(--text)">' + escapeHtml(o.notes) + '</span></div>';
+    if (m) {
+        const etb = function(v) { return 'ETB ' + (Number(v) || 0).toFixed(2); };
+        h += '<div style="border-top:1px solid var(--glass-border);margin-top:10px;padding-top:10px">' +
+            (m.subtotal != null ? row(escapeHtml(T('lbl_subtotal')), etb(m.subtotal)) : '') +
+            (m.delivery_fee != null ? row(escapeHtml(T('lbl_delivery_fee')), etb(m.delivery_fee)) : '') +
+            (m.service_charge != null ? row(escapeHtml(T('lbl_service_charge')), Number(m.service_charge) > 0 ? etb(m.service_charge) : '<span style="color:#2ECC71;font-weight:700">' + escapeHtml(T('lbl_free')) + '</span>') : '') +
+            (Number(m.discount) > 0 ? row('🏷️', '−' + etb(m.discount)) : '') +
+            (Number(m.courier_tip) > 0 ? row(escapeHtml(T('lbl_tip')), etb(m.courier_tip)) : '') +
+            (m.fare_total != null ? row(escapeHtml(T('lbl_total')), etb(m.fare_total), true) : '') +
+            (o.payment_method ? row(escapeHtml(T('trk_pay')), escapeHtml(String(o.payment_method).toUpperCase())) : '') + '</div>';
+    }
+    el.innerHTML = h + '</div>';
 }
 // Cancel button on the tracking screen. The server decides (track_order returns can_cancel): only before the shop starts
 // preparing, and never once the order is on its way. The reasons come from the server's list too (api/lib/order_cancel.php).
@@ -789,7 +822,7 @@ function renderTrackChat(o) {
 function renderTrackEta(o) {
     const el = document.getElementById('track-eta');
     if (!el) return;
-    const st = o.status || '';
+    const st = o.stage || o.status || '';   // stage = the further of the order status and the shop's own step (preparing, ready)
     if (st === 'delivered') { el.innerHTML = '<div class="trk-eta-main">✅ Delivered</div>'; return; }
     if (st === 'cancelled') { el.innerHTML = '<div class="trk-eta-main">Order cancelled</div>'; return; }
     const onRoad = (st === 'picked_up' || st === 'in_transit');
@@ -811,7 +844,7 @@ function renderTrackEta(o) {
     } else if (onRoad) {
         el.innerHTML = '<div class="trk-eta-main">🛵 On the way to you</div>';
     } else {
-        const label = {pending:'Waiting for the shop to confirm', assigned:'Shop is confirming your order', preparing:'Your order is being prepared', accepted:'Ready — waiting for the courier'}[st] || 'Processing your order';
+        const label = {pending:'Waiting for the shop to confirm', assigned:'A courier has your order — the shop is confirming it', preparing:'Your order is being prepared', accepted:'Your order is ready — the courier is picking it up'}[st] || 'Processing your order';
         el.innerHTML = '<div class="trk-eta-main">' + label + '</div>';
     }
 }
