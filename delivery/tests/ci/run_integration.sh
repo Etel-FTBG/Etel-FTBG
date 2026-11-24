@@ -116,6 +116,7 @@ run php tests/pulse_avg_test.php
 run php tests/order_stamps_test.php
 run php tests/ratings_report_test.php
 run php tests/track_eta_test.php
+run php tests/shield_geo_test.php
 run php tests/shop_hours_test.php
 run python3 tests/shop_open_hours_smoke.py
 run php tests/money_ledger_test.php

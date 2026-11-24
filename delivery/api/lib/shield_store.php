@@ -19,7 +19,10 @@ function etel_shield_defaults() {
         'ban_minutes'       => array(15, 60, 1440),   /* first, second, later block of the same connection */
         'scanner_mode'      => 'block',      /* hacking tools (sqlmap, nikto ...) */
         'waf_mode'          => 'monitor',    /* attack patterns in what was sent: off | monitor (log only) | block */
-        'geo_mode'          => 'off',        /* Ethiopia only: off | monitor | enforce (see shield_geo.php) */
+        'geo_mode'          => 'monitor',    /* Ethiopia only, the connection: off | monitor (log only) | enforce (see shield_geo.php) */
+        'geo_device_mode'   => 'monitor',    /* Ethiopia only, the position the app sends: off | monitor | enforce */
+        'geo_allow_countries' => array('ET'),/* country codes accepted when Cloudflare reports the country */
+        'geo_exempt_actions' => array('get_config'),   /* answered from anywhere, so an app abroad can show its message */
         'max_body_kb'       => 2048,         /* biggest request the API accepts */
         'allow_ips'         => array(),      /* never limited or blocked (office, owner) - exact address or CIDR */
         'deny_ips'          => array(),      /* always blocked */
@@ -52,6 +55,17 @@ function etel_shield_clean($in) {
     if (isset($in['proxy_mode']) && in_array($in['proxy_mode'], array('none', 'cloudflare', 'any_xff'), true)) $o['proxy_mode'] = $in['proxy_mode'];
     foreach (array('rate_mode', 'scanner_mode', 'waf_mode') as $k) { if (isset($in[$k]) && in_array($in[$k], $modes3, true)) $o[$k] = $in[$k]; }
     if (isset($in['geo_mode']) && in_array($in['geo_mode'], array('off', 'monitor', 'enforce'), true)) $o['geo_mode'] = $in['geo_mode'];
+    if (isset($in['geo_device_mode']) && in_array($in['geo_device_mode'], array('off', 'monitor', 'enforce'), true)) $o['geo_device_mode'] = $in['geo_device_mode'];
+    if (isset($in['geo_allow_countries']) && is_array($in['geo_allow_countries'])) {
+        $l = array('ET');
+        foreach ($in['geo_allow_countries'] as $cc) { $cc = strtoupper(trim((string) $cc)); if (preg_match('/^[A-Z]{2}$/', $cc)) $l[] = $cc; }
+        $o['geo_allow_countries'] = array_values(array_unique(array_slice($l, 0, 30)));   /* Ethiopia is always in */
+    }
+    if (isset($in['geo_exempt_actions']) && is_array($in['geo_exempt_actions'])) {
+        $l = array();
+        foreach ($in['geo_exempt_actions'] as $a) { $a = trim((string) $a); if ($a !== '' && preg_match('/^[a-z0-9_*]{2,60}$/i', $a)) $l[] = $a; }
+        $o['geo_exempt_actions'] = array_values(array_unique(array_slice($l, 0, 50)));
+    }
     $lim = array('rate_anon_per_min' => array(30, 100000), 'rate_auth_per_min' => array(30, 100000), 'rate_login_per_min' => array(3, 10000), 'rate_signup_per_min' => array(2, 10000), 'max_body_kb' => array(64, 51200), 'keep_days' => array(1, 365));
     foreach ($lim as $k => $r) { if (isset($in[$k]) && is_numeric($in[$k])) $o[$k] = max($r[0], min($r[1], intval($in[$k]))); }
     if (isset($in['ban_minutes']) && is_array($in['ban_minutes'])) {

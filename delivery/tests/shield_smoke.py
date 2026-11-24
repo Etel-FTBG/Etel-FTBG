@@ -55,7 +55,7 @@ def call(action, body=None, token=None, xff=None, ua=None, raw=None):
 
 def check(name, cond, detail=""):
     (PASS if cond else FAIL).append(name)
-    print(("  OK   " if cond else "  FAIL ") + name + ("" if cond else "  " + str(detail)))
+    print(("  OK   " if cond else "  FAIL ") + name + ("" if cond else "  " + str(detail)[:240]))
 
 
 def sql1(q):
@@ -232,6 +232,45 @@ def main():
     check("the stats count what happened (events, blocks, top connections)", st.get("events_24h", 0) > 5 and len(st.get("top_ips") or []) > 0 and st.get("bans_active", 0) >= 1, st)
 
     reset_old_limiter()
+    print("8b. Ethiopia only (connection and device position)")
+    ET_IP = "196.188.%d.%d" % (random.randint(1, 250), random.randint(1, 250))   # inside the Ethiopian list (a new one each run: the log writes one row per address and rule per minute)
+    FOREIGN = "198.51.100.%d" % random.randint(1, 250)                           # a documentation address: not Ethiopian
+    cfg(**dict(base, geo_mode="monitor", geo_device_mode="off"))
+    s, r, h = call("get_config", {}, xff=FOREIGN)
+    s2, r2, h2 = call("customer_get_items", {}, xff=FOREIGN)
+    check("monitor mode serves a connection from outside Ethiopia", s2 != 403 or r2.get("code") != "geo_blocked", (s2, r2))
+    check("monitor mode writes it to the security log (geo_ip)", events("geo_ip", FOREIGN) >= 1)
+    cfg(**dict(base, geo_mode="enforce", geo_device_mode="off"))
+    s, r, h = call("customer_get_items", {}, xff=FOREIGN)
+    check("enforce mode turns a foreign connection away (403, code geo_blocked, plain message)", s == 403 and r.get("code") == "geo_blocked" and "inside Ethiopia" in (r.get("message") or ""), (s, r))
+    s, r, h = call("customer_get_items", {}, xff=ET_IP)
+    check("enforce mode serves an Ethiopian connection", s == 200 and r.get("code") != "geo_blocked", (s, r))
+    s, r, h = call("get_config", {}, xff=FOREIGN)
+    check("an action on the exempt list (get_config) is answered from anywhere", s == 200, (s, r))
+    s, r, h = call("customer_get_items", {})
+    check("this server itself (no forwarded address) is never turned away", r.get("code") != "geo_blocked", (s, r))
+    cfg(**dict(base, geo_mode="enforce", geo_device_mode="off", allow_ips=[FOREIGN]))
+    s, r, h = call("customer_get_items", {}, xff=FOREIGN)
+    check("an address on the owner's allowed list works from anywhere", r.get("code") != "geo_blocked", (s, r))
+    cfg(**dict(base, geo_mode="enforce", geo_device_mode="off", allow_ips=[]))
+    s, r, h = call("admin_shield_geo_check", {"ip": ET_IP}, admin)
+    check("the owner can ask whether an address counts as Ethiopian (yes)", (r.get("data") or {}).get("ethiopia") is True, r)
+    s, r, h = call("admin_shield_geo_check", {"ip": FOREIGN}, admin)
+    check("... (no)", (r.get("data") or {}).get("ethiopia") is False and (r.get("data") or {}).get("list", {}).get("v4_ranges", 0) > 50, r)
+    cfg(**dict(base, geo_mode="off", geo_device_mode="monitor"))
+    s, r, h = call("customer_get_items", {"delivery_lat": 48.85, "delivery_lng": 2.35}, xff=ET_IP)
+    check("device position outside Ethiopia: monitor mode serves it and logs geo_device", r.get("code") != "geo_device" and events("geo_device", ET_IP) >= 1, (s, r))
+    cfg(**dict(base, geo_mode="off", geo_device_mode="enforce"))
+    s, r, h = call("customer_get_items", {"delivery_lat": 48.85, "delivery_lng": 2.35}, xff=ET_IP)
+    check("device position outside Ethiopia: enforce mode refuses it (403, code geo_device)", s == 403 and r.get("code") == "geo_device", (s, r))
+    s, r, h = call("customer_get_items", {"delivery_lat": 7.05, "delivery_lng": 38.48}, xff=ET_IP)
+    check("a position in Hawassa passes", r.get("code") != "geo_device", (s, r))
+    s, r, h = call("customer_get_items", {"lat": 0, "lng": 0}, xff=ET_IP)
+    check("(0,0) means 'not set' and passes", r.get("code") != "geo_device", (s, r))
+    s, r, h = call("admin_shield_get", {"lat": 48.85, "lng": 2.35}, admin)
+    check("admin screens are not checked for position", r.get("code") != "geo_device", (s, r))
+    cfg(**dict(base, geo_mode="monitor", geo_device_mode="monitor"))
+
     print("9. Safety: a broken shield never takes the system down")
     cfg(**base)
     os.makedirs(TMPDIR, exist_ok=True)
@@ -250,7 +289,7 @@ def main():
             os.unlink(os.path.join(TMPDIR, t))
         except OSError:
             pass
-    etel_test_db.run_sql("DELETE FROM shield_events WHERE ip LIKE '203.0.%' OR ip LIKE '198.51.100.%'")
+    etel_test_db.run_sql("DELETE FROM shield_events WHERE ip LIKE '203.0.%' OR ip LIKE '198.51.100.%' OR ip LIKE '196.188.%'")
     etel_test_db.run_sql("DELETE FROM shield_bans WHERE ip LIKE '203.0.%' OR ip LIKE '198.51.100.%'")
     etel_test_db.run_sql("DELETE FROM pricing_rules WHERE rule_key = 'shield_config'")
     try:
