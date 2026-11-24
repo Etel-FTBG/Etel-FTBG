@@ -1791,6 +1791,9 @@ switch ($action) {
     case 'admin_ride_offers_get': case 'admin_ride_offers_save': case 'admin_ride_area_save': case 'admin_ride_area_delete':
         require __DIR__ . '/controllers/RideOffersAdminController.php';
         break;
+    case 'courier_job_geo':
+        require __DIR__ . '/controllers/CourierJobGeoController.php';
+        break;
     case 'delivery_fee_quote': case 'admin_dfee_get': case 'admin_dfee_save':
         require __DIR__ . '/controllers/DeliveryFeeController.php';
         break;
