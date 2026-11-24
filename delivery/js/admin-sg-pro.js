@@ -140,12 +140,19 @@ function readinessBox(rd, g) {
       else if (it.key === 'owner') act = '<button type="button" class="ak-btn" data-gl="owner">Enter phone</button>';
       else if (it.key === 'documents') act = '<button type="button" class="ak-btn" data-gl="docs">See papers</button>';
       else if (it.key === 'menu') act = '<button type="button" class="ak-btn gold" data-gl="menu">Import menu</button>';
-      else if (it.key === 'location' || it.key === 'payout') act = '<button type="button" class="ak-btn" data-gl="full">Open profile</button>';
+      else if (it.key === 'payout') act = '<button type="button" class="ak-btn" data-gl="full">Open profile</button>';
     }
     var hours = it.key === 'hours' ? '<div class="ak-acts" style="margin-top:6px"><input id="gl-open" class="ak-in" type="time" value="' + esc(hhmm(g.opens_at)) + '" aria-label="Opens" style="max-width:120px"><input id="gl-close" class="ak-in" type="time" value="' + esc(hhmm(g.closes_at)) + '" aria-label="Closes" style="max-width:120px"><button type="button" class="ak-btn" data-gl="hours">Save hours</button></div>' : '';
+    /* Address and map pin: edited right here (no other screen needed). Saved with sg_update_profile, which lets an admin edit a business by sg_id. */
+    var loc = (it.key === 'location' && !it.ok) ? '<div style="margin-top:8px;display:grid;gap:8px">' +
+      '<input id="gl-addr" class="ak-in" type="text" maxlength="200" placeholder="Street, area, landmark" value="' + esc(g.address || '') + '" aria-label="Shop address">' +
+      '<div class="ak-acts" style="margin:0"><input id="gl-lat" class="ak-in" type="number" step="any" inputmode="decimal" placeholder="Latitude" value="' + esc(g.lat == null ? '' : g.lat) + '" aria-label="Latitude" style="max-width:140px">' +
+      '<input id="gl-lng" class="ak-in" type="number" step="any" inputmode="decimal" placeholder="Longitude" value="' + esc(g.lng == null ? '' : g.lng) + '" aria-label="Longitude" style="max-width:140px"></div>' +
+      '<div class="ak-acts" style="margin:0"><button type="button" class="ak-btn" data-gl="here">📍 Use my location</button><button type="button" class="ak-btn gold" data-gl="loc">Save address &amp; pin</button></div>' +
+      '<div data-gl-note role="status" style="font-size:12.5px;min-height:16px"></div></div>' : '';
     return '<div class="gl-row" style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line,rgba(128,128,128,.2))">' +
       '<span aria-hidden="true" style="font-size:16px;line-height:1.3">' + (it.ok ? '✅' : '⬜') + '</span>' +
-      '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(it.label) + '</b>' + (it.ok ? '' : '<div class="ak-fh" style="margin:2px 0 0">' + esc(it.hint) + '</div>') + hours + '</div>' + (act ? '<div>' + act + '</div>' : '') + '</div>';
+      '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(it.label) + '</b>' + (it.ok ? '' : '<div class="ak-fh" style="margin:2px 0 0">' + esc(it.hint) + '</div>') + hours + loc + '</div>' + (act ? '<div>' + act + '</div>' : '') + '</div>';
   }).join('');
   return '<div class="ak-sec"><h4>Go-live checklist · ' + rd.done + ' of ' + rd.total + '</h4>' +
     '<div style="height:8px;border-radius:6px;background:rgba(128,128,128,.25);margin:2px 0 8px"><div style="height:8px;border-radius:6px;width:' + pct + '%;background:' + (pct >= 100 ? '#2ecc71' : pct >= 50 ? '#D4AF37' : '#e74c3c') + '"></div></div>' + rows + '</div>';
@@ -280,6 +287,25 @@ function onDrawerClick(e) {
     if (k === 'hours') {
       K.api('admin_sg_set_hours', { id: g.id, opens_at: document.getElementById('gl-open').value, closes_at: document.getElementById('gl-close').value }).then(function (res) {
         if (K.okRes(res)) { K.toast('Opening hours saved'); V.busy = false; load(true); openSG(g.id); } else K.toast(K.failText(res), true);
+      });
+    }
+    else if (k === 'here' || k === 'loc') {
+      var glNote = function (m, bad) { var n = dr.querySelector('[data-gl-note]'); if (n) { n.textContent = m; n.style.color = bad ? '#d6364a' : '#1fa463'; } };
+      var fAddr = document.getElementById('gl-addr'), fLat = document.getElementById('gl-lat'), fLng = document.getElementById('gl-lng');
+      if (!fAddr || !fLat || !fLng) return;
+      if (k === 'here') {
+        if (!navigator.geolocation) { glNote('This phone or browser cannot give its location. Type the numbers instead.', true); return; }
+        glNote('Finding the location…');
+        navigator.geolocation.getCurrentPosition(function (p) { fLat.value = p.coords.latitude.toFixed(6); fLng.value = p.coords.longitude.toFixed(6); glNote('Location filled in. Check it, then press Save.', false); },
+          function () { glNote('Could not get the location. Allow it, or type the numbers.', true); }, { enableHighAccuracy: true, timeout: 10000 });
+        return;
+      }
+      var addr = fAddr.value.trim(), la = Number(fLat.value), ln = Number(fLng.value);
+      if (!addr) { glNote('Write the address first (street, area or landmark).', true); fAddr.focus(); return; }
+      if (fLat.value === '' || fLng.value === '' || !isFinite(la) || !isFinite(ln) || la < -90 || la > 90 || ln < -180 || ln > 180 || (la === 0 && ln === 0)) { glNote('Enter the map pin as two numbers (latitude and longitude), or press "Use my location".', true); return; }
+      glNote('Saving…');
+      K.api('sg_update_profile', { sg_id: g.id, address: addr, lat: la, lng: ln }).then(function (res) {
+        if (K.okRes(res)) { K.toast('Address and map pin saved'); V.busy = false; load(true); openSG(g.id); } else glNote(K.failText(res, 'Could not save.'), true);
       });
     }
     else if (k === 'owner') { var ph = document.getElementById('sgo-phone'); if (ph) { ph.scrollIntoView({ block: 'center' }); ph.focus(); ph.select(); } }
