@@ -1,9 +1,12 @@
 name: Android preview APK
 
-# MANUAL ONLY (decided with the owner to save the free build time): this no longer runs on every merge. The app code still goes to phones
-# over the air on every merge (publish-update.yml, which does not use build time). Build a new APK only when the Android native code
-# changed or at the end of the planned phases: Expo website > Workflows > Run workflow > Android preview APK.
-# (No `on:` trigger = it never starts by itself. To build automatically again, add the old `on: push` block back.)
+# Builds a fresh installable APK every time the app folder changes on main (that is, whenever a PR is merged),
+# and can still be run by hand from the Expo website (Workflows > Run workflow).
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'Etel-Driver-App/**'
 
 jobs:
   build_android:
