@@ -184,6 +184,9 @@ case 'sg_profile': {
     if (!$sg) fail('Service giver profile could not be loaded. Contact admin.', 404);
     // Fill any missing optional fields with defaults
     $sg += array('average_rating'=>0,'rating_count'=>0,'total_deliveries'=>0,'total_earnings'=>0,'is_online'=>0);
+    // Open or closed follows the opening hours when the shop has them (the online switch only matters for a shop with no hours).
+    $of = etel_shop_open_fields($sg);
+    $sg['open_now'] = $of['open_now']; $sg['hours_mode'] = $of['hours_mode'];
 
     require_once __DIR__ . '/../lib/sg_business.php';
     $sg['business_tools'] = etel_sgb_enabled($pdo, intval($sg['id'])) ? 1 : 0;
@@ -969,7 +972,9 @@ case 'sg_set_hours': {
     }
     try {
         $pdo->prepare('UPDATE service_givers SET opens_at=?, closes_at=? WHERE id=?')->execute(array($o, $c, $ctx['sg_id']));
-        ok(array('opens_at' => $o, 'closes_at' => $c, 'message' => ($o === null ? 'Opening hours cleared' : 'Opening hours saved')));
+        $sw = $pdo->prepare('SELECT is_online FROM service_givers WHERE id=?'); $sw->execute(array($ctx['sg_id']));
+        $of = etel_shop_open_fields(array('is_online' => $sw->fetchColumn(), 'opens_at' => $o, 'closes_at' => $c));
+        ok(array('opens_at' => $o, 'closes_at' => $c, 'open_now' => $of['open_now'], 'hours_mode' => $of['hours_mode'], 'message' => ($o === null ? 'Opening hours cleared' : 'Opening hours saved')));
     } catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
     break;
 }
