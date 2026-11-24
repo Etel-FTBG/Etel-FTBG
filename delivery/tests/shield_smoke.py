@@ -102,10 +102,12 @@ def main():
     print("2. Floods are slowed down (429 + Retry-After), per connection")
     cfg(**dict(base, rate_login_per_min=3))
     codes = []
-    for i in range(5):
+    for i in range(9):   # the counter is per minute: if the clock moves to a new minute in the middle it starts again, so look for the FIRST 429
         s, r, h = call("login", {"phone": "0911000000", "password": "wrong"}, xff=ip(2))
         codes.append(s)
-    check("the first 3 sign-in tries are answered normally, the next ones get 429", all(c != 429 for c in codes[:3]) and codes[3] == 429 and codes[4] == 429, codes)
+        if s == 429:
+            break
+    check("the first 3 sign-in tries of a minute are answered normally, then 429 (limit 3)", 429 in codes and 3 <= codes.index(429) <= 6 and all(c != 429 for c in codes[:3]), codes)
     check("the answer says what to do and carries Retry-After", r.get("code") == "rate_limited" and "slow down" in (r.get("message") or "") and int(h.get("Retry-After", "0")) > 0, (r, h))
     s, r, h = call("login", {"phone": "0911000000", "password": "wrong"}, xff=ip(3))
     check("another connection is not affected", s != 429, s)

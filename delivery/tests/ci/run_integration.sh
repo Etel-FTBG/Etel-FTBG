@@ -53,6 +53,7 @@ run python3 tests/sg_order_view_smoke.py
 run python3 tests/delivery_fees_smoke.py
 run python3 tests/order_refusal_smoke.py
 run python3 tests/shield_smoke.py
+run python3 tests/idle_session_smoke.py
 run python3 tests/courier_location_smoke.py
 run python3 tests/courier_job_geo_smoke.py
 run python3 tests/driver_courier_smoke.py
