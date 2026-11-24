@@ -7,6 +7,7 @@
 //   admin_shield_bans    {}                                  -> { bans: [...] }                                             (settings.view)
 //   admin_shield_ban     { ip, minutes, reason? }            -> { bans }                                                    (settings.manage)
 //   admin_shield_unban   { ip }                              -> { bans }                                                    (settings.manage)
+//   admin_shield_geo_check { ip }                            -> { ip, ethiopia, list }  is this address in the Ethiopian list?  (settings.view)
 // ============================================================
 require_once __DIR__ . '/../lib/shield.php';
 
@@ -102,6 +103,15 @@ case 'admin_shield_ban': {
     if ($minutes < 1 || $minutes > 525600) fail('Minutes must be between 1 and 525600 (one year)', 400);
     etel_shield_ban($pdo, $ip, $minutes, isset($body['reason']) ? trim((string) $body['reason']) : 'blocked by an admin', 'admin:' . intval($adm['id']));
     ok(array('bans' => etel_shield_bans_list($pdo)));
+    break;
+}
+
+case 'admin_shield_geo_check': {
+    $pdo = db(); require_admin($pdo, 'settings.view');
+    $ip = isset($body['ip']) ? trim((string) $body['ip']) : '';
+    if ($ip === '' || @inet_pton($ip) === false) fail('Write a valid IP address', 400);
+    $r = etel_shield_geo_et_ranges();
+    ok(array('ip' => $ip, 'ethiopia' => etel_shield_geo_is_et($ip), 'list' => array('built' => $r['built'], 'v4_ranges' => count($r['v4']), 'v6_ranges' => count($r['v6']))));
     break;
 }
 

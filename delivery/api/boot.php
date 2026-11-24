@@ -1794,7 +1794,7 @@ switch ($action) {
     case 'admin_ride_offers_get': case 'admin_ride_offers_save': case 'admin_ride_area_save': case 'admin_ride_area_delete':
         require __DIR__ . '/controllers/RideOffersAdminController.php';
         break;
-    case 'admin_shield_get': case 'admin_shield_save': case 'admin_shield_events': case 'admin_shield_bans': case 'admin_shield_ban': case 'admin_shield_unban':
+    case 'admin_shield_get': case 'admin_shield_save': case 'admin_shield_events': case 'admin_shield_bans': case 'admin_shield_ban': case 'admin_shield_unban': case 'admin_shield_geo_check':
         require __DIR__ . '/controllers/ShieldController.php';
         break;
     case 'courier_job_geo':

@@ -27,7 +27,13 @@ if '!$signedIn && $n > $limit * 2' not in core:
     bad.append('only a clear flood of SIGNED-OUT traffic may block an address (phone networks share addresses)')
 if 'etel_shield_is_internal($ip)' not in core:
     bad.append('the server itself and local networks must never be limited')
-for f in ('api/lib/shield.php', 'api/lib/shield_store.php', 'api/lib/shield_waf.php', 'api/controllers/ShieldController.php'):
+if "'geo_mode'          => 'monitor'" not in store or "'geo_device_mode'   => 'monitor'" not in store:
+    bad.append("Ethiopia-only must start in 'monitor' mode (log only) until the owner has read who would be turned away")
+if 'etel_shield_geo_foreign(' not in core or 'etel_shield_geo_device_out(' not in core:
+    bad.append('the guard no longer calls the Ethiopia-only checks')
+if "etel_shield_waf_exempt($action, $cfg['geo_exempt_actions'])" not in core:
+    bad.append('the Ethiopia-only check must respect the exempt actions list')
+for f in ('api/lib/shield.php', 'api/lib/shield_store.php', 'api/lib/shield_waf.php', 'api/lib/shield_geo.php', 'api/lib/shield_geo_data.php', 'api/controllers/ShieldController.php'):
     s = read(f)
     if re.search(r'[^\x00-\x7f]', s):
         bad.append(f + ' has non-ASCII characters (PHP files are ASCII only)')

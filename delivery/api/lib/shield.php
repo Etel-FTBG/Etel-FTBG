@@ -15,6 +15,7 @@
  */
 require_once __DIR__ . '/shield_store.php';
 require_once __DIR__ . '/shield_waf.php';
+require_once __DIR__ . '/shield_geo.php';
 
 if (!function_exists('etel_shield_guard')) {
 
@@ -129,6 +130,12 @@ function etel_shield_guard($action, $body, $raw) {
             etel_shield_deny(413, 'The request is too large.', 'too_large', 0);
         }
 
+        /* 4b. Ethiopia only: the connection (monitor = log only) */
+        if ($cfg['geo_mode'] !== 'off' && !etel_shield_waf_exempt($action, $cfg['geo_exempt_actions']) && etel_shield_geo_foreign($ip, $country, $cfg)) {
+            etel_shield_log('geo_ip', $cfg['geo_mode'], $ip, $action, 'connection outside Ethiopia' . ($country !== '' ? ' (' . $country . ')' : ''), $country);
+            if ($cfg['geo_mode'] === 'enforce') etel_shield_deny(403, 'This service is available inside Ethiopia only.', 'geo_blocked', 0);
+        }
+
         /* 5. floods */
         if ($cfg['rate_mode'] !== 'off') {
             $auth = isset($_SERVER['HTTP_AUTHORIZATION']) ? (string) $_SERVER['HTTP_AUTHORIZATION'] : (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) ? (string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] : '');
@@ -145,6 +152,15 @@ function etel_shield_guard($action, $body, $raw) {
                     if (!$signedIn && $n > $limit * 2) etel_shield_strike($ip, 'flood', 5, $cfg, $action, $country);
                     etel_shield_deny(429, 'Too many requests. Please slow down and try again in a minute.', 'rate_limited', 60 - (time() % 60));
                 }
+            }
+        }
+
+        /* 5b. Ethiopia only: the position the app sends (admin screens are not checked) */
+        if ($cfg['geo_device_mode'] !== 'off' && strpos($action, 'admin_') !== 0 && !etel_shield_waf_exempt($action, $cfg['geo_exempt_actions'])) {
+            $out = etel_shield_geo_device_out($body);
+            if ($out) {
+                etel_shield_log('geo_device', $cfg['geo_device_mode'], $ip, $action, $out[0] . ' = ' . round($out[1], 4) . ',' . round($out[2], 4) . ' is outside Ethiopia', $country);
+                if ($cfg['geo_device_mode'] === 'enforce') etel_shield_deny(403, 'This service works inside Ethiopia only: your device position is outside Ethiopia.', 'geo_device', 0);
             }
         }
 
