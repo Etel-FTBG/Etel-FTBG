@@ -1,5 +1,17 @@
 <?php
 if (!function_exists('sg_build_kitchen_ticket')) {
+    /* What an order is worth to the SHOP: the items, not the delivery fee or the service charge (those are for the courier, the company and
+       the customer). Sets fare_total to that value and removes the two fee fields, so a shop never sees them (and an older cached app that
+       still shows fare_total shows the items value). */
+    function sg_shop_view($row) {
+        $fee = isset($row['delivery_fee']) ? floatval($row['delivery_fee']) : 0;
+        $svc = isset($row['service_charge']) ? floatval($row['service_charge']) : 0;
+        $sub = (isset($row['subtotal']) && $row['subtotal'] !== null && floatval($row['subtotal']) > 0) ? floatval($row['subtotal'])
+             : (isset($row['fare_total']) ? max(0, floatval($row['fare_total']) - $fee - $svc) : null);
+        if ($sub !== null) { $row['fare_total'] = round($sub, 2); $row['items_total'] = round($sub, 2); }
+        unset($row['delivery_fee'], $row['service_charge']);
+        return $row;
+    }
     function sg_build_kitchen_ticket($pdo, $order_id) {
         $oq = $pdo->prepare('SELECT order_code, recipient_name, recipient_phone, notes, placed_at, from_zone, to_zone, fare_total, subtotal, delivery_fee, service_charge FROM orders WHERE id=?');
         $oq->execute(array($order_id));
@@ -10,6 +22,7 @@ if (!function_exists('sg_build_kitchen_ticket')) {
         $iq->execute(array($order_id));
         $items = $iq->fetchAll();
 
+        $orderRow = sg_shop_view($orderRow);   // no delivery fee or service charge on the shop's slips
         return array(
             'order_code'      => $orderRow['order_code'],
             'recipient_name'  => $orderRow['recipient_name'],
@@ -18,10 +31,8 @@ if (!function_exists('sg_build_kitchen_ticket')) {
             'placed_at'       => $orderRow['placed_at'],
             'from_zone'       => $orderRow['from_zone'],
             'to_zone'         => $orderRow['to_zone'],
-            'fare_total'      => $orderRow['fare_total'],
-            'subtotal'        => $orderRow['subtotal'],
-            'delivery_fee'    => $orderRow['delivery_fee'],
-            'service_charge'  => $orderRow['service_charge'],
+            'fare_total'      => isset($orderRow['fare_total']) ? $orderRow['fare_total'] : null,
+            'subtotal'        => isset($orderRow['items_total']) ? $orderRow['items_total'] : $orderRow['subtotal'],
             'items'           => $items,
         );
     }
@@ -432,6 +443,9 @@ case 'sg_orders': {
                 o.recipient_name,
                 o.recipient_phone,
                 o.fare_total,
+                o.subtotal,
+                o.delivery_fee,
+                o.service_charge,
                 o.placed_at,
                 o.notes
             FROM order_assignments oa
@@ -441,6 +455,7 @@ case 'sg_orders': {
         ");
         $s->execute($params);
         $orders = $s->fetchAll();
+        foreach ($orders as $oi => $orow) { $orders[$oi] = sg_shop_view($orow); }   // the delivery fee is for the courier and the admin, not the shop
     } catch (Exception $e) {
         fail_ex($e, 'Query failed', 500);
     }
@@ -671,7 +686,7 @@ case 'sg_order_detail': {
     
     if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
-    $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
+    $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : (isset($body['order_id']) ? intval($body['order_id']) : 0);
     if (!$order_id) fail('order_id is required', 400);
     
     try {
@@ -696,14 +711,15 @@ case 'sg_order_detail': {
                 o.from_zone,
                 o.to_zone,
                 o.package_type,
-                o.description,
-                o.weight,
-                o.sender_name,
-                o.sender_phone,
                 o.recipient_name,
                 o.recipient_phone,
                 o.recipient_address,
                 o.fare_total,
+                o.subtotal,
+                o.delivery_fee,
+                o.service_charge,
+                o.status AS order_status,
+                o.courier_id,
                 o.placed_at,
                 o.notes
             FROM order_assignments oa
@@ -715,7 +731,23 @@ case 'sg_order_detail': {
     } catch (Exception $e) { error_log('[ServiceGiverController] sg_order_detail: order query failed: ' . $e->getMessage()); $order = null; }
     
     if (!$order) fail('Order not found', 404);
-    
+
+    // What was ordered, and who is bringing it (the shop hands the food to the courier, so it may call them).
+    $order['items'] = array(); $order['courier'] = null;
+    try {
+        $iq = $pdo->prepare('SELECT item_name, quantity, unit_price, subtotal FROM order_items WHERE order_id=? ORDER BY id ASC');
+        $iq->execute(array($order_id));
+        $order['items'] = $iq->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($order['courier_id'])) {
+            $cq = $pdo->prepare('SELECT u.name, u.phone, c.vehicle_type FROM couriers c JOIN users u ON u.id = c.user_id WHERE c.id = ?');
+            $cq->execute(array($order['courier_id']));
+            $cr = $cq->fetch(PDO::FETCH_ASSOC);
+            if ($cr) $order['courier'] = array('name' => $cr['name'], 'phone' => $cr['phone'], 'vehicle' => $cr['vehicle_type']);
+        }
+    } catch (Exception $e) { error_log('[ServiceGiverController] sg_order_detail: items/courier failed: ' . $e->getMessage()); }
+    unset($order['courier_id']);
+    $order = sg_shop_view($order);   // no delivery fee or service charge for the shop
+
     ok(array('order' => $order));
     break;
 }

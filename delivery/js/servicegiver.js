@@ -449,6 +449,8 @@
                     if (status === 'pending' || status === 'preparing') {
                         actionBtn += '<button class="btn-decline" ' + _ea('openDecline', [orderId]) + '>' + escapeHtml(sgT('sg_decline')) + '</button>';
                     }
+                    sgOdCss();
+                    actionBtn += '<button type="button" class="sg-od-btn" ' + _ea('openSgOrder', [orderId]) + '>' + escapeHtml(sgT('sg_od_details')) + '</button>';
                     return '<div style="padding:16px;border-bottom:1px solid var(--border-light);">' +
                         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
                             '<div style="font-weight:700;color:var(--text-dark);">' + escapeHtml(order.order_code || ('#' + orderId)) + '</div>' +
@@ -465,6 +467,57 @@
             } catch(e) {
                 container.innerHTML = UI.error(sgT('sg_d_orders_err'));
             }
+        }
+
+        // ORDER DETAILS: everything the shop needs to know about one order, in one window with a Back button. The delivery fee and the service
+        // charge are not here (the server does not send them to the shop): the shop sees the value of the items.
+        function sgOdCss() {
+            if (document.getElementById('sg-od-css')) return;
+            const s = document.createElement('style'); s.id = 'sg-od-css';
+            s.textContent = '.sg-od-btn{margin-top:8px;width:100%;padding:10px;background:rgba(212,175,55,.12);color:#F0CA58;border:1px solid rgba(212,175,55,.65);border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer}' +
+                '#sg-od-overlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}' +
+                '.sg-od-sheet{background:var(--bg-card,#fff);color:var(--text-dark,#1a1a1a);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px 22px}' +
+                '.sg-od-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;position:sticky;top:-14px;background:inherit;padding:6px 0}' +
+                '.sg-od-top h3{margin:0;font-size:16px;flex:1}.sg-od-back{min-height:42px;padding:0 14px;border:1.5px solid var(--primary);background:none;color:var(--primary);border-radius:10px;font-weight:700;cursor:pointer}' +
+                '.sg-od-sec{border-top:1px solid var(--border-light,#ddd);padding:10px 0}.sg-od-sec h4{margin:0 0 6px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;opacity:.65}' +
+                '.sg-od-item{display:flex;gap:8px;padding:4px 0;font-size:14px}.sg-od-item span{flex:1}.sg-od-item em{font-style:normal;opacity:.8}' +
+                '.sg-od-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0}.sg-od-muted{opacity:.6;font-size:13px}.sg-od-total{font-size:15px;font-weight:800;display:flex;justify-content:space-between;margin-top:6px}';
+            document.head.appendChild(s);
+        }
+        function closeSgOrder() {
+            var o = document.getElementById('sg-od-overlay');
+            if (o && o.parentNode) o.parentNode.removeChild(o);
+        }
+        async function openSgOrder(orderId) {
+            closeSgOrder();
+            const res = await apiCall('sg_order_detail', { order_id: orderId });
+            if (!res || !res.order) return;
+            const o = res.order, T = sgT;
+            const row = function (k, v) { return v ? '<div class="sg-od-row"><span>' + escapeHtml(k) + '</span><b>' + v + '</b></div>' : ''; };
+            const items = (o.items || []).map(function (it) {
+                const sub = parseFloat(it.subtotal != null ? it.subtotal : (it.unit_price || 0) * (it.quantity || 1));
+                return '<div class="sg-od-item"><b>' + escapeHtml(String(parseInt(it.quantity, 10) || 1)) + ' ×</b><span>' + escapeHtml(it.item_name || '') + '</span><em>Br ' + sub.toFixed(2) + '</em></div>';
+            }).join('') || '<div class="sg-od-muted">—</div>';
+            const when = o.placed_at ? new Date(String(o.placed_at).replace(' ', 'T')).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            const c = o.courier;
+            const courier = c ? '<b>' + escapeHtml(c.name || '') + '</b>' + (c.vehicle ? ' · ' + escapeHtml(c.vehicle) : '') + (c.phone ? ' · <a href="tel:' + escapeHtml(c.phone) + '">' + escapeHtml(c.phone) + '</a>' : '')
+                : '<span class="sg-od-muted">' + escapeHtml(T('sg_od_no_courier')) + '</span>';
+            sgOdCss();
+            const ov = document.createElement('div'); ov.id = 'sg-od-overlay'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+            ov.innerHTML = '<div class="sg-od-sheet">' +
+                '<div class="sg-od-top"><button type="button" class="sg-od-back" ' + _ea('closeSgOrder', []) + '>&larr; ' + escapeHtml(T('sg_back')) + '</button><h3>' + escapeHtml(o.order_code || ('#' + orderId)) + '</h3>' + getStatusBadge(o.status || 'pending') + '</div>' +
+                '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_items')) + '</h4>' + items +
+                    (o.fare_total != null ? '<div class="sg-od-total"><span>' + escapeHtml(T('sg_od_items_total')) + '</span><span>Br ' + parseFloat(o.fare_total).toFixed(2) + '</span></div>' : '') + '</div>' +
+                '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_customer')) + '</h4>' +
+                    row(T('sg_od_for'), escapeHtml(o.recipient_name || '')) +
+                    row(T('sg_od_phone'), o.recipient_phone ? '<a href="tel:' + escapeHtml(o.recipient_phone) + '">' + escapeHtml(o.recipient_phone) + '</a>' : '') +
+                    row(T('sg_od_to'), escapeHtml(o.recipient_address || o.to_zone || '')) +
+                    row(T('sg_od_note'), escapeHtml(o.notes || '')) +
+                    row(T('sg_od_placed'), escapeHtml(when)) + '</div>' +
+                '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_courier')) + '</h4><div style="font-size:13.5px">' + courier + '</div></div>' +
+                '</div>';
+            ov.addEventListener('click', function (e) { if (e.target === ov) closeSgOrder(); });
+            document.body.appendChild(ov);
         }
 
         // Decline an order the shop cannot fill (sold out, too busy, closing). Same server rule as everywhere:
@@ -624,11 +677,8 @@
             const placedTime = ticket.placed_at ? new Date(ticket.placed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
             const route = (ticket.from_zone || ticket.to_zone) ? (escapeHtml(ticket.from_zone || '') + (ticket.to_zone ? ' &rarr; ' + escapeHtml(ticket.to_zone) : '')) : '';
 
-            const feeRows = [
-                ticket.subtotal != null ? lineItemHtml('Subtotal', 'Br ' + parseFloat(ticket.subtotal).toFixed(2), { cls: 'fee-row' }) : '',
-                ticket.delivery_fee != null ? lineItemHtml('Delivery Fee', 'Br ' + parseFloat(ticket.delivery_fee).toFixed(2), { cls: 'fee-row' }) : '',
-                ticket.service_charge != null ? lineItemHtml('Service Fee', 'Br ' + parseFloat(ticket.service_charge).toFixed(2), { cls: 'fee-row' }) : ''
-            ].join('');
+            // No delivery fee or service fee here: those are for the courier, the company and the customer, not the shop.
+            const feeRows = '';
 
             return '<div class="slip">' +
                 slipHeaderHtml(businessName, 'DELIVERY RECEIPT', ticket.is_reprint) +
@@ -637,7 +687,7 @@
                 '<hr class="rule-dash">' +
                 itemRows +
                 (feeRows ? '<hr class="rule-dash">' + feeRows : '') +
-                (ticket.fare_total != null ? '<hr class="rule-dash"><div class="total">TOTAL: Br ' + parseFloat(ticket.fare_total).toFixed(2) + '</div>' : '') +
+                (ticket.fare_total != null ? '<hr class="rule-dash"><div class="total">' + escapeHtml(sgT('sg_od_items_total')) + ': Br ' + parseFloat(ticket.fare_total).toFixed(2) + '</div>' : '') +
                 ((ticket.recipient_name || ticket.recipient_phone) ?
                     '<hr class="rule-dash">' +
                     (ticket.recipient_name ? '<div class="section-label">For</div><div class="recipient-name">' + escapeHtml(ticket.recipient_name) + '</div>' : '') +
@@ -679,10 +729,19 @@
                 '  .footer { text-align: center; margin-top: 10px; }' +
                 '  .footer-logo { display: block; max-width: 26px; max-height: 26px; margin: 0 auto 3px; object-fit: contain; opacity: .85; }' +
                 '  .footer-brand { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #555; }' +
+                '  .toolbar { display: flex; gap: 8px; margin: 0 0 10px; position: sticky; top: 0; background: #fff; padding: 6px 0; z-index: 2; }' +
+                '  .toolbar button { flex: 1; min-height: 44px; font: 700 15px sans-serif; border: 2px solid #000; background: #fff; border-radius: 10px; cursor: pointer; }' +
+                '  @media print { .toolbar { display: none; } }' +
                 '</style></head><body>' +
+                '<div class="toolbar"><button id="bk" type="button">&larr; ' + escapeHtml(sgT('sg_back')) + '</button><button id="pr" type="button">' + escapeHtml(sgT('sg_print')) + '</button></div>' +
                 kitchenSlipHtml(ticket, businessName) +
                 deliverySlipHtml(ticket, businessName) +
-                '<script>window.onload = function () { window.print(); };<\/script>' +
+                // Back: close this window; if the app will not close it, go back, or return to the shop app's own address.
+                '<script>(function () { var home = ' + JSON.stringify(window.location.href.split('#')[0]).replace(/</g, '\\u003c') + ';' +
+                ' function back() { try { window.close(); } catch (e) {} setTimeout(function () { if (!window.closed) { if (history.length > 1) history.back(); else location.replace(home); } }, 250); }' +
+                ' document.getElementById("bk").addEventListener("click", back);' +
+                ' document.getElementById("pr").addEventListener("click", function () { window.print(); });' +
+                ' window.onload = function () { window.print(); }; })();<\/script>' +
                 '</body></html>';
 
             const win = window.open('', '_blank', 'width=380,height=600');
@@ -2054,21 +2113,12 @@
                 }
                 text(bytes, DASH);
 
-                // Subtotal + delivery + service fee breakdown, so the
-                // customer can see what the total is made of, not just the
-                // final number.
-                const hasFeeBreakdown = ticket.subtotal != null || ticket.delivery_fee != null || ticket.service_charge != null;
-                if (hasFeeBreakdown) {
-                    if (ticket.subtotal != null) text(bytes, padLine('Subtotal', 'Br ' + parseFloat(ticket.subtotal).toFixed(2), 32) + '\n');
-                    if (ticket.delivery_fee != null) text(bytes, padLine('Delivery Fee', 'Br ' + parseFloat(ticket.delivery_fee).toFixed(2), 32) + '\n');
-                    if (ticket.service_charge != null) text(bytes, padLine('Service Fee', 'Br ' + parseFloat(ticket.service_charge).toFixed(2), 32) + '\n');
-                    text(bytes, DASH);
-                }
-
+                // The shop's slip shows the value of the ITEMS only. The delivery fee and the service charge are for the courier, the company
+                // and the customer: the server no longer sends them to the shop, and this slip never prints them.
                 if (ticket.fare_total != null) {
                     esc(bytes, 0x1D, 0x21, 0x01);    // double height
                     esc(bytes, 0x1B, 0x45, 0x01);    // bold on
-                    text(bytes, 'TOTAL: Br ' + parseFloat(ticket.fare_total).toFixed(2) + '\n');
+                    text(bytes, 'ITEMS TOTAL: Br ' + parseFloat(ticket.fare_total).toFixed(2) + '\n');
                     esc(bytes, 0x1D, 0x21, 0x00);
                     esc(bytes, 0x1B, 0x45, 0x00);    // bold off
                     text(bytes, DASH);

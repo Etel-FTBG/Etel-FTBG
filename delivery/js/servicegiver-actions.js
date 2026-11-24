@@ -58,6 +58,8 @@ EtelActions.expose([
     "reassignStaffRoleUI",
     "refreshCurrentPage",
     "removeSettingsCover",
+    "openSgOrder",
+    "closeSgOrder",
     "replyToReview",
     "saveAbysiniaAccount",
     "saveBusinessSettings",
