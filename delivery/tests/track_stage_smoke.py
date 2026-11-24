@@ -51,6 +51,11 @@ def register(phone, role):
     return (r.get("data") or {}).get("token")
 
 
+def sql1(q):
+    ok, out, _ = etel_test_db.query_text(q)
+    return out.strip().split("\n")[-1] if ok and out.strip() else ""
+
+
 def main():
     s, r = call("login", {"phone": "0900000000", "password": "admin1234"})
     admin = (r.get("data") or {}).get("token")
@@ -126,6 +131,23 @@ def main():
     check("with a pin, the customer gets the shop's point", (o.get("pickup_point") or {}).get("lat") == 7.05 and (o.get("pickup_point") or {}).get("lng") == 38.48, o.get("pickup_point"))
     check("the raw columns are still not sent", "shop_lat" not in o and "pickup_lat" not in o, sorted(o.keys()))
 
+    print("4c. Who is coming (the courier card for the customer)")
+    cuid = sql1("SELECT u.id FROM users u WHERE u.phone = '+251988%s'" % TAIL)
+    etel_test_db.run_sql("UPDATE couriers SET vehicle_type = 'qute', plate_number = 'AA 12345', rating = 4.8, total_deliveries = 57 WHERE user_id = %s" % cuid)
+    etel_test_db.run_sql("INSERT INTO courier_details (user_id, id_type, id_number, id_photo_url, selfie_url, licence_number, emergency_name, emergency_phone, address, vehicle_info) "
+                         "VALUES (%s, 'national_id', 'SECRET-ID-999', 'https://x.test/uploads/driver_documents/idphoto.jpg', 'https://x.test/uploads/driver_documents/selfie_test.jpg', 'SECRET-LIC-1', 'Secret Mum', '0911999999', 'Secret Street 5', 'Red Bajaj, 2021') "
+                         "ON DUPLICATE KEY UPDATE selfie_url = VALUES(selfie_url), vehicle_info = VALUES(vehicle_info), id_number = VALUES(id_number), licence_number = VALUES(licence_number), emergency_name = VALUES(emergency_name), address = VALUES(address)" % cuid)
+    d, tl, cur, by = track(cust)
+    o = d.get("order") or {}
+    cc = o.get("courier_card") or {}
+    check("the card has the name, phone, vehicle, plate, make text, rating, deliveries", bool(cc.get("name")) and bool(cc.get("phone")) and cc.get("vehicle_type") == "qute" and cc.get("plate") == "AA 12345" and cc.get("vehicle_info") == "Red Bajaj, 2021" and cc.get("rating") == 4.8 and cc.get("deliveries") == 57, cc)
+    check("the courier's photo comes as a signed, expiring link (not the plain private address)", "private_file.php" in (cc.get("photo") or "") and "selfie_test.jpg" in (cc.get("photo") or "") and "uploads/driver_documents" not in (cc.get("photo") or ""), cc.get("photo"))
+    raw = json.dumps(d)
+    check("the ID, licence, home address and emergency contact are NOT sent", all(x not in raw for x in ("SECRET-ID-999", "SECRET-LIC-1", "Secret Mum", "0911999999", "Secret Street", "idphoto")), raw[:300])
+    d, tl, cur, by = track(guest)
+    check("the person the food is for sees the card too", ((d.get("order") or {}).get("courier_card") or {}).get("plate") == "AA 12345", (d.get("order") or {}).get("courier_card"))
+    d, tl, cur, by = track(cust)
+
     print("5. Order details")
     items = o.get("items") or []
     check("the customer gets the items (2 x Track Meal)", len(items) == 1 and items[0].get("item_name") == "Track Meal" and int(items[0].get("quantity")) == 2, items)
@@ -161,6 +183,9 @@ def main():
     check("the customer now sees Being prepared, with Courier assigned still ticked", cur2 and cur2[0]["label"] == "Being prepared" and {x["status"]: x for x in d2["timeline"]}["assigned"]["done"], d2.get("timeline"))
     check("and can no longer cancel (the shop has started)", (d2.get("order") or {}).get("can_cancel") is False, (d2.get("order") or {}).get("can_cancel"))
 
+    etel_test_db.run_sql("UPDATE orders SET status = 'delivered' WHERE id = %d" % int(oid))
+    d, tl, cur, by = track(cust)
+    check("after delivery the courier card is gone (no photo or plate kept on screen)", (d.get("order") or {}).get("courier_card") is None, (d.get("order") or {}).get("courier_card"))
     etel_test_db.run_sql("DELETE FROM login_attempts WHERE identifier LIKE 'register:%' OR identifier LIKE 'upload:%'")
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0

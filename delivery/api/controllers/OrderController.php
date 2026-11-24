@@ -1019,6 +1019,8 @@ case 'track_order': {
     elseif (!$is_package && is_numeric($order['shop_lat']) && is_numeric($order['shop_lng']) && (floatval($order['shop_lat']) || floatval($order['shop_lng']))) $pk = array(floatval($order['shop_lat']), floatval($order['shop_lng']));
     $order['pickup_point'] = $pk ? array('lat' => round($pk[0], 6), 'lng' => round($pk[1], 6)) : null;
     unset($order['shop_lat'], $order['shop_lng'], $order['pickup_lat'], $order['pickup_lng']);
+    // Who is coming (photo, vehicle, plate...), only for the person who ordered or the recipient, only while the order is running (api/lib/courier_card.php)
+    try { require_once __DIR__ . '/../lib/courier_card.php'; $order['courier_card'] = !empty($order['courier_name']) ? etel_courier_card($pdo, $order['id']) : null; } catch (Exception $cc) { $order['courier_card'] = null; } catch (Throwable $cc) { $order['courier_card'] = null; }
     // can the customer still cancel it themselves, and which reasons to offer (api/lib/order_cancel.php)
     try {
         require_once __DIR__ . '/../lib/order_cancel.php';

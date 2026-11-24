@@ -707,7 +707,7 @@ async function refreshTrackOrder() {
                 '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';flex-shrink:0;box-shadow:' + (t.current ? '0 0 10px rgba(212,175,55,.6)' : 'none') + '"></div>' +
                 '<span style="font-size:13px;color:' + (t.done ? 'var(--text)' : 'var(--text-dim)') + ';font-weight:' + (t.current ? '700' : '500') + '">' + escapeHtml(t.label) + '</span></div>';
         }).join('') + '</div>';
-    document.getElementById('track-courier-card').innerHTML = o.courier_name
+    document.getElementById('track-courier-card').innerHTML = (window.etelCourierCard && o.courier_card) ? etelCourierCard(o) : o.courier_name   // js/customer-courier-card.js: the full "who is coming" card
         ? '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass-2);border:1px solid var(--glass-border);border-radius:14px;margin-top:14px">' +
           '<div style="width:44px;height:44px;border-radius:50%;background:rgba(212,175,55,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div>' +
           '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(o.courier_name) + '</div>' +
