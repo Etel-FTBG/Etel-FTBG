@@ -210,6 +210,10 @@ if (!$body || !is_array($body)) $body = array();
 $action = isset($body['action'])   ? trim($body['action'])
         : (isset($_GET['action'])  ? trim($_GET['action'])  : '');
 
+/* Etel Shield (lib/shield.php): blocked connections, hacking tools, floods and attack patterns are stopped here, before any real work.
+   Costs one tiny file write per request, no database. Never allowed to break a request. */
+try { require_once __DIR__ . '/lib/shield.php'; etel_shield_guard($action, $body, $raw); } catch (Exception $e) {} catch (Throwable $e) {}
+
 /* API health counters (one cheap row update per request, see lib/api_perf.php).
    Never allowed to break a request. */
 try { require_once __DIR__ . '/lib/api_perf.php'; etel_perf_install($action); } catch (Exception $e) {} catch (Throwable $e) {}
@@ -1796,6 +1800,8 @@ switch ($action) {
     case 'admin_ride_offers_get': case 'admin_ride_offers_save': case 'admin_ride_area_save': case 'admin_ride_area_delete':
         require __DIR__ . '/controllers/RideOffersAdminController.php';
         break;
+    case 'admin_shield_get': case 'admin_shield_save': case 'admin_shield_events': case 'admin_shield_bans': case 'admin_shield_ban': case 'admin_shield_unban':
+        require __DIR__ . '/controllers/ShieldController.php';
     case 'session_ping': case 'admin_idle_get': case 'admin_idle_save':
         require __DIR__ . '/controllers/SessionController.php';
         break;
