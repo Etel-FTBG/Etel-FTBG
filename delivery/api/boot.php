@@ -377,6 +377,11 @@ function get_auth_user($pdo) {
         require_once __DIR__ . '/lib/auth_sessions.php';
         if (!etel_sess_touch($pdo, $u['id'], $t)) return null;
     } catch (Exception $e) { /* never lock anyone out because of the device list */ }
+    // Signed out for not using the app (lib/idle_session.php): only sessions whose app has reported activity before, never couriers / drivers who are working. Fails open.
+    try {
+        require_once __DIR__ . '/lib/idle_session.php';
+        if (etel_idle_expired($pdo, intval($u['id']), (string) $u['role'], $t)) { $GLOBALS['ETEL_IDLE_EXPIRED'] = 1; return null; }
+    } catch (Exception $e) { /* never lock anyone out because of this check */ }
     /* Limited (Ride-only) EtelID accounts: only Ride is open. Controllers for
        everything else (orders, service givers, equb, courier) set
        $GLOBALS['ETEL_LIMITED_BLOCK'] in the dispatch below before they load,
@@ -423,6 +428,7 @@ function etel_limited_refuse() {
 }
 function require_auth($pdo) {
     $u = get_auth_user($pdo);
+    if (!$u && !empty($GLOBALS['ETEL_IDLE_EXPIRED'])) fail('You were signed out because the app was not used for a while. Please sign in again.', 401, array('code' => 'idle_expired'));
     if (!$u) fail('Unauthorized  please login again', 401);
     etel_admin_2fa_enforce($pdo, $u);
     return $u;
@@ -1796,6 +1802,8 @@ switch ($action) {
         break;
     case 'admin_shield_get': case 'admin_shield_save': case 'admin_shield_events': case 'admin_shield_bans': case 'admin_shield_ban': case 'admin_shield_unban':
         require __DIR__ . '/controllers/ShieldController.php';
+    case 'session_ping': case 'admin_idle_get': case 'admin_idle_save':
+        require __DIR__ . '/controllers/SessionController.php';
         break;
     case 'courier_job_geo':
         require __DIR__ . '/controllers/CourierJobGeoController.php';
