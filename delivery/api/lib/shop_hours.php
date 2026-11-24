@@ -37,13 +37,25 @@ function etel_hours_within($opens, $closes, $now) {
 }
 
 // Returns array(open => bool, reason => ''|'switch'|'hours', opens_at => 'HH:MM'|null, closes_at => 'HH:MM'|null).
+// A shop WITH opening hours is open exactly inside them: the online switch does not close it and does not open it.
+// A shop with no hours set follows its switch (on = open, off = closed).
 function etel_shop_state($is_online, $opens, $closes, $now) {
     $o = etel_hours_clean($opens); $c = etel_hours_clean($closes);
     $hasHours = ($o !== null && $c !== null && $o !== $c);
     $state = array('open' => true, 'reason' => '', 'opens_at' => $hasHours ? $o : null, 'closes_at' => $hasHours ? $c : null);
-    if (!$is_online) { $state['open'] = false; $state['reason'] = 'switch'; return $state; }
-    if ($hasHours && !etel_hours_within($o, $c, $now)) { $state['open'] = false; $state['reason'] = 'hours'; }
+    if ($hasHours) {
+        if (!etel_hours_within($o, $c, $now)) { $state['open'] = false; $state['reason'] = 'hours'; }
+        return $state;
+    }
+    if (!$is_online) { $state['open'] = false; $state['reason'] = 'switch'; }
     return $state;
+}
+
+// For the shop's own app and the Admin list: is the shop open right now, and are its opening hours the thing in charge (hours_mode = 1)?
+function etel_shop_open_fields($row, $now = null) {
+    if ($now === null) $now = date('H:i');
+    $st = etel_shop_state(!empty($row['is_online']), isset($row['opens_at']) ? $row['opens_at'] : null, isset($row['closes_at']) ? $row['closes_at'] : null, $now);
+    return array('open_now' => $st['open'] ? 1 : 0, 'hours_mode' => $st['opens_at'] !== null ? 1 : 0, 'opens_at' => $st['opens_at'], 'closes_at' => $st['closes_at']);
 }
 
 function etel_item_sold_out($sold_out_date, $today) {
@@ -68,7 +80,7 @@ function etel_shop_feed_apply($rows, $now, $today) {
 
 // Order-time check. Returns '' when every line can be ordered, or the message to show the customer.
 // Hidden / sold-out items are always refused. A shop is refused only when it has HOURS set and is outside them
-// (a shop that merely has its switch off keeps the old behaviour: the customer was warned and may still order).
+// (a shop with no hours that merely has its switch off keeps the old behaviour: the customer was warned and may still order).
 function etel_order_blockers($pdo, $item_ids, $now = null, $today = null) {
     $item_ids = array_values(array_unique(array_filter(array_map('intval', $item_ids))));
     if (!$item_ids) return '';

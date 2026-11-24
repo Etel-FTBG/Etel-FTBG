@@ -238,11 +238,17 @@
         // used to be static HTML ("● Online", always, regardless of the
         // real is_online value) - sg_set_online has existed and worked in
         // the backend the whole time, nothing in the UI ever called it.
+        // Open or closed follows the opening hours when the shop has them (the server sends hours_mode and open_now); only a shop with no
+        // hours follows its online switch. An older server sends neither field, so the switch is used, as before.
+        function sgByHours(sg) { return !!sg && parseInt(sg.hours_mode, 10) === 1; }
+        function sgIsOpen(sg) { if (!sg) return false; return sgByHours(sg) ? parseInt(sg.open_now, 10) === 1 : parseInt(sg.is_online, 10) === 1; }
+        function sgHm(t) { return t ? String(t).slice(0, 5) : ''; }
         function updateOnlineStatusUI() {
-            const online = !!(currentServiceGiver && parseInt(currentServiceGiver.is_online, 10) === 1);
+            const online = sgIsOpen(currentServiceGiver);
             const statusEl = document.getElementById('profile-status');
             if (statusEl) {
-                statusEl.textContent = online ? sgT('sg_online') : sgT('sg_offline');
+                if (sgByHours(currentServiceGiver)) statusEl.textContent = (online ? sgT('sg_open_until').replace('{t}', sgHm(currentServiceGiver.closes_at)) : sgT('sg_closed_until').replace('{t}', sgHm(currentServiceGiver.opens_at)));
+                else statusEl.textContent = online ? sgT('sg_online') : sgT('sg_offline');
                 statusEl.style.color = online ? 'var(--success, #2ecc71)' : 'var(--text-faint, #9A9AAE)';
             }
             const dot = document.getElementById('sgp-dot');
@@ -251,6 +257,10 @@
 
         async function toggleSgOnline(e) {
             if (e) e.stopPropagation(); // don't also trigger the profile-panel opener it sits inside
+            if (sgByHours(currentServiceGiver)) {   // the opening hours are in charge: say so instead of flipping a switch that does nothing
+                showNotification(sgT('sg_d_hours_rule').replace('{a}', sgHm(currentServiceGiver.opens_at)).replace('{b}', sgHm(currentServiceGiver.closes_at)), 'success');
+                return;
+            }
             const wasOnline = !!(currentServiceGiver && parseInt(currentServiceGiver.is_online, 10) === 1);
             const nextOnline = wasOnline ? 0 : 1;
             const statusEl = document.getElementById('profile-status');
@@ -270,12 +280,16 @@
             const data = await apiCall('sg_set_hours', { opens_at: o, closes_at: c });
             if (!data) return;
             currentServiceGiver.opens_at = data.opens_at; currentServiceGiver.closes_at = data.closes_at;
+            if (data.hours_mode != null) { currentServiceGiver.hours_mode = data.hours_mode; currentServiceGiver.open_now = data.open_now; }
+            updateOnlineStatusUI();
             showNotification(sgT('sg_d_hours_saved').replace('{a}', data.opens_at).replace('{b}', data.closes_at), 'success');
         }
         async function clearSgHours() {
             const data = await apiCall('sg_set_hours', { opens_at: '', closes_at: '' });
             if (!data) return;
             currentServiceGiver.opens_at = null; currentServiceGiver.closes_at = null;
+            if (data.hours_mode != null) { currentServiceGiver.hours_mode = data.hours_mode; currentServiceGiver.open_now = data.open_now; }
+            updateOnlineStatusUI();
             const hOpen = document.getElementById('sgp-opens'), hClose = document.getElementById('sgp-closes');
             if (hOpen) hOpen.value = ''; if (hClose) hClose.value = '';
             showNotification(sgT('sg_d_hours_cleared'), 'success');
@@ -303,7 +317,7 @@
             // shows an explicit "hidden" dash rather than a misleading "ETB 0".
             setText('sgp-stat-revenue', currentStaffRole === 'cashier' ? '—' : 'ETB ' + Math.round(parseFloat(sg.total_earnings || 0)).toLocaleString());
             const dot = document.getElementById('sgp-dot');
-            if (dot) dot.style.background = sg.is_online ? 'var(--success)' : 'var(--text-faint)';
+            if (dot) dot.style.background = sgIsOpen(sg) ? 'var(--success)' : 'var(--text-faint)';
             const hOpen = document.getElementById('sgp-opens'), hClose = document.getElementById('sgp-closes');
             if (hOpen) hOpen.value = sg.opens_at ? String(sg.opens_at).slice(0, 5) : '';
             if (hClose) hClose.value = sg.closes_at ? String(sg.closes_at).slice(0, 5) : '';
