@@ -118,6 +118,14 @@ def main():
     check("the order status is assigned but the stage stays at Ready for pickup", o.get("status") == "assigned" and o.get("stage") == "accepted" and cur.get("label") == "Ready for pickup", (o.get("status"), o.get("stage"), cur))
     check("now Courier assigned is ticked", by["assigned"]["done"], by)
 
+    print("4b. The map pin of the shop (for the live map)")
+    check("the shop has no pin yet: pickup_point is empty and the raw columns are not sent", o.get("pickup_point") is None and "shop_lat" not in o and "pickup_lat" not in o, o)
+    etel_test_db.run_sql("UPDATE service_givers SET lat = 7.0500000, lng = 38.4800000 WHERE business_name = 'Trk Kitchen'")
+    d, tl, cur, by = track(cust)
+    o = d.get("order") or {}
+    check("with a pin, the customer gets the shop's point", (o.get("pickup_point") or {}).get("lat") == 7.05 and (o.get("pickup_point") or {}).get("lng") == 38.48, o.get("pickup_point"))
+    check("the raw columns are still not sent", "shop_lat" not in o and "pickup_lat" not in o, sorted(o.keys()))
+
     print("5. Order details")
     items = o.get("items") or []
     check("the customer gets the items (2 x Track Meal)", len(items) == 1 and items[0].get("item_name") == "Track Meal" and int(items[0].get("quantity")) == 2, items)

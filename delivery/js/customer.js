@@ -682,11 +682,12 @@ async function openTrackOrder(orderId) {
     document.getElementById('track-map').innerHTML = 'Loading map…';
     await refreshTrackOrder();
     if (_trackPollTimer) clearInterval(_trackPollTimer);
-    _trackPollTimer = setInterval(refreshTrackOrder, 8000);
+    _trackPollTimer = setInterval(refreshTrackOrder, 5000);   // every 5 s so the courier moves on the map almost live
 }
 function closeTrackOrder() {
     document.getElementById('view-track-order').style.display = 'none';
     if (_trackPollTimer) { clearInterval(_trackPollTimer); _trackPollTimer = null; }
+    if (window.etelTrackReset) { try { etelTrackReset(); } catch (e) {} }
     _trackOrderId = null; _trackGMap = null; _trackDestMarker = null; _trackCourierMarker = null; _trackRoute = null;
     if (_trackAnim) { cancelAnimationFrame(_trackAnim); _trackAnim = null; }
 }
@@ -887,6 +888,12 @@ function updateTrackMap(o) {
         // courier stopped reporting: a pin from 15 minutes ago would be a lie, so take it off the map
         _trackCourierMarker.setMap(null); _trackCourierMarker = null;
     }
+    if (window.etelTrackLive) {
+        // js/customer-live-map.js draws the shop pin, the road route of the current step, the LIVE badge and the distance
+        if (_trackRoute) { _trackRoute.setMap(null); _trackRoute = null; }
+        try { etelTrackLive(_trackGMap, o); } catch (e) { console.warn('live map', e); }
+        return;
+    }
     if (hasDest && hasCourier) {
         const line = [{lat: +o.courier_lat, lng: +o.courier_lng}, {lat: +o.delivery_lat, lng: +o.delivery_lng}];
         if (!_trackRoute) _trackRoute = new google.maps.Polyline({map: _trackGMap, path: line, strokeOpacity: 0, icons: [{icon: {path: 'M 0,-1 0,1', strokeOpacity: .85, strokeColor: '#D4AF37', scale: 3}, offset: '0', repeat: '14px'}]});
@@ -898,7 +905,7 @@ function updateTrackMap(o) {
 function _glideMarker(marker, to) {
     const from = marker.getPosition();
     if (!from) { marker.setPosition(to); return; }
-    const a = {lat: from.lat(), lng: from.lng()}, t0 = performance.now(), dur = 1000;
+    const a = {lat: from.lat(), lng: from.lng()}, t0 = performance.now(), dur = window.etelTrackLive ? 4500 : 1000;
     if (_trackAnim) cancelAnimationFrame(_trackAnim);
     (function step(now) {
         const k = Math.min(1, (now - t0) / dur);
