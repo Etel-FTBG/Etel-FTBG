@@ -31,7 +31,19 @@ check('switch on, inside hours: open', $s['open'] === true && $s['reason'] === '
 $s = etel_shop_state(1, '08:00', '21:00', '23:00');
 check('switch on, outside hours: closed because of hours', $s['open'] === false && $s['reason'] === 'hours');
 $s = etel_shop_state(0, '08:00', '21:00', '12:00');
-check('switch off, inside hours: still closed (the switch wins)', $s['open'] === false && $s['reason'] === 'switch');
+check('switch off, inside hours: OPEN (the opening hours decide, not the switch)', $s['open'] === true && $s['reason'] === '');
+$s = etel_shop_state(0, '08:00', '21:00', '23:00');
+check('switch off, outside hours: closed because of hours', $s['open'] === false && $s['reason'] === 'hours');
+$s = etel_shop_state(0, '13:00', '10:00', '10:33');
+check('overnight hours 13:00-10:00 at 10:33: closed', $s['open'] === false && $s['reason'] === 'hours');
+$s = etel_shop_state(0, '06:00', '22:00', '10:48');
+check('06:00-22:00 at 10:48 with the switch off: open', $s['open'] === true);
+$f = etel_shop_open_fields(array('is_online' => 0, 'opens_at' => '06:00:00', 'closes_at' => '22:00:00'), '10:48');
+check('open fields: hours mode, open now, times as HH:MM', $f['hours_mode'] === 1 && $f['open_now'] === 1 && $f['opens_at'] === '06:00' && $f['closes_at'] === '22:00', $f);
+$f = etel_shop_open_fields(array('is_online' => 1, 'opens_at' => null, 'closes_at' => null), '10:48');
+check('open fields: no hours follows the switch (on = open)', $f['hours_mode'] === 0 && $f['open_now'] === 1);
+$f = etel_shop_open_fields(array('is_online' => 0), '10:48');
+check('open fields: no hours and switch off = closed', $f['hours_mode'] === 0 && $f['open_now'] === 0);
 $s = etel_shop_state(1, null, null, '03:00');
 check('no hours set, switch on: open any time', $s['open'] === true && $s['opens_at'] === null);
 $s = etel_shop_state(0, null, null, '12:00');
@@ -46,13 +58,16 @@ echo "customer feed\n";
 $rows = array(
     array('id' => 1, 'is_online' => 1, 'opens_at' => '08:00:00', 'closes_at' => '21:00:00', 'sold_out_date' => null, 'is_available' => 1),
     array('id' => 2, 'is_online' => 1, 'opens_at' => '08:00:00', 'closes_at' => '21:00:00', 'sold_out_date' => '2026-10-14', 'is_available' => 1),
-    array('id' => 3, 'is_online' => 0, 'opens_at' => null, 'closes_at' => null, 'sold_out_date' => null, 'is_available' => 1));
+    array('id' => 3, 'is_online' => 0, 'opens_at' => null, 'closes_at' => null, 'sold_out_date' => null, 'is_available' => 1),
+    array('id' => 4, 'is_online' => 0, 'opens_at' => '08:00:00', 'closes_at' => '21:00:00', 'sold_out_date' => null, 'is_available' => 1));
 $f = etel_shop_feed_apply($rows, '22:30', '2026-10-14');
 check('after closing time the feed says closed (is_online 0, reason hours)', $f[0]['is_online'] === 0 && $f[0]['closed_reason'] === 'hours' && $f[0]['opens_at'] === '08:00');
 check('sold-out item is marked and not available', $f[1]['sold_out'] === 1 && $f[1]['is_available'] === 0 && !array_key_exists('sold_out_date', $f[1]));
 check('switch-off shop reports reason switch', $f[2]['is_online'] === 0 && $f[2]['closed_reason'] === 'switch');
 $f = etel_shop_feed_apply($rows, '12:00', '2026-10-14');
 check('at noon the first shop is open and its item orderable', $f[0]['is_online'] === 1 && $f[0]['sold_out'] === 0 && $f[0]['is_available'] === 1);
+check('at noon a shop with hours and its switch OFF is open too (hours decide)', $f[3]['is_online'] === 1 && $f[3]['closed_reason'] === '');
+check('at noon a shop with no hours and its switch off is still closed (reason switch)', $f[2]['is_online'] === 0 && $f[2]['closed_reason'] === 'switch');
 
 echo "order-time block (real database)\n";
 etel_hours_ensure_columns($pdo);

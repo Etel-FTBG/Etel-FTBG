@@ -24,7 +24,8 @@ function title(r) { return r.business_name || r.name || 'Business'; }
 function pillFor(r) {
   if (r.status === 'suspended') return K.pill('Suspended', 'red');
   if (r.status === 'pending') return K.pill('Waiting verification', 'amber');
-  return K.pill(r.is_online ? 'Open now' : 'Closed', r.is_online ? 'green' : 'grey');
+  var open = r.open_now != null ? Number(r.open_now) === 1 : !!r.is_online;   // by the opening hours when the shop has them (older servers: the switch)
+  return K.pill(open ? 'Open now' : 'Closed', open ? 'green' : 'grey');
 }
 function logo(r, cls) {
   var g = GRAD[r.status] || GRAD.verified, u = String(r.logo_url || '');
@@ -51,7 +52,7 @@ function load(quiet) {
 function types() { var seen = {}; V.rows.forEach(function (r) { if (r.service_type) seen[r.service_type] = 1; }); return Object.keys(seen).sort(); }
 function visibleRows() {
   var q = V.q.toLowerCase(), rows = V.rows.filter(function (r) {
-    if (V.filter === 'online') { if (!r.is_online || r.status === 'suspended') return false; }
+    if (V.filter === 'online') { if (!(r.open_now != null ? Number(r.open_now) === 1 : r.is_online) || r.status === 'suspended') return false; }
     else if (V.filter && r.status !== V.filter) return false;
     if (V.type && r.service_type !== V.type) return false;
     if (q && (String(r.business_name || '') + ' ' + String(r.name || '') + ' ' + String(r.phone || '') + ' ' + String(r.service_giver_code || '') + ' ' + String(r.zone || '')).toLowerCase().indexOf(q) < 0) return false;

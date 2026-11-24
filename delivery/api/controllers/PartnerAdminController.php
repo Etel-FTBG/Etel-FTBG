@@ -103,9 +103,11 @@ case 'admin_service_givers_board': {
     $pdo = db();
     $u = require_admin($pdo, 'service_givers.view');
     if (etel_is_ride_only($pdo, $u)) fail('You can only see ride accounts', 403);
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    etel_hours_ensure_columns($pdo);
     $sc = etel_pb_cols($pdo, 'service_givers');
     $cols = array('sg.id', 'sg.user_id', 'u.name', 'u.phone');
-    foreach (array('service_giver_code', 'business_name', 'service_type', 'zone', 'address', 'status', 'is_online', 'average_rating', 'rating_count', 'completed_deliveries', 'total_deliveries', 'failed_deliveries', 'total_earnings', 'logo_url', 'created_at') as $c) {
+    foreach (array('service_giver_code', 'business_name', 'service_type', 'zone', 'address', 'status', 'is_online', 'opens_at', 'closes_at', 'average_rating', 'rating_count', 'completed_deliveries', 'total_deliveries', 'failed_deliveries', 'total_earnings', 'logo_url', 'created_at') as $c) {
         if (in_array($c, $sc, true)) $cols[] = 'sg.' . $c;
     }
     $cols[] = "(SELECT COUNT(*) FROM order_assignments oa JOIN orders o ON o.id = oa.order_id WHERE oa.service_giver_id = sg.id AND o.placed_at >= CURDATE()) AS orders_today";
@@ -120,10 +122,14 @@ case 'admin_service_givers_board': {
         $r['id'] = intval($r['id']); $r['user_id'] = intval($r['user_id']);
         $r['orders_today'] = intval($r['orders_today']); $r['orders_30d'] = intval($r['orders_30d']); $r['open_orders'] = intval($r['open_orders']);
         $r['is_online'] = !empty($r['is_online']) ? 1 : 0;
+        // Open or closed follows the opening hours when the shop has them; only a verified shop can be open.
+        $of = etel_shop_open_fields($r);
+        $r['open_now'] = (!isset($r['status']) || $r['status'] === 'verified') ? $of['open_now'] : 0;
+        $r['hours_mode'] = $of['hours_mode'];
         $r['average_rating'] = isset($r['average_rating']) ? round(floatval($r['average_rating']), 2) : 0;
         $r['total_earnings'] = isset($r['total_earnings']) ? round(floatval($r['total_earnings']), 2) : 0;
         $sum['total']++; $sum['orders_today'] += $r['orders_today']; $sum['earnings'] += $r['total_earnings'];
-        if ($r['is_online'] && (!isset($r['status']) || $r['status'] !== 'suspended')) $sum['online']++;
+        if ($r['open_now'] && (!isset($r['status']) || $r['status'] !== 'suspended')) $sum['online']++;
         if (isset($r['status']) && isset($sum[$r['status']])) $sum[$r['status']]++;
         if ($r['average_rating'] > 0) { $rsum += $r['average_rating']; $rn++; }
     }
@@ -147,6 +153,10 @@ case 'admin_service_giver_detail': {
                   'completed_deliveries', 'total_deliveries', 'failed_deliveries', 'total_earnings', 'logo_url', 'cover_url', 'opens_at', 'closes_at', 'created_at', 'lat', 'lng', 'business_tools');
     $out = array();
     foreach ($keep as $k) { if (array_key_exists($k, $g)) $out[$k] = $g[$k]; }
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    $of = etel_shop_open_fields($out);   // open or closed follows the opening hours when the shop has them
+    $out['open_now'] = (!isset($out['status']) || $out['status'] === 'verified') ? $of['open_now'] : 0;
+    $out['hours_mode'] = $of['hours_mode'];
     $st = $one("SELECT SUM(o.placed_at >= CURDATE()) AS today, SUM(o.placed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS d7, SUM(o.placed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS d30,
                        SUM(o.status = 'cancelled' AND o.placed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS x30,
                        SUM(o.status IN ('pending','assigned','picked_up','in_transit')) AS open_orders,
