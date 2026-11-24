@@ -12,7 +12,12 @@
    DiagPanel replays this buffer into its own log once it starts. */
 window.__etelEarlyErrors = [];
 window.addEventListener('error', function(e) {
-  window.__etelEarlyErrors.push('EARLY JS: ' + e.message + ' (' + (e.filename||'').split('/').pop() + ':' + e.lineno + ')');
+  // Where it happened: file, line and COLUMN, and the first two lines of the call stack (function names), so a report names the real code even
+  // when an old copy of a script is cached or injected code is involved.
+  var where = (e.filename||'').split('/').pop() + ':' + e.lineno + ':' + (e.colno || 0);
+  var stack = '';
+  try { if (e.error && e.error.stack) stack = String(e.error.stack).split('\n').slice(1, 3).map(function(x) { return x.trim().replace(/https?:\/\/[^\/]+\//, ''); }).join(' | '); } catch (x) { /* no stack */ }
+  window.__etelEarlyErrors.push('EARLY JS: ' + e.message + ' (' + where + ')' + (stack ? ' ' + stack : ''));
 });
 window.addEventListener('unhandledrejection', function(e) {
   window.__etelEarlyErrors.push('EARLY Unhandled promise rejection: ' + (e.reason && e.reason.message || e.reason || 'unknown'));
