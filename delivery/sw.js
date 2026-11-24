@@ -22,6 +22,8 @@ const PRECACHE = [
     './driver/',
     './offline.html',
     './js/core.js',
+    './js/qrcode.min.js',
+    './js/jsQR.js',
     './js/etel-display-settings.js',
     './favicon.ico',
     './icons/icon-192.png',
