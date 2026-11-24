@@ -72,7 +72,7 @@ def main():
     if not cust:
         return 1
     s, r = call("customer_create_order", {"items": [{"item_id": item, "quantity": 3}], "to_zone": "Tabor", "recipient_name": "Emu", "recipient_phone": "0936533606",
-                                          "notes": "No onions", "payment_method": "cash"}, cust)
+                                          "notes": "Address: Cheffe\nNo onions", "payment_method": "cash"}, cust)
     oid = (r.get("data") or {}).get("order_id")
     check("an order is placed (3 x 100 and a delivery fee)", r.get("success") is True and oid, r)
     row = etel_test_db.query_text("SELECT CONCAT(subtotal,'|',delivery_fee,'|',service_charge,'|',fare_total) FROM orders WHERE id=%d" % int(oid))[1].strip().split("|")
@@ -86,13 +86,16 @@ def main():
     check("the list has the order", bool(mine), r)
     check("the list shows the items value (300), not the total with the delivery fee", float(o.get("fare_total", 0)) == 300 and float(o.get("items_total", 0)) == 300, o)
     check("the list carries no delivery fee and no service charge", "delivery_fee" not in o and "service_charge" not in o, list(o.keys()))
+    check("the list carries no customer name, phone, address or drop-off area", not any(k in o for k in ("recipient_name", "recipient_phone", "recipient_address", "to_zone")), list(o.keys()))
+    check("the customer's address is cut out of the note, the kitchen note stays", o.get("notes") == "No onions", o.get("notes"))
 
     print("2. The shop's order detail")
     s, r = call("sg_order_detail", {"order_id": oid}, sg)
     d = (r.get("data") or {}).get("order") or {}
     check("the detail loads with the order id in the request body", s == 200 and d.get("order_code"), r)
     check("the detail has the items with counts", len(d.get("items") or []) == 1 and int(d["items"][0]["quantity"]) == 3 and d["items"][0]["item_name"] == "View Meal", d.get("items"))
-    check("the detail has the customer, the note and the address", d.get("recipient_name") == "Emu" and d.get("recipient_phone") == "0936533606" and d.get("notes") == "No onions", d)
+    check("the detail has the kitchen note but NOT the customer's name, phone or address", d.get("notes") == "No onions" and not any(k in d for k in ("recipient_name", "recipient_phone", "recipient_address", "to_zone")), d)
+    check("... and the customer's details are nowhere in the answer", "Emu" not in json.dumps(d) and "0936533606" not in json.dumps(d) and "Cheffe" not in json.dumps(d), d)
     check("no courier yet", d.get("courier") is None, d.get("courier"))
     check("the detail shows the items value and no fees", float(d.get("fare_total", 0)) == 300 and "delivery_fee" not in d and "service_charge" not in d, d)
     check("the courier's id is not sent to the shop", "courier_id" not in d, list(d.keys()))
@@ -102,6 +105,7 @@ def main():
     tk = (r.get("data") or {}).get("ticket") or {}
     check("the ticket comes back", r.get("success") is True and tk.get("order_code"), r)
     check("the ticket has no delivery fee and no service charge", "delivery_fee" not in tk and "service_charge" not in tk, list(tk.keys()))
+    check("the ticket has no customer name, phone, address or drop-off area", not any(k in tk for k in ("recipient_name", "recipient_phone", "recipient_address", "to_zone", "from_zone")) and "Emu" not in json.dumps(tk) and "Cheffe" not in json.dumps(tk), tk)
     check("the ticket total is the items value (300)", float(tk.get("fare_total", 0)) == 300 and float(tk.get("subtotal", 0)) == 300, tk)
     s, r = call("sg_get_kitchen_ticket", {"order_id": oid}, sg)
     tk2 = (r.get("data") or {}).get("ticket") or {}
