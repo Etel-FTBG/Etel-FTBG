@@ -10,7 +10,16 @@ if (!function_exists('sg_build_kitchen_ticket')) {
              : (isset($row['fare_total']) ? max(0, floatval($row['fare_total']) - $fee - $svc) : null);
         if ($sub !== null) { $row['fare_total'] = round($sub, 2); $row['items_total'] = round($sub, 2); }
         unset($row['delivery_fee'], $row['service_charge']);
+        // The shop does not see WHO the order is for or WHERE it goes: only the order itself and the courier who picks it up.
+        unset($row['recipient_name'], $row['recipient_phone'], $row['recipient_address'], $row['to_zone'], $row['from_zone'], $row['sender_name'], $row['sender_phone']);
+        if (array_key_exists('notes', $row)) $row['notes'] = sg_clean_note($row['notes']);
         return $row;
+    }
+    /* A note to the kitchen ("no onions") stays. The customer's address is saved in the same field as a line "Address: ..." - that line goes. */
+    function sg_clean_note($note) {
+        if ($note === null) return null;
+        $out = trim(preg_replace('/^[ \t]*Address:.*$/mi', '', (string) $note));
+        return $out === '' ? null : $out;
     }
     function sg_build_kitchen_ticket($pdo, $order_id) {
         $oq = $pdo->prepare('SELECT order_code, recipient_name, recipient_phone, notes, placed_at, from_zone, to_zone, fare_total, subtotal, delivery_fee, service_charge FROM orders WHERE id=?');
@@ -25,12 +34,8 @@ if (!function_exists('sg_build_kitchen_ticket')) {
         $orderRow = sg_shop_view($orderRow);   // no delivery fee or service charge on the shop's slips
         return array(
             'order_code'      => $orderRow['order_code'],
-            'recipient_name'  => $orderRow['recipient_name'],
-            'recipient_phone' => $orderRow['recipient_phone'],
-            'notes'           => $orderRow['notes'],
+            'notes'           => isset($orderRow['notes']) ? $orderRow['notes'] : null,
             'placed_at'       => $orderRow['placed_at'],
-            'from_zone'       => $orderRow['from_zone'],
-            'to_zone'         => $orderRow['to_zone'],
             'fare_total'      => isset($orderRow['fare_total']) ? $orderRow['fare_total'] : null,
             'subtotal'        => isset($orderRow['items_total']) ? $orderRow['items_total'] : $orderRow['subtotal'],
             'items'           => $items,

@@ -36,12 +36,14 @@ const TICKET = { order_code: 'ETD-F23A5E', recipient_name: 'Emu', recipient_phon
     const list = await p.evaluate(() => (document.getElementById('orders-container') || document.body).innerText.replace(/\s+/g, ' '));
     t(n + ': the order is in the list with the items value (Br 500.00)', /ETD-F23A5E/.test(list) && /Br 500\.00/.test(list), list.slice(0, 300));
     t(n + ': the list shows no delivery fee', !/delivery fee|service fee/i.test(list) && !/605|105\.00/.test(list), list.slice(0, 300));
+    t(n + ': the list shows no customer name or drop-off area (even if an older server still sent them)', !/Emu/.test(list) && !/University/.test(list), list.slice(0, 300));
     t(n + ': every order has a Details button', (await p.locator('#orders-container .sg-od-btn').count()) === 1);
     await p.locator('#orders-container .sg-od-btn').first().click(); await p.waitForTimeout(700);
     const det = await p.evaluate(() => (document.getElementById('sg-od-overlay') || { innerText: '' }).innerText.replace(/\s+/g, ' '));
     t(n + ': the details window opens', det.length > 0, det);
     t(n + ': it lists the items with their counts and prices', /1 ×\s*Burger \+ Mayonis, Kachap/.test(det) && /2 ×\s*Soft Drink/.test(det) && /Br 600\.00/.test(det) && /Br 200\.00/.test(det), det);
-    t(n + ': it shows the items total (Br 500.00), the person, phone, address and note', /Br 500\.00/.test(det) && /Emu/.test(det) && /0936533606/.test(det) && /Cheffe/.test(det) && /No onions please/.test(det), det);
+    t(n + ': it shows the items total (Br 500.00), the kitchen note and the time placed', /Br 500\.00/.test(det) && /No onions please/.test(det) && /Nov 24/.test(det), det);
+    t(n + ': it does NOT show the customer: no name, phone or address (even if an older server still sent them)', !/Emu/.test(det) && !/0936533606/.test(det) && !/Cheffe/.test(det) && !/University/.test(det), det);
     t(n + ': it shows the courier (name, vehicle, phone)', /Etel Admin/.test(det) && /qute/.test(det) && /0924445206/.test(det), det);
     t(n + ': it has no delivery fee or service fee', !/delivery fee|service (fee|charge)/i.test(det) && !/605|105\.00/.test(det), det);
     t(n + ': the window has a Back button', (await p.locator('#sg-od-overlay .sg-od-back').count()) === 1);
@@ -58,6 +60,7 @@ const TICKET = { order_code: 'ETD-F23A5E', recipient_name: 'Emu', recipient_phon
       await pop.waitForLoadState('domcontentloaded'); await pop.waitForTimeout(500);
       const txt = await pop.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
       t(n + ': the receipt shows the kitchen ticket and the receipt with the items total (Br 500.00)', /KITCHEN TICKET/.test(txt) && /DELIVERY RECEIPT/.test(txt) && /Br 500\.00/.test(txt), txt);
+      t(n + ': the receipt does NOT show the customer (name, phone, address, drop-off area)', !/Emu/.test(txt) && !/0936533606/.test(txt) && !/Cheffe/.test(txt) && !/University/.test(txt), txt);
       t(n + ': it does NOT show a delivery fee, a service fee or the full total', !/delivery fee|service fee/i.test(txt) && !/605/.test(txt) && !/105\.00/.test(txt), txt);
       t(n + ': it has a Back and a Print button', (await pop.locator('#bk').count()) === 1 && (await pop.locator('#pr').count()) === 1);
       await pop.click('#bk').catch(() => {}); await p.waitForTimeout(700);
