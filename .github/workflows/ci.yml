@@ -128,6 +128,7 @@ jobs:
           python3 delivery/tests/ci/check_courier_local_libs.py
           python3 delivery/tests/ci/check_customer_live_map.py
           python3 delivery/tests/ci/check_courier_job_nav.py
+          python3 delivery/tests/ci/check_admin_js_file.py
           python3 delivery/tests/ci/check_courier_bottom_buttons.py
           python3 delivery/tests/ci/check_courier_location_report.py
           python3 delivery/tests/ci/check_courier_card.py
