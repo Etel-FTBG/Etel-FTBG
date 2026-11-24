@@ -407,7 +407,7 @@
                     '<div style="padding:14px 0;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">' +
                         '<div>' +
                             '<div style="font-weight:600;color:var(--text-dark);font-size:13px">' + escapeHtml(order.order_code || ('#' + order.order_id)) + '</div>' +
-                            '<div style="font-size:11px;color:#B8B0A0;margin-top:3px">' + escapeHtml(order.from_zone || '') + (order.to_zone ? ' → ' + escapeHtml(order.to_zone) : '') + '</div>' +
+                            '<div style="font-size:11px;color:#B8B0A0;margin-top:3px">' + escapeHtml(sgPlacedAt(order)) + '</div>' +
                         '</div>' +
                         '<div style="text-align:right">' +
                             '<div style="font-weight:700;color:var(--primary)">Br ' + parseFloat(order.fare_total||0).toFixed(2) + '</div>' +
@@ -457,8 +457,7 @@
                             '<div>' + getStatusBadge(status) + '</div>' +
                         '</div>' +
                         '<div style="font-size:12px;color:#B8B0A0;">' +
-                            (order.from_zone ? sgT('sg_from') + escapeHtml(order.from_zone) + ' → ' : '') + escapeHtml(order.to_zone || '') +
-                            (order.recipient_name ? ' · ' + escapeHtml(order.recipient_name) : '') +
+                            escapeHtml(sgPlacedAt(order)) +
                         '</div>' +
                         '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-top:4px">Br ' + parseFloat(order.fare_total||0).toFixed(2) + '</div>' +
                         actionBtn +
@@ -484,6 +483,12 @@
                 '.sg-od-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0}.sg-od-muted{opacity:.6;font-size:13px}.sg-od-total{font-size:15px;font-weight:800;display:flex;justify-content:space-between;margin-top:6px}';
             document.head.appendChild(s);
         }
+        // When the order was placed, short ("Nov 24, 12:40 PM"); empty when unknown.
+        function sgPlacedAt(order) {
+            if (!order || !order.placed_at) return '';
+            const d = new Date(String(order.placed_at).replace(' ', 'T'));
+            return isNaN(d.getTime()) ? '' : d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }
         function closeSgOrder() {
             var o = document.getElementById('sg-od-overlay');
             if (o && o.parentNode) o.parentNode.removeChild(o);
@@ -508,10 +513,8 @@
                 '<div class="sg-od-top"><button type="button" class="sg-od-back" ' + _ea('closeSgOrder', []) + '>&larr; ' + escapeHtml(T('sg_back')) + '</button><h3>' + escapeHtml(o.order_code || ('#' + orderId)) + '</h3>' + getStatusBadge(o.status || 'pending') + '</div>' +
                 '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_items')) + '</h4>' + items +
                     (o.fare_total != null ? '<div class="sg-od-total"><span>' + escapeHtml(T('sg_od_items_total')) + '</span><span>Br ' + parseFloat(o.fare_total).toFixed(2) + '</span></div>' : '') + '</div>' +
-                '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_customer')) + '</h4>' +
-                    row(T('sg_od_for'), escapeHtml(o.recipient_name || '')) +
-                    row(T('sg_od_phone'), o.recipient_phone ? '<a href="tel:' + escapeHtml(o.recipient_phone) + '">' + escapeHtml(o.recipient_phone) + '</a>' : '') +
-                    row(T('sg_od_to'), escapeHtml(o.recipient_address || o.to_zone || '')) +
+                // Who it is for and where it goes are not shown to the shop: the order itself and the courier who picks it up.
+                '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_order')) + '</h4>' +
                     row(T('sg_od_note'), escapeHtml(o.notes || '')) +
                     row(T('sg_od_placed'), escapeHtml(when)) + '</div>' +
                 '<div class="sg-od-sec"><h4>' + escapeHtml(T('sg_od_courier')) + '</h4><div style="font-size:13.5px">' + courier + '</div></div>' +
@@ -602,6 +605,9 @@
         // available (unsupported browser, no printer paired, user cancels
         // the pairing prompt, etc.) so the feature still works either way.
         async function printKitchenTicket(ticket) {
+            // The shop's slips never carry who the order is for or where it goes (the server does not send them; this makes sure of it).
+            ticket = Object.assign({}, ticket); delete ticket.recipient_name; delete ticket.recipient_phone; delete ticket.recipient_address; delete ticket.to_zone; delete ticket.from_zone;
+            if (ticket.notes) ticket.notes = String(ticket.notes).replace(/^[ \t]*Address:.*$/gmi, '').trim();
             const businessName = (currentServiceGiver && currentServiceGiver.business_name) || (currentUser && currentUser.name) || 'Kitchen';
             if (BLEPrinter.isSupported()) {
                 try {
