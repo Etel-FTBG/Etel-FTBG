@@ -259,7 +259,16 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         // coordinates - this is purely additive.
         $customerLat = isset($body['customer_lat']) ? floatval($body['customer_lat']) : 0;
         $customerLng = isset($body['customer_lng']) ? floatval($body['customer_lng']) : 0;
-        if ($customerLat && $customerLng) {
+        // Fees by distance (Admin > Delivery fees): shop to the customer's pin, priced per vehicle. Needs both positions; otherwise the zone fee below applies.
+        $dfee = null;
+        if ($delivery_lat !== null && $delivery_lng !== null && ($delivery_lat != 0 || $delivery_lng != 0)) {
+            require_once __DIR__ . '/delivery_fees.php';
+            $dfee = etel_dfee_for_order($pdo, $cart_vehicle, $delivery_tier, etel_dfee_shop_point($pdo, $service_giver_id), array($delivery_lat, $delivery_lng), (int) date('G'));
+            if (is_array($dfee) && isset($dfee['too_far'])) throw new EtelFeeException('This shop is too far to deliver to you (the limit is ' . $dfee['too_far'] . ' km).');
+        }
+        if ($dfee) {
+            $priced = array('delivery_fee' => $dfee['fee'], 'tier_used' => $delivery_tier);
+        } elseif ($customerLat && $customerLng) {
             $distanceKm = delivery_distance_from_center($customerLat, $customerLng, $pdo);
             $priced = delivery_calc_fee_by_distance($pdo, $distanceKm);
             $priced['tier_used'] = $delivery_tier;
@@ -276,7 +285,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         }
         $delivery_tier  = $priced['tier_used'];
         $delivery_fee   = $priced['delivery_fee'];
-        $service_charge = delivery_calc_service_charge($items_subtotal);
+        $service_charge = delivery_calc_service_charge($items_subtotal, $pdo);
         $fare_total     = $items_subtotal + $delivery_fee + $service_charge;
 
         // Optional promo code - re-validated here on the server from the real
@@ -376,6 +385,15 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             } catch (Exception $e) { error_log('[ETEL] order vehicle for ' . $order_id . ': ' . $e->getMessage()); }
         }
 
+        // Fees by distance: save the courier's share (and the company's, in the note) so a later change of the settings never rewrites this order.
+        if ($dfee) {
+            try {
+                require_once __DIR__ . '/courier_pay.php';
+                etel_ensure_order_pay_columns($pdo);
+                $pdo->prepare('UPDATE orders SET courier_pay = ?, courier_pay_note = ? WHERE id = ?')->execute(array($dfee['courier'], substr($dfee['note'], 0, 250), $order_id));
+            } catch (Exception $e) { error_log('[ETEL] courier share for order ' . $order_id . ': ' . $e->getMessage()); }
+        }
+
         if ($tip > 0) {
             try { $pdo->prepare('UPDATE orders SET courier_tip = ? WHERE id = ?')->execute(array($tip, $order_id)); }
             catch (Exception $e) { error_log('[ETEL] tip bookkeeping failed for order ' . $order_id . ': ' . $e->getMessage()); }
@@ -454,7 +472,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         if (!empty($redeem_id) && empty($order_id)) {
             try { $pdo->prepare('DELETE FROM loyalty_points WHERE id = ? AND order_id IS NULL')->execute(array($redeem_id)); } catch (Exception $e3) {}
         }
-        if ($e instanceof EtelPromoException) throw new Exception($e->getMessage());
+        if ($e instanceof EtelPromoException || $e instanceof EtelFeeException) throw new Exception($e->getMessage());
         error_log('[ETEL] Order creation failed: ' . $e->getMessage());
         throw new Exception('Order creation failed - please try again or contact support');
     }

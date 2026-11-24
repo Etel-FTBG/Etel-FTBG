@@ -289,7 +289,10 @@ var CP_FIELDS = [['base', 'Base pay per order (ETB)', 'number'], ['per_km', 'Pay
 function courierView() {
   if (S.err.courier || !S.cp) return K.empty('⚠️', 'Could not load courier pay', S.err.courier || 'No data.');
   var cs = S.cp.settings || {}, st = S.cp.stats || {};
-  var h = '<div class="ps-box"><h3>Courier pay and tips</h3><div class="sub"><b>Off</b>: the courier is paid the delivery fee the customer was charged. <b>On</b>: pay follows the distance and the numbers below.</div>' +
+  var h = '<div class="ps-box"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 13px;margin-bottom:12px;border-radius:14px;border:1px solid var(--gold);background:rgba(212,175,55,.12);font-size:13px">' +
+    '<div style="flex:1 1 240px"><b>Delivery fees by distance now pay couriers a share of the fee.</b> When an order is priced on the Delivery fees page, the courier gets the courier share (60% to start) of that fee. The numbers below only apply to orders priced by zone.</div>' +
+    '<button type="button" class="ak-btn gold" data-open-dfees>Open Delivery fees</button></div>' +
+    '<h3>Courier pay and tips</h3><div class="sub"><b>Off</b>: the courier is paid the delivery fee the customer was charged. <b>On</b>: pay follows the distance and the numbers below.</div>' +
     '<div id="ps-cp-form">' + K.sw('ps-cp-enabled', 'Pay couriers by distance', !!cs.enabled) + '<div class="ak-fg" style="margin-top:12px">' + CP_FIELDS.map(function (x) {
       return '<label class="ak-fl">' + esc(x[1]) + '<input class="ak-in" data-f="' + x[0] + '" ' + (x[2] === 'number' ? 'type="number" step="any" min="0" inputmode="decimal"' : 'type="text"') + ' value="' + esc(cs[x[0]] == null ? '' : cs[x[0]]) + '"></label>';
     }).join('') + '</div></div><div class="ak-acts" style="margin-top:12px"><button type="button" class="ak-btn gold" data-save-cp>💾 Save</button></div>' +
@@ -424,6 +427,7 @@ function onClick(e) {
   if ((b = t.closest('[data-save-zone]'))) { el = b.closest('tr'); var zb = vals(el); zb.id = parseInt(b.getAttribute('data-save-zone'), 10); zb.active = sw(el); if (!zb.name) { K.toast('Zone name cannot be empty.', true); return; } run('admin_update_zone', zb).then(function (r) { return done(r, 'Zone saved'); }); return; }
   if ((b = t.closest('[data-del-zone]'))) { var zid = parseInt(b.getAttribute('data-del-zone'), 10), zn = b.getAttribute('data-name'); K.confirm({ title: 'Switch off "' + zn + '"?', text: 'It stops appearing to customers; past orders keep their history.', label: 'Switch off', danger: true }).then(function (r) { if (r) run('admin_delete_zone', { id: zid }).then(function (res) { return done(res, 'Zone switched off'); }); }); return; }
   if ((b = t.closest('[data-save-tier]'))) { el = b.closest('tr'); var tb = vals(el); tb.id = parseInt(b.getAttribute('data-save-tier'), 10); tb.active = sw(el); if (!tb.label) { K.toast('Label cannot be empty.', true); return; } if (!(tb.multiplier > 0)) { K.toast('Multiplier must be above 0.', true); return; } run('admin_update_delivery_tier', tb).then(function (r) { return done(r, 'Tier saved'); }); return; }
+  if (t.closest('[data-open-dfees]')) { var dn = document.querySelector('.nav-item[data-page="dfees"]'); if (typeof switchPage === 'function') switchPage('dfees', dn); return; }
   if (t.closest('[data-save-cp]')) {
     var cf = document.getElementById('ps-cp-form'), cb = vals(cf); cb.enabled = sw(cf);
     run('admin_save_courier_pay', cb).then(function (res) { if (K.okRes(res)) { S.cp = K.data(res).settings ? { settings: K.data(res).settings, stats: S.cp.stats } : S.cp; K.toast(S.cp.settings.enabled ? 'Saved — couriers are paid by distance' : 'Saved — pay by distance is off, couriers get the delivery fee'); paint(); } else K.toast(K.failText(res, 'Could not save.'), true); }); return;

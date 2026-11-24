@@ -108,6 +108,8 @@ jobs:
             -not -name '*.min.js' -print0 | xargs -0 -n1 node --check
       - name: Ride fare versus quote cap and peak-window check
         run: php delivery/tests/ride_quote_cap_unit.php
+      - name: Delivery fees by distance (fee maths, split, rounding)
+        run: php delivery/tests/delivery_fees_test.php
       - name: Migration numbering and XSS ratchet
         run: |
           python3 delivery/tests/ci/check_migrations.py
@@ -122,6 +124,7 @@ jobs:
           python3 delivery/tests/ci/check_money_ledger.py
           python3 delivery/tests/ci/check_manual_dispatch.py
           python3 delivery/tests/ci/check_package_prices_admin.py
+          python3 delivery/tests/ci/check_delivery_fees_admin.py
           python3 delivery/tests/ci/check_integrations_admin.py
           python3 delivery/tests/ci/check_customers_admin.py
           python3 delivery/tests/ci/check_people_admin.py

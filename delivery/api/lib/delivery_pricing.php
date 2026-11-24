@@ -66,8 +66,15 @@ function delivery_calc_fee($pdo, $to_zone, $delivery_tier) {
     );
 }
 
-function delivery_calc_service_charge($items_subtotal) {
-    return round($items_subtotal * SERVICE_CHARGE_PERCENT / 100, 2);
+// The service charge is a percent of the items subtotal. The admin sets the percent (Admin > Delivery fees); it starts at 0 (free).
+// Pass $pdo so the saved percent is used; without it the answer is the starting value (0).
+function delivery_calc_service_charge($items_subtotal, $pdo = null) {
+    $pct = 0;
+    if ($pdo) {
+        require_once __DIR__ . '/delivery_fees.php';
+        $pct = etel_dfee_service_pct($pdo);
+    }
+    return round($items_subtotal * $pct / 100, 2);
 }
 
 // Distance-based delivery fee - computed straight from GPS, no zone name

@@ -16,7 +16,7 @@ var K = window.AdminKit;
 var WS = [
   { id: 'delivery', label: 'Delivery', icon: '🚚', accent: '#D4AF37', blurb: 'Orders, couriers, shops, menus and delivery prices.',
     sections: [['Run the day', ['dispatch', 'orders', 'packages', 'orderchats']], ['Couriers and shops', ['couriers', 'servicegivers', 'ratings']],
-               ['Menu and prices', ['items', 'menucat', 'pricing', 'promos']], ['Money and reports', ['money', 'telebirr', 'reports']]] },
+               ['Menu and prices', ['items', 'menucat', 'pricing', 'dfees', 'promos']], ['Money and reports', ['money', 'telebirr', 'reports']]] },
   { id: 'ride', label: 'Ride', icon: '🚕', accent: '#3B82F6', blurb: 'Ride requests, drivers, safety and ride payments.',
     sections: [['Run the day', ['liveops', 'rides', 'rideoffers']], ['Drivers and safety', ['ridedrivers', 'trust', 'agents']], ['Money and prices', ['pricing', 'ridepay']]] },
   { id: 'company', label: 'Company', icon: '🏢', accent: '#8B5CF6', blurb: 'People, money, support and settings that both systems share.',
@@ -28,7 +28,7 @@ var DESC = {
   dispatch: 'Orders that need a courier right now. Assign by hand.', orders: 'Every delivery order: search, status, details.', packages: 'Package prices by vehicle, distance and weight.',
   orderchats: 'Chats between customers, shops and couriers.', couriers: 'Courier list, approval, vehicle, documents.', servicegivers: 'Shops and service givers: verification and menus.',
   ratings: 'What customers said about shops and couriers.', items: 'Products and prices in every shop.', menucat: 'The shared menu catalog shops pick from.',
-  pricing: 'Delivery fees and zones, and ride fares.', promos: 'Promo codes for orders and rides.', money: 'Refunds and the cash couriers hold.',
+  pricing: 'Delivery fees and zones, and ride fares.', dfees: 'Price each delivery by distance for every vehicle, and share it between the company and the courier.', promos: 'Promo codes for orders and rides.', money: 'Refunds and the cash couriers hold.',
   telebirr: 'Payments to check and confirm.', reports: 'Sales and delivery reports.',
   liveops: 'Ride requests waiting, drivers online, SOS: right now.', ridedrivers: 'Drivers on a live map, approvals, suspend, add a driver.', rideoffers: 'What drivers see in their Pull tab: far waiting trips, VIP and sweet areas.', rides: 'All rides, fares, receipts, cancel or finish a ride.', trust: 'Driver documents, expired papers, fake GPS checks.',
   agents: 'Agents who book rides and bring in drivers.', ridepay: 'Ride payments, wallet and tips.',
