@@ -1147,7 +1147,7 @@ case 'sg_pending_confirmations': {
     try {
         $s0 = $pdo->prepare("
             SELECT oc.id, oc.order_id, oc.requested_at,
-                   o.order_code, o.fare_total, o.from_zone,
+                   o.order_code, COALESCE(o.subtotal, o.fare_total) AS fare_total, o.from_zone,
                    u_c.name  AS courier_name,
                    u_c.phone AS courier_phone
             FROM   order_confirmations oc
