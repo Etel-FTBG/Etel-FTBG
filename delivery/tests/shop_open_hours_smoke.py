@@ -103,10 +103,14 @@ def main():
     # What hour is it for the server? Try one-hour windows until the Admin list says "open now": that is the server's current hour.
     etel_test_db.run_sql("UPDATE service_givers SET is_online = 0 WHERE id = %d" % sgid)
     H = None
-    for h in range(24):
-        set_hours("%02d:00" % h, "%02d:59" % h)
-        if int(board_row()[0].get("open_now") or 0) == 1:
-            H = h; break
+    for attempt in range(2):
+        for h in range(24):
+            set_hours("%02d:00" % h, "%02d:59" % h)
+            if int(board_row()[0].get("open_now") or 0) == 1:
+                H = h; break
+        if H is not None:
+            break
+        time.sleep(65)   # the last minute of an hour (xx:59:xx) is outside every HH:00-HH:59 window: wait for the next hour to start and look again
     check("the server's current hour was found (a one-hour window around now is open)", H is not None)
     if H is None:
         return 1
