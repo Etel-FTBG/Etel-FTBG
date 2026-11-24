@@ -193,7 +193,6 @@ define('ETEL_WRITE_ACTIONS', array(
     'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','admin_item_extras_save','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
-    'courier_update_location',
     'nfc_confirm_pickup','nfc_confirm_delivery',
     'fa_claim_ref','fa_agent_apply','fa_agent_update_profile','fa_agent_notifications_read',
     'admin_fa_settings_save','admin_fa_agent_decide','admin_fa_customer_message','admin_fa_sms_test','admin_fa_sms_template_save','admin_fa_sms_mode_save','admin_fa_earning_decide','admin_fa_run_earnings','admin_fa_payout_create','admin_fa_payout_export','admin_fa_payout_mark_paid','admin_fa_payout_cancel','admin_fa_nudge','admin_fa_digest_build','admin_fa_tiers_run',
