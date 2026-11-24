@@ -940,7 +940,7 @@ case 'track_order': {
                 o.delivery_lat, o.delivery_lng,
                 o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.pickup_pin, o.delivery_pin,
                 oa.status as assignment_status, oa.accepted_at, oa.pickup_qr_scanned,
-                sg.business_name as service_giver_name, sg.zone as sg_zone,
+                sg.business_name as service_giver_name, sg.zone as sg_zone, sg.lat AS shop_lat, sg.lng AS shop_lng, o.pickup_lat, o.pickup_lng,
                 u_sg.phone as sg_phone,
                 c.vehicle_type as courier_vehicle, c.rating AS courier_avg_rating, c.last_lat as courier_lat, c.last_lng as courier_lng, c.last_seen as courier_last_seen,
                 TIMESTAMPDIFF(SECOND, c.last_seen, NOW()) AS courier_seen_sec,
@@ -1013,6 +1013,12 @@ case 'track_order': {
 
     // arrival estimate + hides a courier pin that has gone stale (api/lib/track_eta.php)
     try { require_once __DIR__ . '/../lib/track_eta.php'; $order = etel_track_eta_apply($pdo, $order); } catch (Exception $te) {} catch (Throwable $te) {}
+    // The map pin of the place the courier collects from: the shop, or the sender's pickup point for a package. Raw columns are not sent.
+    $pk = null;
+    if ($is_package && is_numeric($order['pickup_lat']) && is_numeric($order['pickup_lng']) && (floatval($order['pickup_lat']) || floatval($order['pickup_lng']))) $pk = array(floatval($order['pickup_lat']), floatval($order['pickup_lng']));
+    elseif (!$is_package && is_numeric($order['shop_lat']) && is_numeric($order['shop_lng']) && (floatval($order['shop_lat']) || floatval($order['shop_lng']))) $pk = array(floatval($order['shop_lat']), floatval($order['shop_lng']));
+    $order['pickup_point'] = $pk ? array('lat' => round($pk[0], 6), 'lng' => round($pk[1], 6)) : null;
+    unset($order['shop_lat'], $order['shop_lng'], $order['pickup_lat'], $order['pickup_lng']);
     // can the customer still cancel it themselves, and which reasons to offer (api/lib/order_cancel.php)
     try {
         require_once __DIR__ . '/../lib/order_cancel.php';

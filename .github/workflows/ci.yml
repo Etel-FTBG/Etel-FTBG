@@ -126,6 +126,7 @@ jobs:
           python3 delivery/tests/ci/check_package_prices_admin.py
           python3 delivery/tests/ci/check_delivery_fees_admin.py
           python3 delivery/tests/ci/check_courier_local_libs.py
+          python3 delivery/tests/ci/check_customer_live_map.py
           python3 delivery/tests/ci/check_courier_job_nav.py
           python3 delivery/tests/ci/check_integrations_admin.py
           python3 delivery/tests/ci/check_customers_admin.py
