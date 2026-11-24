@@ -12,6 +12,10 @@
 // Exception on any validation/creation failure instead of echo+exit,
 // so both the real HTTP action below and the AI's tool can each wrap
 // it in their own try/catch and respond however is right for them.
+// A refusal the customer can act on (your own shop, shop closed, sold out, too far, outside the cities...). Its words reach the customer as written;
+// any other fault stays a generic message and goes to the server log.
+if (!class_exists('EtelOrderRefusal')) { class EtelOrderRefusal extends Exception {} }
+
 function delivery_execute_order_creation($pdo, $auth_user, $body) {
     // POST: (requires customer auth)  items (array of {item_id, quantity}), to_zone, recipient_name, recipient_phone, notes
     // Create a new order with items and assign to the service giver who owns those items
@@ -128,7 +132,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         $item_query->execute(array($first_item_id));
         $first_item = $item_query->fetch();
         
-        if (!$first_item) throw new Exception('Item not found');
+        if (!$first_item) throw new EtelOrderRefusal('Item not found');
         
         $from_zone = $first_item['from_zone'];
         $service_giver_id = $first_item['service_giver_id'];
@@ -142,19 +146,19 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
                 if (!$cLat && isset($body['customer_lat'])) { $cLat = floatval($body['customer_lat']); $cLng = isset($body['customer_lng']) ? floatval($body['customer_lng']) : 0; }
                 if ($cLat || $cLng) {
                     $custArea = etel_area_for_point($pdo, $cLat, $cLng);
-                    if (!$custArea) { $chk = etel_area_check_point($pdo, $cLat, $cLng, 'delivery location'); throw new Exception($chk['message']); }
-                    if ($shopArea && $shopArea['code'] !== $custArea['code']) throw new Exception('This shop is in ' . $shopArea['name'] . ' and cannot deliver to ' . $custArea['name'] . '. Please order from a shop in ' . $custArea['name'] . '.');
+                    if (!$custArea) { $chk = etel_area_check_point($pdo, $cLat, $cLng, 'delivery location'); throw new EtelOrderRefusal($chk['message']); }
+                    if ($shopArea && $shopArea['code'] !== $custArea['code']) throw new EtelOrderRefusal('This shop is in ' . $shopArea['name'] . ' and cannot deliver to ' . $custArea['name'] . '. Please order from a shop in ' . $custArea['name'] . '.');
                 }
             }
         } catch (PDOException $e) { /* a database fault never blocks an order */ }
         require_once __DIR__ . '/own_shop.php';
-        if (etel_user_runs_shop($pdo, $auth_user['id'], $service_giver_id)) throw new Exception('You cannot order from your own shop.');
+        if (etel_user_runs_shop($pdo, $auth_user['id'], $service_giver_id)) throw new EtelOrderRefusal('You cannot order from your own shop.');
         $package_type = $first_item['category'];
         
         // Refuse hidden / sold-out items and shops outside their opening hours (api/lib/shop_hours.php)
         require_once __DIR__ . '/shop_hours.php';
         $blocked = etel_order_blockers($pdo, array_map(function ($ci) { return isset($ci['item_id']) ? $ci['item_id'] : 0; }, $items));
-        if ($blocked !== '') throw new Exception($blocked);
+        if ($blocked !== '') throw new EtelOrderRefusal($blocked);
 
         // Calculate total
         $fare_total = 0;
@@ -199,15 +203,15 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             // item with a negative quantity on another could keep the
             // overall total positive (passing the total>0 check below)
             // while still shipping more items than were actually paid for.
-            if ($quantity < 1) throw new Exception('Quantity must be at least 1 for every item');
+            if ($quantity < 1) throw new EtelOrderRefusal('Quantity must be at least 1 for every item');
 
             $item = isset($items_by_id[$item_id]) ? $items_by_id[$item_id] : null;
 
-            if (!$item) throw new Exception('Item with ID ' . $item_id . ' not found');
+            if (!$item) throw new EtelOrderRefusal('Item with ID ' . $item_id . ' not found');
 
             // Verify all items belong to same service giver
             if ($item['service_giver_id'] != $service_giver_id) {
-                throw new Exception('All items must be from the same service giver');
+                throw new EtelOrderRefusal('All items must be from the same service giver');
             }
 
             // The price of one is the item's price plus its ticked extras; the extras' names go after the item's name so the
@@ -217,11 +221,11 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             if (isset($cart_item['extras']) && is_array($cart_item['extras'])) {
                 $picked = array();
                 foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $picked[$xid] = isset($cart_item['extras_qty'][$xid]) ? max(1, min(9, intval($cart_item['extras_qty'][$xid]))) : 1; }
-                if (count($picked) > 12) throw new Exception('Too many extras on one item');
+                if (count($picked) > 12) throw new EtelOrderRefusal('Too many extras on one item');
                 $xnames = array();
                 foreach ($picked as $xid => $xn) {
                     if (!isset($extras_by_id[$xid]) || intval($extras_by_id[$xid]['item_id']) !== $item_id) {
-                        throw new Exception('One of the extras you chose for "' . $item['name'] . '" is no longer available');
+                        throw new EtelOrderRefusal('One of the extras you chose for "' . $item['name'] . '" is no longer available');
                     }
                     $unit_price += (float)$extras_by_id[$xid]['price'] * $xn;   // the price is the shop's, times how many the customer chose
                     $xnames[] = $extras_by_id[$xid]['name'] . ($xn > 1 ? ' x' . $xn : '');
@@ -243,7 +247,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         }
         
         $items_subtotal = $fare_total;
-        if ($items_subtotal <= 0) throw new Exception('Order total must be greater than 0');
+        if ($items_subtotal <= 0) throw new EtelOrderRefusal('Order total must be greater than 0');
 
         // Delivery fee (zone + tier) - shared with AgentController.php's
         // order-quote tool via api/lib/delivery_pricing.php so a quote
@@ -472,7 +476,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         if (!empty($redeem_id) && empty($order_id)) {
             try { $pdo->prepare('DELETE FROM loyalty_points WHERE id = ? AND order_id IS NULL')->execute(array($redeem_id)); } catch (Exception $e3) {}
         }
-        if ($e instanceof EtelPromoException || $e instanceof EtelFeeException) throw new Exception($e->getMessage());
+        if ($e instanceof EtelPromoException || $e instanceof EtelFeeException || $e instanceof EtelOrderRefusal) throw new Exception($e->getMessage());
         error_log('[ETEL] Order creation failed: ' . $e->getMessage());
         throw new Exception('Order creation failed - please try again or contact support');
     }
