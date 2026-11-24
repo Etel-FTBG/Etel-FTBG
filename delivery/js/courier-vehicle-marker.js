@@ -19,10 +19,19 @@
       .then(function (j) { var d = j && j.success && j.data; var v = d && (d.vehicle_type || (d.courier && d.courier.vehicle_type) || (d.profile && d.profile.vehicle_type)); if (v && !type) type = String(v); })
       .catch(function () { /* quiet */ });
   }
+  /* In dark mode the whole map is drawn through filter:invert(90%) hue-rotate(180deg) (js/core.js), which also turns the vehicle picture pale. The exact opposite
+     filter on the picture gives it back its real colours: hue-rotate(180deg) invert(1) contrast(1.25) undoes invert(90%) then hue-rotate(180deg). */
+  function css() {
+    if (document.getElementById('cvm-css')) return;
+    var s = document.createElement('style'); s.id = 'cvm-css';
+    s.textContent = 'body.dark-theme .cvm-pic{filter:hue-rotate(180deg) invert(1) contrast(1.25)}';
+    document.head.appendChild(s);
+  }
   function build(t) {
     var url = window.EtelVehiclePic && EtelVehiclePic.has(t) ? EtelVehiclePic.url(t) : '';
     if (!url) return null;
-    var d = document.createElement('div');
+    css();
+    var d = document.createElement('div'); d.className = 'cvm-pic';
     d.style.cssText = 'position:relative;width:64px;height:52px;display:flex;align-items:flex-end;justify-content:center;pointer-events:none';
     var ring = document.createElement('div');
     ring.style.cssText = 'position:absolute;bottom:2px;left:50%;width:46px;height:14px;margin-left:-23px;border-radius:50%;background:rgba(46,204,113,.45);box-shadow:0 0 0 3px rgba(46,204,113,.3)';
