@@ -330,6 +330,27 @@
     if (window.speechSynthesis) try { window.speechSynthesis.cancel(); } catch (e) {}
   }
 
+  /* ---------- did the courier ask for navigation? ---------- */
+  var navIntent = 0;
+  function wantNav() { var ok = navIntent && Date.now() - navIntent < 20000; navIntent = 0; return !!ok; }
+  function isNavButton(el) {
+    for (var n = el, i = 0; n && n !== document && i < 6; n = n.parentNode, i++) {
+      var oc = n.getAttribute && n.getAttribute('onclick');
+      if (oc && /navigateTo(Shop|Customer)|drawRouteOnMap|startNavigation/.test(oc)) return true;
+      if (n.getAttribute && n.getAttribute('data-act') && /^nav/i.test(n.getAttribute('data-act'))) return true;
+    }
+    return false;
+  }
+  ['click', 'touchend'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { if (isNavButton(e.target)) navIntent = Date.now(); }, true);
+  });
+  /* choosing a place from the destination search box is also the courier's own action */
+  ['click', 'touchend'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { var t = e.target; if (t && t.closest && t.closest('.pac-container')) navIntent = Date.now(); }, true);
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.id === 'map-nav-input') navIntent = Date.now(); }, true);
+  window.__courierNavAsk = function () { navIntent = Date.now(); };   // for other buttons and for tests
+
   /* ---------- hook into the app's DirectionsRenderer ---------- */
   function hook() {
     if (hooked) return true;
@@ -338,9 +359,12 @@
     var orig = g.DirectionsRenderer.prototype.setDirections;
     g.DirectionsRenderer.prototype.setDirections = function (res) {
       var empty = !res || !res.routes || !res.routes.length;
-      if (!empty) { try { this.setOptions({ suppressPolylines: true, suppressMarkers: true }); } catch (e) {} }
+      /* Full-screen navigation starts ONLY after the courier pressed a Navigate button (a few seconds ago). The app also draws the route by
+         itself every time the Active tab refreshes: that must never take over the screen, and must never bring it back after "End". */
+      var wanted = !empty && wantNav();
+      if (wanted) { try { this.setOptions({ suppressPolylines: true, suppressMarkers: true }); } catch (e) {} }
       var out = orig.apply(this, arguments);
-      try { if (empty) stop(); else start(this, res); } catch (e) { if (window.console) console.warn('courier-nav:', e); }
+      try { if (empty) stop(); else if (wanted) start(this, res); } catch (e) { if (window.console) console.warn('courier-nav:', e); }
       return out;
     };
     hooked = true;
