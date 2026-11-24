@@ -947,7 +947,10 @@ switch ($action) {
         }
         $vehicles = array();
         try { require_once __DIR__ . '/lib/vehicle_catalog.php'; $vehicles = etel_vc_cart_vehicles(db()); } catch (Exception $e) { error_log('[ETEL] cart vehicles: ' . $e->getMessage()); }
-        ok(array('tiers' => $tiers, 'vehicles' => $vehicles));
+        // The cart needs the service charge percent (the admin sets it; free by default) and whether delivery fees are by distance (Admin > Delivery fees).
+        $fees = array('service_pct' => 0, 'distance_on' => false);
+        try { require_once __DIR__ . '/lib/delivery_fees.php'; $fs = etel_dfee_settings(db()); $fees = array('service_pct' => $fs['service_pct'], 'distance_on' => !empty($fs['enabled'])); } catch (Exception $e) { error_log('[ETEL] cart fees: ' . $e->getMessage()); }
+        ok(array('tiers' => $tiers, 'vehicles' => $vehicles, 'fees' => $fees));
         break;
     }
     case 'get_bank_accounts': {
@@ -1787,6 +1790,9 @@ switch ($action) {
         break;
     case 'admin_ride_offers_get': case 'admin_ride_offers_save': case 'admin_ride_area_save': case 'admin_ride_area_delete':
         require __DIR__ . '/controllers/RideOffersAdminController.php';
+        break;
+    case 'delivery_fee_quote': case 'admin_dfee_get': case 'admin_dfee_save':
+        require __DIR__ . '/controllers/DeliveryFeeController.php';
         break;
     case 'driver_courier_status': case 'driver_courier_apply':
         require __DIR__ . '/controllers/DriverCourierController.php';

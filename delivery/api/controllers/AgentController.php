@@ -356,7 +356,7 @@ case 'agent_find_and_quote': {
         fail('Please share your current location so I can calculate the delivery fee, or name the area you\'re in.');
     }
 
-    $serviceCharge = delivery_calc_service_charge($subtotal);
+    $serviceCharge = delivery_calc_service_charge($subtotal, $pdo);
     $total = $subtotal + $priced['delivery_fee'] + $serviceCharge;
 
     ok(array(
@@ -444,7 +444,7 @@ case 'agent_order_quote': {
         fail('Please share your current location so I can calculate the delivery fee, or name the area you\'re in.');
     }
 
-    $serviceCharge = delivery_calc_service_charge($subtotal);
+    $serviceCharge = delivery_calc_service_charge($subtotal, $pdo);
     $total = $subtotal + $priced['delivery_fee'] + $serviceCharge;
 
     ok(array(

@@ -70,7 +70,7 @@ ETEL_I18N.register('customer', {
         payments_title:'💳 Wallet & Payments',
         cart_title:'My Cart',
         courier_qr_title:"Scan Courier's QR Code", cancel_btn:'Cancel',
-        lbl_subtotal:'Subtotal', lbl_delivery_fee:'Delivery Fee', lbl_service_charge:'Service Charge', lbl_total:'Total',
+        lbl_subtotal:'Subtotal', lbl_delivery_fee:'Delivery Fee', lbl_service_charge:'Service Charge', lbl_free:'Free', lbl_total:'Total',
         lbl_tip:'Courier tip', tip_title:'Tip your courier', tip_sub:'100% of your tip goes to the courier.', tip_none:'No tip', tip_custom:'Custom', tip_custom_ph:'Amount in ETB',
         saved_places:'Your saved places', save_this_addr:'★ Save this address', saved_addr_ok:'Address saved', saved_addr_fail:'Could not save the address', lbl_delivery_address:'Delivery Address *', lbl_recipient_name:'Recipient Name *', lbl_recipient_phone:'Recipient Phone *',
         lbl_notes:'Notes (optional)', lbl_payment_method:'Payment Method', btn_place_order:'Place Order',
@@ -103,7 +103,7 @@ ETEL_I18N.register('customer', {
         payments_title:'💳 ቦርሳ እና ክፍያዎች',
         cart_title:'የእኔ ጋሪ',
         courier_qr_title:'የተላላኪውን QR ኮድ ይቃኙ', cancel_btn:'ይቅር',
-        lbl_subtotal:'ንዑስ ድምር', lbl_delivery_fee:'የማድረስ ክፍያ', lbl_service_charge:'የአገልግሎት ክፍያ', lbl_total:'ጠቅላላ',
+        lbl_subtotal:'ንዑስ ድምር', lbl_delivery_fee:'የማድረስ ክፍያ', lbl_service_charge:'የአገልግሎት ክፍያ', lbl_free:'ነፃ', lbl_total:'ጠቅላላ',
         lbl_tip:'የአስረካቢ ጉርሻ', tip_title:'ለአስረካቢው ጉርሻ ይስጡ', tip_sub:'ጉርሻዎ 100% ለአስረካቢው ይሄዳል።', tip_none:'ጉርሻ የለም', tip_custom:'ሌላ መጠን', tip_custom_ph:'መጠን በብር',
         saved_places:'የተቀመጡ አድራሻዎቼ', save_this_addr:'★ ይህን አድራሻ አስቀምጥ', saved_addr_ok:'አድራሻው ተቀምጧል', saved_addr_fail:'አድራሻውን ማስቀመጥ አልተቻለም', lbl_delivery_address:'የማድረሻ አድራሻ *', lbl_recipient_name:'የተቀባይ ስም *', lbl_recipient_phone:'የተቀባይ ስልክ *',
         lbl_notes:'ማስታወሻ (አማራጭ)', lbl_payment_method:'የክፍያ ዘዴ', btn_place_order:'ትዕዛዝ ያስገቡ',
@@ -1277,7 +1277,7 @@ const HAWASSA_FEES = {
     'Liqe Mender':           {fee:50,  time:18},
     'University':            {fee:60,  time:25},
 };
-const SERVICE_CHARGE_PCT = 5;
+let SERVICE_CHARGE_PCT = 0;   // the admin sets it (Admin > Delivery fees); it starts free. The server sends the real value.
 const HAWASSA_ZONE_COORDS = {
     'Stadium':               { lat: 7.0606, lng: 38.4775 },
     'Mehal Ketema':          { lat: 7.0559, lng: 38.4762 },
@@ -1323,6 +1323,11 @@ async function loadDeliveryTiers() {
     if (_deliveryTiersLoaded) return;
     _deliveryTiersLoaded = true; // only try once per page load, even on failure
     const res = await api('get_delivery_tiers', {});
+    if (res && res.success && res.data && res.data.fees) {
+        SERVICE_CHARGE_PCT = Number(res.data.fees.service_pct) || 0;
+        _dfeeOn = !!res.data.fees.distance_on;
+        renderCartDrawer();
+    }
     if (res && res.success && res.data && Array.isArray(res.data.tiers) && res.data.tiers.length) {
         _deliveryTiers = res.data.tiers;
         // The real vehicle types (admin: Package prices) with how many couriers are online for each: the picker shows these when the server sends them.
@@ -1363,11 +1368,43 @@ let currentOrderId = 0;
 let currentPaymentId = 0;
 let telebirrPollTimer = null;
 
+// ── DELIVERY FEE BY DISTANCE (Admin > Delivery fees). The server prices the road from the shop to the customer's pin for each vehicle
+// (api action delivery_fee_quote). The price list is the admin's; the customer only sees the fee. When the shop or the pin is unknown,
+// or the admin turned it off, the zone fee below is used, exactly as before. The server prices the real order again at checkout.
+let _dfeeOn = false;        // the server says fees are by distance
+let _dfeeQuote = null;      // { mode, vehicles: { class: { fee, km } }, too_far }
+let _dfeeKey = '';          // the item + pin the last quote was asked for (no second request for the same thing)
+function _dfeeCurrentKey() { return (cart.length ? String(cart[0].item_id) : '') + '|' + _deliveryLat + '|' + _deliveryLng; }
+function ensureFeeQuote() {
+    if (!_dfeeOn || !cart.length || _deliveryLat === null || _deliveryLng === null) return;
+    const key = _dfeeCurrentKey();
+    if (key === _dfeeKey) return;
+    _dfeeKey = key;
+    api('delivery_fee_quote', { item_id: cart[0].item_id, lat: _deliveryLat, lng: _deliveryLng }).then(function(res) {
+        if (key !== _dfeeCurrentKey()) return;   // the customer moved the pin or changed the cart meanwhile
+        _dfeeQuote = (res && res.success && res.data) ? res.data : null;
+        renderCartDrawer();
+    }).catch(function() { _dfeeQuote = null; });
+}
+// The distance quote for one vehicle (by its tier key), or null when the zone fee applies.
+function _dfeeFor(tierKey) {
+    if (!_dfeeOn || !_dfeeQuote || _dfeeKey !== _dfeeCurrentKey() || _dfeeQuote.mode !== 'distance' || !_dfeeQuote.vehicles) return null;
+    const cls = _deliveryIsVehicles ? tierKey : (tierKey === 'car' ? 'car' : (tierKey === 'express_cargo' ? 'van' : 'moto'));
+    return _dfeeQuote.vehicles[cls] || null;
+}
+function _dfeeMinutes(q, tierKey) {
+    const t = _deliveryTiers.find(function(x){ return x.tier_key === tierKey; });
+    return Math.max(5, Math.round(10 + Number(q.km) * 4 + (t ? Number(t.eta_delta_min) : 0)));
+}
 function getDeliveryFee(zone) {
+    const q = _dfeeFor(selectedTier);
+    if (q) return Number(q.fee);
     const baseFee = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].fee : 50;
     return Math.round(baseFee * getTierMultiplier(selectedTier));
 }
 function getEstimatedTime(zone) {
+    const q = _dfeeFor(selectedTier);
+    if (q) return _dfeeMinutes(q, selectedTier);
     const baseTime = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].time : 25;
     const t = _deliveryTiers.find(function(x){ return x.tier_key === selectedTier; });
     const delta = t ? Number(t.eta_delta_min) : 0;
@@ -1597,6 +1634,7 @@ function renderCartDrawer() {
         if (_dp) applySavedPlace(_dp);
     }
     const subtotal = cart.reduce(function(s,c){ return s + c.price*c.quantity; }, 0);
+    ensureFeeQuote();
     const deliveryFee = getDeliveryFee(selectedZone);
     const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_PCT / 100 * 100) / 100;
     const promoDisc = _promo ? Math.min(_promo.discount, subtotal + deliveryFee) : 0;
@@ -1623,7 +1661,7 @@ function renderCartDrawer() {
         '<div style="border-top:2px solid rgba(212,175,55,.15);padding-top:14px;margin-top:12px">' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_subtotal') + '</span><span>ETB ' + subtotal.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + (SERVICE_CHARGE_PCT > 0 ? ' (' + SERVICE_CHARGE_PCT + '%)' : '') + '</span>' + (SERVICE_CHARGE_PCT > 0 ? '<span>ETB ' + serviceCharge.toFixed(2) + '</span>' : '<span style="color:#2ECC71;font-weight:700">' + ETEL_I18N.t('lbl_free') + '</span>') + '</div>' +
         (pointsDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>' + escapeHtml(ETEL_I18N.t('pts_applied')) + ' (' + pointsUsed + ')</span><span>−ETB ' + pointsDisc.toFixed(2) + '</span></div>' : '') +
         (promoDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>🏷️ ' + escapeHtml(_promo.code) + ' <button type="button"' + _ea('removePromo', []) + ' style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;cursor:pointer;padding:0 0 0 6px">' + escapeHtml(ETEL_I18N.t('promo_remove')) + '</button></span><span>−ETB ' + promoDisc.toFixed(2) + '</span></div>' : '') +
         (tipAmt > 0 ? '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin:-6px 0 12px"><span>' + ETEL_I18N.t('lbl_tip') + '</span><span>ETB ' + tipAmt.toFixed(2) + '</span></div>' : '') +
@@ -1850,9 +1888,10 @@ function vpic(type, px, fallback) {
 
 function tierOptionBtn(tier, zone) {
     const active = selectedTier === tier.tier_key;
-    const fee = Math.round((HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].fee : 50) * Number(tier.multiplier));
+    const dq = _dfeeFor(tier.tier_key);
+    const fee = dq ? Number(dq.fee) : Math.round((HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].fee : 50) * Number(tier.multiplier));
     const baseTime = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].time : 25;
-    const eta = Math.max(3, baseTime + Number(tier.eta_delta_min));
+    const eta = dq ? _dfeeMinutes(dq, tier.tier_key) : Math.max(3, baseTime + Number(tier.eta_delta_min));
     return '<button data-tier="'+tier.tier_key+'"' + _ea('selectTier', [String(tier.tier_key)]) + ' style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
         '<span style="display:flex;justify-content:center;align-items:center;height:34px;font-size:20px;margin-bottom:2px">'+vpic(tier.tier_key, 52, tier.icon||'📦')+'</span>' +
         '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+escapeHtml(tier.label)+'</span>' +
@@ -1862,6 +1901,9 @@ function tierOptionBtn(tier, zone) {
 }
 // Under the vehicle picker: tells the customer when nobody with the chosen vehicle is online (the order still waits for one).
 function tierHint() {
+    if (_dfeeOn && _dfeeQuote && _dfeeQuote.too_far && _dfeeKey === _dfeeCurrentKey()) {
+        return '<div style="font-size:11.5px;margin:0 0 14px;color:#E63946;font-weight:700">This shop is too far to deliver to you (the limit is ' + escapeHtml(String(_dfeeQuote.too_far)) + ' km). Choose a nearer shop.</div>';
+    }
     if (!_deliveryIsVehicles) return '';
     const t = _deliveryTiers.find(function(x){ return x.tier_key === selectedTier; });
     if (!t) return '';
@@ -2030,6 +2072,7 @@ async function getMyLocation() {
                 hint.textContent = '📍 ' + selectedZone + ' · ETB ' + fee + ' delivery (' + tm + ' min)';
                 hint.style.color = '#2ECC71';
             }
+            ensureFeeQuote();   // the pin is known now: price the road for every vehicle
         })();
     }
 
