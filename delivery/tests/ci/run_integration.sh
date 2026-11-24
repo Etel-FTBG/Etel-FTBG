@@ -58,6 +58,7 @@ run python3 tests/admin_import_smoke.py
 run python3 tests/sg_claim_smoke.py
 run python3 tests/sg_docs_admin_own_smoke.py
 run python3 tests/sg_location_smoke.py
+run python3 tests/admin_sg_location_smoke.py
 run python3 tests/server_errors_smoke.py
 run python3 tests/item_extras_smoke.py
 run python3 tests/sg_owner_menu_smoke.py
