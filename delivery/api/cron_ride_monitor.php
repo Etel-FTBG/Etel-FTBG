@@ -86,13 +86,42 @@ require_once __DIR__ . '/push.php';
 // Keep the piggy-back throttle in step so both paths do not double up.
 try { $pdo->exec("UPDATE ride_sweeper_state SET last_run=NOW() WHERE id=1"); } catch (Exception $e) { /* table not created yet */ }
 
-$swept = rides_sweep_stuck($pdo, array('limit' => 50, 'push' => true));
+/* A run that stops half way used to leave NO trace: error_reporting(0) hides the error and the heartbeat is only written at the very end, so the System health page could
+   only say "the cron has stopped". Now every step is wrapped, the heartbeat is written even when a step fails, and the reason is kept in the heartbeat row
+   'ride_monitor_error' (shown on Admin > Ride > Rides > System health). A fatal error is caught by the shutdown function below. */
+function cs_note($pdo, $detail) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS etel_heartbeat (name VARCHAR(40) NOT NULL PRIMARY KEY, last_run DATETIME NOT NULL, detail VARCHAR(200) NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $pdo->prepare("INSERT INTO etel_heartbeat (name, last_run, detail) VALUES ('ride_monitor_error', NOW(), ?) ON DUPLICATE KEY UPDATE last_run = NOW(), detail = VALUES(detail)")
+            ->execute(array(substr((string) $detail, 0, 200)));
+    } catch (Exception $e) { } catch (Throwable $e) { }
+}
+$cs_done = false;
+$cs_errors = array();
+register_shutdown_function(function () use ($pdo, &$cs_done) {
+    if ($cs_done) return;
+    $e = error_get_last();
+    cs_note($pdo, 'stopped: ' . ($e ? $e['message'] . ' (' . basename($e['file']) . ':' . $e['line'] . ')' : 'no error message'));
+});
+// Test switch (only when APP_ENV=development): php cron_ride_monitor.php fail=sweep|fatal
+$cs_test = '';
+if (cs_env('APP_ENV', '') === 'development' && $isCli && isset($argv)) { foreach ($argv as $a) { if (strpos($a, 'fail=') === 0) $cs_test = substr($a, 5); } }
+
+$swept = array('completed' => array());
+$watch = array('findings' => 0);
+$backup = array('stale' => false, 'hours' => null, 'sent' => 0);
 $noPush = $isCli ? (isset($argv) && in_array('push=0', $argv, true)) : (isset($_GET['push']) && $_GET['push'] === '0');
-$watch = rides_monitor_run($pdo, !$noPush);
+try { if ($cs_test === 'sweep') throw new Exception('test failure in the sweep'); $swept = rides_sweep_stuck($pdo, array('limit' => 50, 'push' => true)); }
+catch (Exception $e) { $cs_errors[] = 'sweep: ' . $e->getMessage(); } catch (Throwable $e) { $cs_errors[] = 'sweep: ' . $e->getMessage(); }
+try { $watch = rides_monitor_run($pdo, !$noPush); }
+catch (Exception $e) { $cs_errors[] = 'trip watch: ' . $e->getMessage(); } catch (Throwable $e) { $cs_errors[] = 'trip watch: ' . $e->getMessage(); }
 // Expire courier job offers even when nobody's screen is polling (offers are lazy otherwise).
-try { require_once __DIR__ . '/lib/courier_offers.php'; etel_offers_sweep($pdo, true); } catch (Exception $e) {} catch (Throwable $e) {}
+try { require_once __DIR__ . '/lib/courier_offers.php'; etel_offers_sweep($pdo, true); } catch (Exception $e) { $cs_errors[] = 'offers: ' . $e->getMessage(); } catch (Throwable $e) { $cs_errors[] = 'offers: ' . $e->getMessage(); }
 // Backup alert: the newest backup is older than 26 hours (or missing) -> one push to the admins, then at most one per 12 hours.
-require_once __DIR__ . '/lib/backup_watch.php';
-$backup = etel_backup_watch($pdo, !$noPush);
-etel_health_heartbeat($pdo, 'ride_monitor', 'swept ' . count($swept['completed']) . ' closed, ' . $watch['findings'] . ' findings');
-cs_reply(array('success' => true, 'swept' => $swept, 'watch' => $watch, 'backup' => $backup));
+try { require_once __DIR__ . '/lib/backup_watch.php'; $backup = etel_backup_watch($pdo, !$noPush); }
+catch (Exception $e) { $cs_errors[] = 'backup alert: ' . $e->getMessage(); } catch (Throwable $e) { $cs_errors[] = 'backup alert: ' . $e->getMessage(); }
+if ($cs_test === 'fatal') { cs_this_function_does_not_exist(); }
+$cs_done = true;
+etel_health_heartbeat($pdo, 'ride_monitor', 'swept ' . count($swept['completed']) . ' closed, ' . $watch['findings'] . ' findings' . ($cs_errors ? ', ' . count($cs_errors) . ' step(s) failed' : ''));
+cs_note($pdo, $cs_errors ? implode(' | ', $cs_errors) : 'ok');
+cs_reply(array('success' => true, 'swept' => $swept, 'watch' => $watch, 'backup' => $backup, 'errors' => $cs_errors));
