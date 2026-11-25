@@ -65,6 +65,8 @@ delivery/uploads/items/*
 delivery/uploads/driver_documents/*
 delivery/uploads/driver_licenses/*
 delivery/uploads/driver_selfies/*
+delivery/uploads/hub/*
+delivery/uploads/vehicle_photos/*
 delivery/api/.users_token_version_ok
 delivery/api/.goal_tiers_ok
 api/.users_token_version_ok
