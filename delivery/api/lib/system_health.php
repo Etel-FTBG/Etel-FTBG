@@ -180,13 +180,25 @@ function etel_system_health($pdo, $adminId = 0) {
     // Cron job heartbeat
     try {
         $r = $pdo->query("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins FROM etel_heartbeat WHERE name='ride_monitor'")->fetch();
+        /* the reason a run stopped or a step failed (cron_ride_monitor.php keeps it in the row 'ride_monitor_error'; 'ok' = nothing wrong) */
+        $err = null;
+        try { $err = $pdo->query("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins, detail FROM etel_heartbeat WHERE name='ride_monitor_error'")->fetch(); } catch (Exception $e) { $err = null; }
+        $errNewer = $err && $err['detail'] !== 'ok' && $err['detail'] !== '' && (!$r || intval($err['mins']) <= intval($r['mins']));
         if (!$r) {
-            $checks[] = etel_health_item('Cron job', 'warn', 'Has not run yet. Add the 5-minute cron for cron_ride_monitor.php in cPanel.');
+            $checks[] = $errNewer
+                ? etel_health_item('Cron job', 'bad', 'The job starts but stops with an error (' . etel_health_ago(intval($err['mins'])) . '): ' . $err['detail'])
+                : etel_health_item('Cron job', 'warn', 'Has not run yet. Add the 5-minute cron for cron_ride_monitor.php in cPanel.');
         } else {
             $m = intval($r['mins']);
-            $checks[] = $m > 15
-                ? etel_health_item('Cron job', 'bad', 'Last ran ' . etel_health_ago($m) . '. The 5-minute cron has stopped - check cPanel > Cron Jobs.')
-                : etel_health_item('Cron job', 'ok', 'Ran ' . etel_health_ago($m) . ' (every 5 min).');
+            if ($errNewer && $m > 15) {
+                $checks[] = etel_health_item('Cron job', 'bad', 'Last finished ' . etel_health_ago($m) . '. The job starts but stops with an error (' . etel_health_ago(intval($err['mins'])) . '): ' . $err['detail']);
+            } elseif ($errNewer) {
+                $checks[] = etel_health_item('Cron job', 'warn', 'Ran ' . etel_health_ago($m) . ', but a step fails: ' . $err['detail']);
+            } else {
+                $checks[] = $m > 15
+                    ? etel_health_item('Cron job', 'bad', 'Last ran ' . etel_health_ago($m) . '. The 5-minute cron has stopped - check cPanel > Cron Jobs.')
+                    : etel_health_item('Cron job', 'ok', 'Ran ' . etel_health_ago($m) . ' (every 5 min).');
+            }
         }
     } catch (Exception $e) {
         $checks[] = etel_health_item('Cron job', 'warn', 'Has not run yet. Add the 5-minute cron for cron_ride_monitor.php in cPanel.');
