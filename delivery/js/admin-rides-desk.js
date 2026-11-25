@@ -55,7 +55,8 @@ function vis(id) { var p = document.getElementById('panel-rides'); return p && p
 /* ======================= operations pulse ======================= */
 function pulseRoot() { return document.getElementById('rides-ops-pro'); }
 function shell() {
-  var el = pulseRoot(); if (!el || el.firstChild) return;
+  /* children, not firstChild: the page leaves an HTML comment inside this box, and a comment is a child node too - checking firstChild made this think the cards were already built, so System health and Live trip watch never appeared */
+  var el = pulseRoot(); if (!el || el.children.length) return;
   el.innerHTML = '<div class="ak"><div class="rdk-pulse"><div class="rdk-card" id="rdk-health" aria-live="polite"><h3>🩺 System health</h3><div class="rdk-tx">Checking…</div></div><div class="rdk-card" id="rdk-watch" aria-live="polite"><h3>🛰️ Live trip watch</h3><div class="rdk-tx">Checking…</div></div></div></div>';
 }
 function loadHealth() {
@@ -129,7 +130,7 @@ function counts() {
 function loadDesk() {
   var el = deskRoot(); if (!el) return Promise.resolve();
   css();
-  if (!el.firstChild) el.innerHTML = '<div class="ak">' + K.skeleton(3) + '</div>';
+  if (!el.children.length) el.innerHTML = '<div class="ak">' + K.skeleton(3) + '</div>';
   var ask = function (action, key, field) {
     return K.api(action, {}).then(function (res) { D.loaded[key] = K.okRes(res); D.rows[key] = K.okRes(res) ? (K.data(res)[field] || []) : []; if (!K.okRes(res)) D['err_' + key] = K.failText(res); });
   };
