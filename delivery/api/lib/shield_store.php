@@ -23,6 +23,11 @@ function etel_shield_defaults() {
         'geo_device_mode'   => 'monitor',    /* Ethiopia only, the position the app sends: off | monitor | enforce */
         'geo_allow_countries' => array('ET'),/* country codes accepted when Cloudflare reports the country */
         'geo_exempt_actions' => array('get_config'),   /* answered from anywhere, so an app abroad can show its message */
+        'entry_mode'        => 'block',      /* the other files that take web requests (uploads, payment callbacks, beacons ...): off | monitor | block */
+        'rate_upload_per_min' => 90,         /* uploads and document downloads, per sign-in token or connection per minute */
+        'rate_public_per_min' => 600,        /* open pages (trip share, payment return, private files), per connection per minute */
+        'rate_callback_per_min' => 600,      /* payment and Telegram servers calling back, per connection per minute (never blocks by country) */
+        'rate_sink_per_min' => 60,           /* error and policy reports from the apps, per connection per minute */
         'max_body_kb'       => 2048,         /* biggest request the API accepts */
         'allow_ips'         => array(),      /* never limited or blocked (office, owner) - exact address or CIDR */
         'deny_ips'          => array(),      /* always blocked */
@@ -53,7 +58,7 @@ function etel_shield_clean($in) {
     $modes3 = array('off', 'monitor', 'block');
     foreach (array('enabled') as $k) { if (isset($in[$k])) $o[$k] = $in[$k] ? 1 : 0; }
     if (isset($in['proxy_mode']) && in_array($in['proxy_mode'], array('none', 'cloudflare', 'any_xff'), true)) $o['proxy_mode'] = $in['proxy_mode'];
-    foreach (array('rate_mode', 'scanner_mode', 'waf_mode') as $k) { if (isset($in[$k]) && in_array($in[$k], $modes3, true)) $o[$k] = $in[$k]; }
+    foreach (array('rate_mode', 'scanner_mode', 'waf_mode', 'entry_mode') as $k) { if (isset($in[$k]) && in_array($in[$k], $modes3, true)) $o[$k] = $in[$k]; }
     if (isset($in['geo_mode']) && in_array($in['geo_mode'], array('off', 'monitor', 'enforce'), true)) $o['geo_mode'] = $in['geo_mode'];
     if (isset($in['geo_device_mode']) && in_array($in['geo_device_mode'], array('off', 'monitor', 'enforce'), true)) $o['geo_device_mode'] = $in['geo_device_mode'];
     if (isset($in['geo_allow_countries']) && is_array($in['geo_allow_countries'])) {
@@ -66,7 +71,7 @@ function etel_shield_clean($in) {
         foreach ($in['geo_exempt_actions'] as $a) { $a = trim((string) $a); if ($a !== '' && preg_match('/^[a-z0-9_*]{2,60}$/i', $a)) $l[] = $a; }
         $o['geo_exempt_actions'] = array_values(array_unique(array_slice($l, 0, 50)));
     }
-    $lim = array('rate_anon_per_min' => array(30, 100000), 'rate_auth_per_min' => array(30, 100000), 'rate_login_per_min' => array(3, 10000), 'rate_signup_per_min' => array(2, 10000), 'max_body_kb' => array(64, 51200), 'keep_days' => array(1, 365));
+    $lim = array('rate_anon_per_min' => array(30, 100000), 'rate_auth_per_min' => array(30, 100000), 'rate_login_per_min' => array(3, 10000), 'rate_signup_per_min' => array(2, 10000), 'rate_upload_per_min' => array(10, 100000), 'rate_public_per_min' => array(20, 100000), 'rate_callback_per_min' => array(60, 100000), 'rate_sink_per_min' => array(10, 100000), 'max_body_kb' => array(64, 51200), 'keep_days' => array(1, 365));
     foreach ($lim as $k => $r) { if (isset($in[$k]) && is_numeric($in[$k])) $o[$k] = max($r[0], min($r[1], intval($in[$k]))); }
     if (isset($in['ban_minutes']) && is_array($in['ban_minutes'])) {
         $b = array();
@@ -113,6 +118,33 @@ function etel_shield_in_list($ip, $list) {
     return false;
 }
 
+/* A database connection for the shield: the API's own db() when boot.php is loaded, else one built from api/.env (for upload.php, the payment callbacks ...). null when there is none. */
+function etel_shield_pdo_any() {
+    static $mine = false;
+    try {
+        if (function_exists('db')) return db();
+        if ($mine !== false) return $mine;
+        $mine = null;
+        require_once dirname(__DIR__) . '/env_loader.php';
+        $e = etel_parse_env_file(dirname(__DIR__) . '/.env');
+        $h = isset($e['DB_HOST']) && $e['DB_HOST'] !== '' ? $e['DB_HOST'] : 'localhost';
+        $n = isset($e['DB_NAME']) ? $e['DB_NAME'] : ''; $u = isset($e['DB_USER']) ? $e['DB_USER'] : ''; $pw = isset($e['DB_PASS']) ? $e['DB_PASS'] : '';
+        if ($n === '' || $u === '') {   /* hosts that keep the database settings in config.php instead of .env */
+            $cf = dirname(__DIR__) . '/config.php';
+            if (is_file($cf)) @require_once $cf;
+            if ($n === '' && defined('CFG_DB_NAME')) $n = CFG_DB_NAME;
+            if ($u === '' && defined('CFG_DB_USER')) $u = CFG_DB_USER;
+            if ($pw === '' && defined('CFG_DB_PASS')) $pw = CFG_DB_PASS;
+            if (defined('CFG_DB_HOST') && CFG_DB_HOST !== '' && (!isset($e['DB_HOST']) || $e['DB_HOST'] === '')) $h = CFG_DB_HOST;
+        }
+        if ($n === '' || $u === '') return null;
+        $pdo = new PDO('mysql:host=' . $h . ';dbname=' . $n . ';charset=utf8mb4', $u, $pw, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC));
+        try { $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $e2) { }
+        $mine = $pdo;
+        return $mine;
+    } catch (Exception $e) { return null; } catch (Throwable $e) { return null; }
+}
+
 /* The settings: the temp-folder copy when it is fresh (60 s), else the database, else the defaults. */
 function etel_shield_cfg($pdo = null) {
     static $cfg = null;
@@ -124,7 +156,7 @@ function etel_shield_cfg($pdo = null) {
     }
     $saved = null;
     try {
-        if ($pdo === null && function_exists('db')) $pdo = db();
+        if ($pdo === null) $pdo = etel_shield_pdo_any();
         if ($pdo !== null) {
             $q = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key = 'shield_config' LIMIT 1");
             $q->execute();
@@ -132,6 +164,7 @@ function etel_shield_cfg($pdo = null) {
             if ($v) $saved = @json_decode($v, true);
         }
     } catch (Exception $e) { $saved = null; }
+    if (!is_array($saved) && $f !== '' && is_file($f)) { $j = @json_decode(@file_get_contents($f), true); if (is_array($j)) $saved = $j; }   /* no database answer: an old copy beats the factory settings */
     $cfg = etel_shield_clean(is_array($saved) ? $saved : array());
     if ($f !== '') @file_put_contents($f, json_encode($cfg), LOCK_EX);
     return $cfg;
@@ -169,7 +202,7 @@ function etel_shield_bans() {
 function etel_shield_bans_rebuild($pdo) {
     $out = array();
     try {
-        if ($pdo === null && function_exists('db')) $pdo = db();
+        if ($pdo === null) $pdo = etel_shield_pdo_any();
         if ($pdo !== null) {
             etel_shield_ensure_tables($pdo);
             foreach ($pdo->query("SELECT ip, UNIX_TIMESTAMP(until_at) AS u FROM shield_bans WHERE until_at > NOW()")->fetchAll(PDO::FETCH_ASSOC) as $r) $out[$r['ip']] = intval($r['u']);
@@ -205,8 +238,8 @@ function etel_shield_log($rule, $mode, $ip, $action, $detail, $country) {
             if (is_file($m)) return;
             @touch($m);
         }
-        if (!function_exists('db')) return;
-        $pdo = db();
+        $pdo = etel_shield_pdo_any();
+        if (!$pdo) return;
         etel_shield_ensure_tables($pdo);
         $ua = isset($_SERVER['HTTP_USER_AGENT']) ? substr((string) $_SERVER['HTTP_USER_AGENT'], 0, 120) : '';
         $pdo->prepare("INSERT INTO shield_events (at, ip, rule, mode, action, detail, ua, country) VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?)")

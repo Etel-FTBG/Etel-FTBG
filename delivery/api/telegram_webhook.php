@@ -24,6 +24,8 @@
 
 error_reporting(0); ini_set('display_errors','0');
 http_response_code(200);
+/* Etel Shield for this file (lib/shield_entry.php) */
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('callback'); } catch (Exception $e) {} catch (Throwable $e) {}
 header('Content-Type: application/json');
 
 /*  Load .env  */

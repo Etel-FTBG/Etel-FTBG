@@ -88,7 +88,8 @@ function etel_shield_strike($ip, $kind, $limit, $cfg, $action, $country) {
     $n = etel_shield_hit('strike|' . $kind . '|' . $ip, 600);
     if ($n < $limit) return;
     try {
-        $pdo = db();
+        $pdo = etel_shield_pdo_any();
+        if (!$pdo) return;
         etel_shield_ensure_tables($pdo);
         $q = $pdo->prepare("SELECT COUNT(*) FROM shield_events WHERE ip = ? AND rule = 'ban' AND at > DATE_SUB(NOW(), INTERVAL 1 DAY)");
         $q->execute(array($ip));

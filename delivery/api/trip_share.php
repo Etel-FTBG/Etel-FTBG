@@ -21,6 +21,7 @@
 
 if (ob_get_level()) ob_end_clean();
 ob_start();
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('public'); } catch (Exception $e) {} catch (Throwable $e) {}
 error_reporting(0);
 ini_set('display_errors', '0');
 

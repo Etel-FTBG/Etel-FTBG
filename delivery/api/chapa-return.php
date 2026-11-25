@@ -4,6 +4,8 @@
  * Verifies the payment with Chapa right away (don't wait for the webhook),
  * then redirects into the right app. The redirect itself proves nothing.
  */
+/* Etel Shield for this file (lib/shield_entry.php) */
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('public'); } catch (Exception $e) {} catch (Throwable $e) {}
 require_once __DIR__ . '/env_loader.php';
 $_ch_env = etel_parse_env_file(__DIR__ . '/.env');
 function etel_env($key, $cfg_const, $default = '') {

@@ -4,6 +4,8 @@
  * Set in the Chapa dashboard to https://ethelmarket.com/delivery/api/chapa-callback.php
  * Trust: HMAC signature, then Chapa's own verify API (chapa_settle).
  */
+/* Etel Shield for this file (lib/shield_entry.php) */
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('callback'); } catch (Exception $e) {} catch (Throwable $e) {}
 require_once __DIR__ . '/env_loader.php';
 $_ch_env = etel_parse_env_file(__DIR__ . '/.env');
 function etel_env($key, $cfg_const, $default = '') {
