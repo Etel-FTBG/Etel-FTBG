@@ -4,11 +4,13 @@ live host), so the Backup job row on System health showed a false red for the la
 
     python3 tests/cron_backup_heartbeat_smoke.py
 
-Runs the real script over the command line (it writes a small real backup into the test folder: keep BACKUP_DIR pointed at a throwaway place). Throwaway database only.
+Runs the real script over the command line with BACKUP_DIR pointed at a throwaway folder (removed at the end), so it never leaves a backup behind for the other backup tests. Throwaway database only.
 """
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 
 import etel_test_db
 
@@ -24,7 +26,12 @@ def check(name, cond, detail=""):
 def main():
     etel_test_db.run_sql("CREATE TABLE IF NOT EXISTS etel_heartbeat (name VARCHAR(40) NOT NULL PRIMARY KEY, last_run DATETIME NOT NULL, detail VARCHAR(200) NULL)")
     etel_test_db.run_sql("DELETE FROM etel_heartbeat WHERE name = 'backup_db'")
-    p = subprocess.run(["php", "cron_backup_db.php"], cwd=ROOT, capture_output=True, text=True, timeout=300)
+    tmp = tempfile.mkdtemp(prefix="etel_bk_")
+    env = dict(os.environ, BACKUP_DIR=tmp)
+    try:
+        p = subprocess.run(["php", "cron_backup_db.php"], cwd=ROOT, capture_output=True, text=True, timeout=300, env=env)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     ok, out, _ = etel_test_db.query_text("SELECT detail, TIMESTAMPDIFF(MINUTE, last_run, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 3 HOUR)) FROM etel_heartbeat WHERE name = 'backup_db'")
     line = out.strip().split("\n")[-1] if ok and out.strip() else ""
     check("the backup job reported (heartbeat backup_db exists)", bool(line), p.stdout[:200] + p.stderr[:200])
