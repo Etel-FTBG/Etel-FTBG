@@ -28,6 +28,7 @@ const cfg = { enabled: 1, geo_mode: 'monitor', geo_device_mode: 'monitor', rate_
   const sent = (calls, a) => calls.filter(c => c.action === a);
   let errs = await run({}, async (p, calls) => {
     t('1 loads the shield, idle, bans and log', ['admin_shield_get', 'admin_idle_get', 'admin_shield_bans', 'admin_shield_events'].every(a => sent(calls, a).length === 1));
+    t('1b the round floating buttons from core.js are not drawn on top of the settings', await p.evaluate(() => ['dark-theme-toggle', '_diag_fab'].every(id => { const e = document.getElementById(id); return !e || getComputedStyle(e).display === 'none'; })));
     t('2 shows the numbers', /7\s*events/.test(await p.locator('#top').innerText()) && (await p.locator('#top').innerText()).includes('1.2.3.4'));
     t('3 settings filled in', (await p.inputValue('#geo_mode')) === 'monitor' && (await p.inputValue('#rate_anon_per_min')) === '1500' && (await p.inputValue('#allow_ips')) === '10.1.1.1');
     t('4 log text is escaped (no script from a log line)', !(await p.evaluate(() => window.__xss)) && (await p.locator('#events').innerText()).includes('<img'));
