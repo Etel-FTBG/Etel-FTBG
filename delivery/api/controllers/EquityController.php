@@ -443,8 +443,13 @@ case 'equity_export_investors_csv': {
     // admin_export_messages_csv on the EtelGroup side - token comes from
     // the query string since this is opened via window.open(), not fetch().
     $pdo = db();
-    $token = isset($_GET['token']) ? $_GET['token'] : '';
-    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $token;
+    /* The admin screen now fetches this with the normal Authorization header and saves the file itself, so the login token is not in the address.
+       A token in the address still works for a screen that is not updated yet, until url_token_mode is set to refuse (Etel Shield). */
+    $hasHdr = !empty($_SERVER['HTTP_AUTHORIZATION']) || !empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    if (!$hasHdr && isset($_GET['token'])) {
+        require_once __DIR__ . '/../lib/stream_ticket.php';
+        if (etel_url_token_note('equity_export_investors_csv')) $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $_GET['token'];
+    }
     require_admin($pdo, 'equity.view');
     try {
         $rows = $pdo->query('SELECT investor_code, name, contact, amount_invested, payment_status, agreement_status, invested_at, receipt_number FROM equity_investors ORDER BY created_at ASC')->fetchAll(PDO::FETCH_ASSOC);

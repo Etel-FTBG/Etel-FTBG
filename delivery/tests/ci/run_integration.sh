@@ -54,6 +54,7 @@ run python3 tests/delivery_fees_smoke.py
 run python3 tests/order_refusal_smoke.py
 run python3 tests/shield_smoke.py
 run python3 tests/shield_entry_smoke.py
+run python3 tests/stream_ticket_smoke.py
 run python3 tests/idle_session_smoke.py
 run python3 tests/courier_location_smoke.py
 run python3 tests/courier_job_geo_smoke.py
@@ -118,6 +119,7 @@ run php tests/order_stamps_test.php
 run php tests/ratings_report_test.php
 run php tests/track_eta_test.php
 run php tests/shield_geo_test.php
+run php tests/stream_ticket_test.php
 run php tests/shop_hours_test.php
 run python3 tests/shop_open_hours_smoke.py
 run php tests/money_ledger_test.php
