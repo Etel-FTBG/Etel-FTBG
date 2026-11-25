@@ -14,7 +14,7 @@ const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; if (u =
   await new Promise(res => srv.listen(0, '127.0.0.1', res)); const HOST = 'http://127.0.0.1:' + srv.address().port; const b = await chromium.launch();
   const run = async (o, steps) => {
     EXTRA = o.extra || ''; const ctx = await b.newContext({ serviceWorkers: 'block' });
-    await ctx.addInitScript(([tok, lang, last]) => { if (tok) { localStorage.setItem('etel_token', 'T'); localStorage.setItem('etel_user', JSON.stringify({ id: 1, role: tok })); } if (lang) localStorage.setItem('etel_lang', lang); if (last) localStorage.setItem('etel_last_active', String(Date.now() - last)); }, [o.token === undefined ? 'customer' : o.token, o.lang || '', o.last || 0]);
+    await ctx.addInitScript(([tok, lang, last, stale]) => { if (tok) { localStorage.setItem('etel_token', 'T'); localStorage.setItem('etel_user', JSON.stringify({ id: 1, role: tok })); } if (lang) localStorage.setItem('etel_lang', lang); if (last) { localStorage.setItem('etel_last_active', String(Date.now() - last)); if (!stale) localStorage.setItem('etel_last_active_tok', 'T'); } }, [o.token === undefined ? 'customer' : o.token, o.lang || '', o.last || o.lastStale || 0, !!o.lastStale]);
     const p = await ctx.newPage(); const pings = []; const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.route(/boot\.php/, r => { let d = {}; try { d = JSON.parse(r.request().postData() || '{}'); } catch (e) {} pings.push({ active: d.active, auth: r.request().headers()['authorization'] });
       if (o.expired) return r.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ success: false, code: 'idle_expired' }) });
@@ -75,8 +75,16 @@ const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; if (u =
   await run({ token: '' }, async (p, pings) => { await adv(p, 20 * 60000);
     t('15 not signed in (the sign-in page): nothing happens, no ping', pings.length === 0 && (await out(p)) === 0, JSON.stringify(pings)); });
   await run({}, async (p) => {
-    await adv(p, 3 * 60000); await p.evaluate(() => localStorage.setItem('etel_last_active', String(Date.now()))); await adv(p, 3 * 60000);
+    await adv(p, 3 * 60000); await p.evaluate(() => { localStorage.setItem('etel_last_active', String(Date.now())); localStorage.setItem('etel_last_active_tok', 'T'); }); await adv(p, 3 * 60000);
     t('16 use in another tab of the same phone counts (shared clock)', (await warn(p)) === 0 && (await out(p)) === 0); });
+  /* signing in again after an idle sign-out must not be thrown out by the OLD last-use time (the bug: sign in -> sign out at once -> login page, over and over) */
+  await run({ lastStale: 3 * 3600000 }, async (p) => { await adv(p, 600);
+    t('17 a last-use time left by an EARLIER sign-in (3 hours old, other sign-in) is ignored: the new sign-in opens normally', (await out(p)) === 0 && (await warn(p)) === 0, await out(p)); });
+  await run({}, async (p) => { await adv(p, 5 * 60000 + 6000);
+    t('18 an idle sign-out forgets the last-use time (both keys), so the next sign-in starts a fresh clock', (await out(p)) === 1 && await p.evaluate(() => localStorage.getItem('etel_last_active') === null && localStorage.getItem('etel_last_active_tok') === null)); });
+  await run({ token: '', lastStale: 3 * 3600000 }, async (p) => {
+    await p.goto(HOST + '/login.html'); await p.waitForTimeout(200);
+    t('19 the sign-in page clears a leftover last-use time', await p.evaluate(() => localStorage.getItem('etel_last_active') === null && localStorage.getItem('etel_last_active_tok') === null)); });
   await run({ lang: 'am' }, async (p) => { await adv(p, 4 * 60000 + 10000);
     t('17 the warning is in Amharic when the app is', /አሁንም እዚያ ነዎት/.test(await p.innerText('.eil-card')) && /ገብቼ ልቆይ/.test(await p.innerText('.eil-card')), await p.innerText('.eil-card').catch(() => '')); });
   // the sign-in page says why

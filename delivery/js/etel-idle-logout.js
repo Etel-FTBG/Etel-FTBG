@@ -20,8 +20,12 @@
   function role() { try { var u = JSON.parse(localStorage.getItem('etel_user') || 'null'); return u && u.role ? String(u.role) : 'other'; } catch (e) { return 'other'; } }
   function apiUrl() { return (window.ETEL && window.ETEL.api) ? window.ETEL.api : '/delivery/api/boot.php'; }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function storedLast() { try { var v = parseInt(localStorage.getItem(KEY), 10); return v > 0 ? v : 0; } catch (e) { return 0; } }
-  function saveLast(t) { try { localStorage.setItem(KEY, String(t)); } catch (e) { /* private window: this tab only */ } }
+  /* The saved last-use time belongs to ONE sign-in (the tail of its token is saved with it). A time left over from an earlier sign-in is ignored, so signing in again
+     after an idle sign-out does not read the old time, think the phone was idle for hours and sign out again at once. */
+  function tag() { try { return String(token()).slice(-16); } catch (e) { return ''; } }
+  function storedLast() { try { if (localStorage.getItem(KEY + '_tok') !== tag()) return 0; var v = parseInt(localStorage.getItem(KEY), 10); return v > 0 ? v : 0; } catch (e) { return 0; } }
+  function saveLast(t) { try { localStorage.setItem(KEY, String(t)); localStorage.setItem(KEY + '_tok', tag()); } catch (e) { /* private window: this tab only */ } }
+  function forgetLast() { try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + '_tok'); } catch (e) { } }
 
   /* a courier who is online or has a job is working without taps */
   function localExempt() {
@@ -78,6 +82,7 @@
   function expire() {
     if (S.done) return; S.done = true; hideWarn();
     try { sessionStorage.setItem(REASON, 'idle'); } catch (e) {}
+    forgetLast();                                      /* the next sign-in starts a fresh clock */
     try { if (window.Auth && Auth.logout) return Auth.logout(); } catch (e) {}
     ['etel_token', 'etel_user', 'etel_courier', 'etel_service_giver', 'etel_sso'].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
     try { location.href = (apiUrl().replace('api/boot.php', '')) + 'login.html'; } catch (e) {}
