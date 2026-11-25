@@ -26,7 +26,8 @@ if (!function_exists('etel_env')) {
 // is unset, CRON_DISPATCH_KEY) in api/.env. No key configured = HTTP denied.
 if (php_sapi_name() !== 'cli') {
     $_equb_expected = etel_env('EQUB_CRON_KEY', 'CFG_EQUB_CRON_KEY', etel_env('CRON_DISPATCH_KEY', 'CFG_CRON_DISPATCH_KEY', ''));
-    $_equb_given    = isset($_GET['key']) ? (string)$_GET['key'] : '';
+    if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php';   // the key comes from the X-Cron-Key header; a key in the address is governed by the Etel Shield setting url_key_mode
+    $_equb_given    = (string) (function_exists('etel_secret_from_request') ? etel_secret_from_request(array('X-Cron-Key'), 'key', basename(__FILE__)) : (isset($_GET['key']) ? (string)$_GET['key'] : ''));
     if ($_equb_expected === '' || !hash_equals($_equb_expected, $_equb_given)) {
         http_response_code(403);
         header('Content-Type: text/plain');

@@ -4,7 +4,7 @@ let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fai
 const ROOT = path.join(__dirname, '..');
 const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; fs.readFile(path.join(ROOT, u === '/' ? 'admin-shield.html' : u), (e, d) => { if (e) { r.statusCode = 404; return r.end(); }
   r.setHeader('Content-Type', u.endsWith('.js') ? 'application/javascript; charset=utf-8' : 'text/html; charset=utf-8'); r.end(d); }); });
-const cfg = { enabled: 1, geo_mode: 'monitor', geo_device_mode: 'monitor', rate_mode: 'block', scanner_mode: 'block', waf_mode: 'monitor', entry_mode: 'block', url_token_mode: 'monitor', rate_anon_per_min: 1500, rate_auth_per_min: 600, rate_login_per_min: 60, rate_signup_per_min: 20, allow_ips: ['10.1.1.1'] };
+const cfg = { enabled: 1, geo_mode: 'monitor', geo_device_mode: 'monitor', rate_mode: 'block', scanner_mode: 'block', waf_mode: 'monitor', entry_mode: 'block', url_token_mode: 'monitor', url_key_mode: 'monitor', rate_anon_per_min: 1500, rate_auth_per_min: 600, rate_login_per_min: 60, rate_signup_per_min: 20, allow_ips: ['10.1.1.1'] };
 (async () => {
   await new Promise(res => srv.listen(0, '127.0.0.1', res)); const HOST = 'http://127.0.0.1:' + srv.address().port; const b = await chromium.launch();
   const run = async (o, steps) => {
@@ -41,6 +41,8 @@ const cfg = { enabled: 1, geo_mode: 'monitor', geo_device_mode: 'monitor', rate_
     const pr = sent(calls, 'admin_shield_save')[2].config; t('8 protection save sends the modes and numbers', pr.waf_mode === 'block' && pr.rate_login_per_min === 90 && pr.rate_anon_per_min === 1500);
     await p.selectOption('#url_token_mode', 'refuse'); await p.click('#save-prot'); await p.waitForTimeout(200);
     t('8c the login-token-in-address switch is sent', sent(calls, 'admin_shield_save').pop().config.url_token_mode === 'refuse');
+    await p.selectOption('#url_key_mode', 'refuse'); await p.click('#save-prot'); await p.waitForTimeout(200);
+    t('8d the secret-key-in-address switch is sent', sent(calls, 'admin_shield_save').pop().config.url_key_mode === 'refuse');
     t('8b the uploads / payment files switch is shown and sent', (await p.inputValue('#entry_mode')) === 'block' && pr.entry_mode === 'block');
     await p.fill('#idle-rows input[data-role=admin]', '20'); await p.click('#save-idle'); await p.waitForTimeout(200);
     t('9 idle save sends minutes for each role', sent(calls, 'admin_idle_save')[0].settings.admin === 20 && sent(calls, 'admin_idle_save')[0].settings.customer === 30);

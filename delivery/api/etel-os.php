@@ -34,7 +34,8 @@ define('PROJECT_VERSION', '1.0.0');
 
 function ok($d)            { ob_clean(); echo json_encode(['ok' => true,  'data' => $d]); exit; }
 function err($m, $c = 400) { ob_clean(); http_response_code($c); echo json_encode(['ok' => false, 'error' => $m]); exit; }
-function auth()  { $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? ''; if (!is_string($k) || !hash_equals((string) ETEL_API_KEY, $k)) err('Unauthorized', 401); }
+if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php';   // the key comes from the X-Cron-Key header; a key in the address is governed by the Etel Shield setting url_key_mode
+function auth()  { if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php'; $k = function_exists('etel_secret_from_request') ? etel_secret_from_request(array('X-Etel-Key'), 'key', basename(__FILE__)) : ($_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? ''); if (!is_string($k) || !hash_equals((string) ETEL_API_KEY, $k)) err('Unauthorized', 401); }
 
 function db() {
     static $pdo = null;

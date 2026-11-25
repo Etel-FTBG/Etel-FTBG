@@ -9,7 +9,7 @@
  * (the piggy-back runs skip pushes to keep requests fast).
  *
  * cPanel -> Cron Jobs -> every 5 minutes:
- *   wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_close_stuck_rides.php?key=YOUR_CRON_KEY"
+ *   wget -q -O /dev/null --header="X-Cron-Key: YOUR_CRON_KEY" "https://ethelmarket.com/delivery/api/cron_close_stuck_rides.php"
  * It reuses CRON_DISPATCH_KEY from api/.env (same key as cron_dispatch_scheduled.php).
  *
  * Standalone like cron_dispatch_scheduled.php: it does NOT include boot.php or
@@ -41,7 +41,8 @@ function cs_env($key, $default = '') {
 }
 
 $expectedKey = cs_env('CRON_DISPATCH_KEY', '');
-$givenKey    = isset($_GET['key']) ? $_GET['key'] : '';
+if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php';   // the key comes from the X-Cron-Key header; a key in the address is governed by the Etel Shield setting url_key_mode
+$givenKey    = (function_exists('etel_secret_from_request') ? etel_secret_from_request(array('X-Cron-Key'), 'key', basename(__FILE__)) : (isset($_GET['key']) ? $_GET['key'] : ''));
 if ($expectedKey === '' || !hash_equals($expectedKey, $givenKey)) {
     cs_reply(array('success' => false, 'message' => 'Missing or wrong ?key= - set CRON_DISPATCH_KEY in api/.env first'), 403);
 }

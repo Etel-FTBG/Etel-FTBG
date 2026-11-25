@@ -78,6 +78,8 @@ a.back{color:var(--dim);font-size:14px}
     <div class="row"><label>Uploads, payment files and reports<small>The other files that take requests: photo and document uploads, payment and Telegram callbacks, error reports, trip share. The payment servers are never turned away by country.</small></label><select id="entry_mode" class="m3"></select></div>
     <div class="row"><label>Login token in a web address<small>Old apps put the login token in the address, where server logs keep it. Watch = allowed but written in the log. When the log shows none left, choose Refuse.</small></label>
       <select id="url_token_mode"><option value="allow">Allow</option><option value="monitor">Watch</option><option value="refuse">Refuse</option></select></div>
+    <div class="row"><label>Secret key in a web address<small>Cron jobs, Diagnose and the updater used to carry their key in the address (...?key=...), where server logs keep it. They can send it in a header now. Watch = allowed but written in the log (filter "Secret key in an address"). When the log shows none left, choose Refuse.</small></label>
+      <select id="url_key_mode"><option value="allow">Allow</option><option value="monitor">Watch</option><option value="refuse">Refuse</option></select></div>
     <div class="row"><label>Signed-out requests per minute<small>For each connection. Phone networks share addresses, so keep it high.</small></label><input type="number" id="rate_anon_per_min" min="10" max="100000"></div>
     <div class="row"><label>Signed-in requests per minute<small>For each person.</small></label><input type="number" id="rate_auth_per_min" min="10" max="100000"></div>
     <div class="row"><label>Sign-in tries per minute<small>For each connection.</small></label><input type="number" id="rate_login_per_min" min="5" max="100000"></div>
@@ -111,7 +113,7 @@ a.back{color:var(--dim);font-size:14px}
 
   <div class="card">
     <h2>Security log</h2>
-    <div class="row"><select id="ev-rule" aria-label="Filter"><option value="">All</option><option value="token_in_url">Login token in an address</option><option value="geo">Ethiopia-only</option><option value="rate_limit">Too many requests</option><option value="waf">Attack patterns</option><option value="scanner">Hacking tools</option></select>
+    <div class="row"><select id="ev-rule" aria-label="Filter"><option value="">All</option><option value="token_in_url">Login token in an address</option><option value="keyurl">Secret key in an address</option><option value="geo">Ethiopia-only</option><option value="rate_limit">Too many requests</option><option value="waf">Attack patterns</option><option value="scanner">Hacking tools</option></select>
       <button id="ev-go">Refresh</button></div>
     <div class="tw"><table><thead><tr><th>Time</th><th>Address</th><th>Rule</th><th>Mode</th><th>Detail</th></tr></thead><tbody id="events"></tbody></table></div>
   </div>
@@ -148,7 +150,7 @@ a.back{color:var(--dim);font-size:14px}
     }
     $('top').innerHTML = h;
     $('geo_mode').value = c.geo_mode; $('geo_device_mode').value = c.geo_device_mode;
-    ['rate_mode', 'scanner_mode', 'waf_mode', 'entry_mode', 'url_token_mode'].forEach(function (k) { $(k).value = c[k]; });
+    ['rate_mode', 'scanner_mode', 'waf_mode', 'entry_mode', 'url_token_mode', 'url_key_mode'].forEach(function (k) { $(k).value = c[k]; });
     ['rate_anon_per_min', 'rate_auth_per_min', 'rate_login_per_min', 'rate_signup_per_min'].forEach(function (k) { $(k).value = c[k]; });
     $('allow_ips').value = (c.allow_ips || []).join('\n');
   }
@@ -178,7 +180,7 @@ a.back{color:var(--dim);font-size:14px}
   };
   $('save-prot').onclick = function () {
     var n = function (k) { return parseInt($(k).value, 10) || 0; };
-    save({ rate_mode: $('rate_mode').value, scanner_mode: $('scanner_mode').value, waf_mode: $('waf_mode').value, entry_mode: $('entry_mode').value, url_token_mode: $('url_token_mode').value,
+    save({ rate_mode: $('rate_mode').value, scanner_mode: $('scanner_mode').value, waf_mode: $('waf_mode').value, entry_mode: $('entry_mode').value, url_token_mode: $('url_token_mode').value, url_key_mode: $('url_key_mode').value,
       rate_anon_per_min: n('rate_anon_per_min'), rate_auth_per_min: n('rate_auth_per_min'),
       rate_login_per_min: n('rate_login_per_min'), rate_signup_per_min: n('rate_signup_per_min') }, 'prot');
   };

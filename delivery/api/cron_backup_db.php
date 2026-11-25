@@ -5,7 +5,7 @@
  * cPanel -> Cron Jobs -> once a day (for example 02:30). The simplest command runs php directly and needs no key:
  *   /usr/local/bin/php /home/ACCOUNT/public_html/delivery/api/cron_backup_db.php >/dev/null 2>&1
  * or, over the web with the key:
- *   wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_backup_db.php?key=YOUR_CRON_KEY"
+ *   wget -q -O /dev/null --header="X-Cron-Key: YOUR_CRON_KEY" "https://ethelmarket.com/delivery/api/cron_backup_db.php"
  * It reuses CRON_DISPATCH_KEY from api/.env, like the other cron scripts.
  *
  * What it does (?action=...):
@@ -58,7 +58,8 @@ if (php_sapi_name() === 'cli' && isset($argv)) {
     foreach (array_slice($argv, 1) as $a) { if (strpos($a, '=') !== false) { list($k, $v) = explode('=', $a, 2); $params[$k] = $v; } }
 }
 $expectedKey = bk_env('CRON_DISPATCH_KEY', '');
-$givenKey    = isset($params['key']) ? $params['key'] : '';
+if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php';   // the key comes from the X-Cron-Key header; a key in the address is governed by the Etel Shield setting url_key_mode
+$givenKey    = (php_sapi_name() !== 'cli' && function_exists('etel_secret_from_request')) ? etel_secret_from_request(array('X-Cron-Key'), 'key', basename(__FILE__)) : (isset($params['key']) ? $params['key'] : '');
 // From the command line (a cPanel cron running php directly) no key is needed: only the server itself can start it.
 // Over the web the key is still required (the same rule as cron_ride_monitor.php).
 if (php_sapi_name() !== 'cli' && ($expectedKey === '' || !hash_equals($expectedKey, $givenKey))) {

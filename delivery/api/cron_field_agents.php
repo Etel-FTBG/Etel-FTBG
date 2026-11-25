@@ -9,7 +9,7 @@
  * cPanel -> Cron Jobs -> every 15 minutes. Best (runs on the server itself, no key):
  *   /usr/local/bin/php -q /home/ACCOUNT/public_html/delivery/api/cron_field_agents.php >/dev/null 2>&1
  * Or over the web (needs CRON_DISPATCH_KEY from api/.env):
- *   wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_field_agents.php?key=YOUR_CRON_KEY"
+ *   wget -q -O /dev/null --header="X-Cron-Key: YOUR_CRON_KEY" "https://ethelmarket.com/delivery/api/cron_field_agents.php"
  */
 if (ob_get_level()) ob_end_clean();
 ob_start();
@@ -36,7 +36,8 @@ function fc_env($key, $default = '') {
 
 $isCli = (PHP_SAPI === 'cli');
 $expectedKey = fc_env('CRON_DISPATCH_KEY', '');
-$givenKey = isset($_GET['key']) ? $_GET['key'] : '';
+if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php';   // the key comes from the X-Cron-Key header; a key in the address is governed by the Etel Shield setting url_key_mode
+$givenKey = (function_exists('etel_secret_from_request') ? etel_secret_from_request(array('X-Cron-Key'), 'key', basename(__FILE__)) : (isset($_GET['key']) ? $_GET['key'] : ''));
 if (!$isCli && ($expectedKey === '' || !hash_equals($expectedKey, $givenKey))) {
     fc_reply(array('success' => false, 'message' => 'Missing or wrong ?key= - set CRON_DISPATCH_KEY in api/.env first'), 403);
 }
