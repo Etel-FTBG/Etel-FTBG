@@ -489,6 +489,7 @@ case 'etelid_login': {
     if (empty($auth['twofa_verified'])) etel_2fa_gate($pdo, $u, $body); // EtelID already checked the member's code
     etel_assert_account_enabled($pdo, $u['id']);
     $token = gen_token($u['id'], isset($u['token_version']) ? intval($u['token_version']) : 0);
+    if (!empty($auth['twofa_verified'])) { require_once __DIR__ . '/../lib/auth_sessions.php'; etel_sess_mark_mfa($pdo, $u['id'], $token); }   // EtelID checked the code: counts as the admin's second step
     ok(array(
         'token'   => $token,
         'user'    => array(
@@ -638,6 +639,7 @@ case 'admin_etelid_login': {
     etel_assert_account_enabled($pdo, $u['id']);
     if (empty($auth['twofa_verified'])) etel_2fa_gate($pdo, $u, $body); // EtelID already checked the member's code
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
+    if (!empty($auth['twofa_verified'])) { require_once __DIR__ . '/../lib/auth_sessions.php'; etel_sess_mark_mfa($pdo, $u['id'], $token); }   // EtelID checked the code: counts as the admin's second step
     ok(array(
         'token' => $token,
         'user'  => array('id' => $u['id'], 'name' => $u['name'], 'phone' => $u['phone'], 'role' => $u['role'], 'staff_role' => $u['staff_role'] ?? null),

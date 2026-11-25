@@ -133,3 +133,44 @@ function etel_sess_revoke_others($pdo, $uid, $currentToken) {
     $s->execute(array(intval($uid), $cur[0]));
     return $s->rowCount();
 }
+
+/*
+ * "Second step done for this sign-in": a sign-in through EtelID that asked for (and checked) the member's authenticator code marks its session, so the admin
+ * two-step rule (boot.php etel_admin_2fa_enforce) counts that code as the admin's second step too, and the person is asked once, not twice.
+ * Only the session made by THAT sign-in is marked; a password-only sign-in gets no mark. The column is added on first use (migration 121 does the same).
+ */
+function etel_sess_mfa_column($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        require_once __DIR__ . '/schema_helpers.php';
+        try { etel_sess_create_table($pdo); } catch (Exception $e) { }
+        rides_add_missing_cols($pdo, 'auth_sessions', array('mfa_ok' => '`mfa_ok` TINYINT(1) NOT NULL DEFAULT 0'));
+    } catch (Exception $e) { /* fail closed below: no mark means no skip */ }
+}
+
+/** Marks the session of $token (just made by a sign-in whose authenticator code was checked). Never throws. */
+function etel_sess_mark_mfa($pdo, $uid, $token) {
+    try {
+        $fp = etel_sess_fingerprint($token);
+        if ($fp === null) return false;
+        etel_sess_mfa_column($pdo);
+        etel_sess_touch($pdo, $uid, $token);      /* makes sure the row exists */
+        $q = $pdo->prepare('UPDATE auth_sessions SET mfa_ok = 1 WHERE token_hash = ? AND user_id = ? AND revoked_at IS NULL');
+        $q->execute(array($fp[0], intval($uid)));
+        return true;
+    } catch (Exception $e) { return false; }
+}
+
+/** True only when this session was made by a sign-in whose authenticator code was checked. Fails closed (false) on any error. */
+function etel_sess_mfa_ok($pdo, $uid, $token) {
+    try {
+        $fp = etel_sess_fingerprint($token);
+        if ($fp === null) return false;
+        $q = $pdo->prepare('SELECT mfa_ok FROM auth_sessions WHERE token_hash = ? AND user_id = ? AND revoked_at IS NULL');
+        $q->execute(array($fp[0], intval($uid)));
+        $v = $q->fetchColumn();
+        return $v !== false && intval($v) === 1;
+    } catch (Exception $e) { return false; }
+}

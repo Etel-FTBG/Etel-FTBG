@@ -459,8 +459,11 @@ function etel_admin_2fa_enforce($pdo, $u) {
         if (!etel_admin_2fa_required($pdo)) return;
         require_once __DIR__ . '/lib/totp.php';
         if (etel_2fa_is_enabled($pdo, intval($u['id']))) return;
+        /* Signed in through EtelID with its authenticator code checked: that code is the second step (the person is asked once). */
+        require_once __DIR__ . '/lib/auth_sessions.php';
+        if (etel_sess_mfa_ok($pdo, intval($u['id']), get_bearer())) return;
     } catch (Exception $e) { return; }
-    fail('Two-step sign-in is required for admins and staff. Open the Two-step sign-in menu item and turn it on first.', 403, array('code' => '2fa_setup_required'));
+    fail('Two-step sign-in is required for admins and staff. Turn on "Admin two-step" in the menu, or sign in with EtelID and its two-step code.', 403, array('code' => '2fa_setup_required'));
 }
 
 // Loads the capability list for a user.
