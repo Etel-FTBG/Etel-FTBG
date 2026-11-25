@@ -28,6 +28,7 @@ function etel_shield_defaults() {
         'rate_public_per_min' => 600,        /* open pages (trip share, payment return, private files), per connection per minute */
         'rate_callback_per_min' => 600,      /* payment and Telegram servers calling back, per connection per minute (never blocks by country) */
         'rate_sink_per_min' => 60,           /* error and policy reports from the apps, per connection per minute */
+        'url_key_mode'      => 'monitor',    /* a secret key (cron jobs, diagnose, updater) in a web address: allow | monitor (log it) | refuse (see lib/cron_key.php) */
         'url_token_mode'    => 'monitor',    /* a login token in a web address (old apps): allow | monitor (log it) | refuse (set to refuse when the log shows none left) */
         'max_body_kb'       => 2048,         /* biggest request the API accepts */
         'allow_ips'         => array(),      /* never limited or blocked (office, owner) - exact address or CIDR */
@@ -59,6 +60,7 @@ function etel_shield_clean($in) {
     $modes3 = array('off', 'monitor', 'block');
     foreach (array('enabled') as $k) { if (isset($in[$k])) $o[$k] = $in[$k] ? 1 : 0; }
     if (isset($in['proxy_mode']) && in_array($in['proxy_mode'], array('none', 'cloudflare', 'any_xff'), true)) $o['proxy_mode'] = $in['proxy_mode'];
+    if (isset($in['url_key_mode']) && in_array($in['url_key_mode'], array('allow', 'monitor', 'refuse'), true)) $o['url_key_mode'] = $in['url_key_mode'];
     if (isset($in['url_token_mode']) && in_array($in['url_token_mode'], array('allow', 'monitor', 'refuse'), true)) $o['url_token_mode'] = $in['url_token_mode'];
     foreach (array('rate_mode', 'scanner_mode', 'waf_mode', 'entry_mode') as $k) { if (isset($in[$k]) && in_array($in[$k], $modes3, true)) $o[$k] = $in[$k]; }
     if (isset($in['geo_mode']) && in_array($in['geo_mode'], array('off', 'monitor', 'enforce'), true)) $o['geo_mode'] = $in['geo_mode'];

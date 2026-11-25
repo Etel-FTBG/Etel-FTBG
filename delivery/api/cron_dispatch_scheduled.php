@@ -16,7 +16,7 @@
  *
  * HOW TO RUN THIS (no SSH on this host, so pick one):
  *   1. cPanel -> Cron Jobs -> add a job every 1-2 minutes running:
- *        wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_dispatch_scheduled.php?key=YOUR_CRON_KEY"
+ *        wget -q -O /dev/null --header="X-Cron-Key: YOUR_CRON_KEY" "https://ethelmarket.com/delivery/api/cron_dispatch_scheduled.php"
  *      (cPanel Cron Jobs need no SSH access, just the cPanel UI.)
  *   2. Or call it manually from a browser tab with the same ?key=...
  *      whenever you want to force a dispatch pass while testing.
@@ -52,7 +52,8 @@ function cd_env($key, $default = '') {
 }
 
 $expectedKey = cd_env('CRON_DISPATCH_KEY', '');
-$givenKey    = isset($_GET['key']) ? $_GET['key'] : '';
+if (is_file(__DIR__ . '/lib/cron_key.php')) require_once __DIR__ . '/lib/cron_key.php';   // the key comes from the X-Cron-Key header; a key in the address is governed by the Etel Shield setting url_key_mode
+$givenKey    = (function_exists('etel_secret_from_request') ? etel_secret_from_request(array('X-Cron-Key'), 'key', basename(__FILE__)) : (isset($_GET['key']) ? $_GET['key'] : ''));
 if ($expectedKey === '' || !hash_equals($expectedKey, $givenKey)) {
     cd_reply(array('success' => false, 'message' => 'Missing or wrong ?key= - set CRON_DISPATCH_KEY in api/.env first'), 403);
 }
