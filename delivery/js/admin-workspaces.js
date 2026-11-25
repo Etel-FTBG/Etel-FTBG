@@ -22,7 +22,7 @@ var WS = [
   { id: 'company', label: 'Company', icon: '🏢', accent: '#8B5CF6', blurb: 'People, money, support and settings that both systems share.',
     sections: [['Overview', ['dashboard']], ['People', ['users', 'customers']], ['Money', ['finance', 'equb', 'integrations']],
                ['Support and records', ['supportdesk', 'support', 'documents', 'launch']],
-               ['System', ['settings', 'serviceareas', 'branding', 'roles', 'releases', 'etelapp', 'updater', 'danger', '#2fa', '#display']]] }
+               ['System', ['settings', 'serviceareas', 'branding', 'roles', 'releases', 'etelapp', 'updater', 'danger', '#2fa', '#shield', '#display']]] }
 ];
 var DESC = {
   dispatch: 'Orders that need a courier right now. Assign by hand.', orders: 'Every delivery order: search, status, details.', packages: 'Package prices by vehicle, distance and weight.',
@@ -36,7 +36,7 @@ var DESC = {
   finance: 'Money, plans and investors.', equb: 'Equb groups.', integrations: 'Payment companies and banks (keys).', supportdesk: 'Support desk: cases and answers.',
   support: 'Messages from users.', documents: 'Company documents.', launch: 'Is the system ready to open? Checklist.', settings: 'Admin settings.', serviceareas: 'The cities Etel serves.',
   branding: 'Logos, colours, names.', roles: 'Who may do what (staff roles).', releases: 'App releases.', etelapp: 'What the ETEL phone app shows (owner).', updater: 'Upload files.',
-  danger: 'Careful: reset and delete tools.', '#2fa': 'Two-step sign-in for your account.', '#display': 'Make text and buttons bigger or smaller.'
+  danger: 'Careful: reset and delete tools.', '#2fa': 'Two-step sign-in for your account.', '#shield': 'Block attacks and people outside Ethiopia, sign out when not used, security log.', '#display': 'Make text and buttons bigger or smaller.'
 };
 var LBL = { ride: { pricing: 'Ride prices' }, delivery: { pricing: 'Delivery prices' } };   // the Pricing page shows the tabs of the workspace it is opened from
 var WDESC = { ride: { pricing: 'Ride fares per vehicle, peak hours, driver goals, commission, incentives.' }, delivery: { pricing: 'Delivery fees and zones, vehicle fees, courier pay, bank accounts.' } };
@@ -54,6 +54,7 @@ function sidebar() { return document.querySelector('.sidebar'); }
 function itemFor(key) {
   var sb = sidebar(); if (!sb) return null;
   if (key === '#2fa') return sb.querySelector('[data-etel-2fa-open]');
+  if (key === '#shield') return sb.querySelector('[data-etel-shield-open]');
   if (key === '#display') return sb.querySelector('[data-etel-display-open]');
   return sb.querySelector('.nav-item[data-page="' + key + '"]');
 }
@@ -159,7 +160,7 @@ function apply() {
   if (!wsUsable(w)) { for (var i = 0; i < WS.length; i++) if (wsUsable(WS[i])) { cur = WS[i].id; w = WS[i]; break; } }
   Array.prototype.forEach.call(sb.querySelectorAll('.nav-item'), function (el) {
     if (el.id === 'header-mobile-menu-btn') return;
-    var key = el.getAttribute('data-page') || (el.hasAttribute('data-etel-2fa-open') ? '#2fa' : el.hasAttribute('data-etel-display-open') ? '#display' : '');
+    var key = el.getAttribute('data-page') || (el.hasAttribute('data-etel-2fa-open') ? '#2fa' : el.hasAttribute('data-etel-shield-open') ? '#shield' : el.hasAttribute('data-etel-display-open') ? '#display' : '');
     el.classList.toggle('aws-off', owners(key).indexOf(cur) < 0);
   });
   Array.prototype.forEach.call(sb.querySelectorAll('.anav-group'), function (g) {

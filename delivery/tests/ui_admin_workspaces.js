@@ -55,7 +55,11 @@ let HOST = '';
     t(n + ': Enter opens the first match and the finder closes', (await p.locator('.aws-ov').count()) === 0 && await p.evaluate(() => AdminWS.current()) === 'ride' && /Live operations/i.test(await p.innerText('#page-title')), await p.innerText('#page-title'));
     await p.locator('#aws-switch .aws-chip[data-ws="company"]').click(); await p.waitForTimeout(400);
     t(n + ': Company has the shared pages (users, settings, dashboard)', (await p.locator('#panel-wshome .aws-tile[data-go="users"]').count()) === 1 && (await p.locator('#panel-wshome .aws-tile[data-go="settings"]').count()) === 1 && (await p.locator('#panel-wshome .aws-tile[data-go="dashboard"]').count()) === 1);
-    t(n + ': no page errors', errs.length === 0, errs.join('|')); await ctx.close();
+    t(n + ': Company has the Etel Shield card in System, and it opens the Shield page', (await p.locator('#panel-wshome .aws-tile[data-go="#shield"]').count()) === 1 && /Etel Shield/.test(await p.locator('#panel-wshome .aws-tile[data-go="#shield"]').innerText()));
+    t(n + ': no page errors', errs.length === 0, errs.join('|'));
+    await p.locator('#panel-wshome .aws-tile[data-go="#shield"]').click(); await p.waitForTimeout(500);
+    t(n + ': tapping it goes to admin-shield.html', /admin-shield\.html$/.test(p.url()), p.url());
+    await ctx.close();
   }
   // staff who may only see rides: only the Ride workspace is offered and it opens by itself
   { const { ctx, p, errs } = await open(b, 1300, 900, ['rides.view', 'rides.manage']);
