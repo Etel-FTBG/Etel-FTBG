@@ -151,6 +151,25 @@ function etel_webpush_encrypt($payloadPlain, $p256dhB64, $authB64) {
     return $header . $ciphertext . $tag;
 }
 
+/* A setting for the push code. The app (boot.php) has etel_env(); the cron jobs do NOT load boot.php, so there this reads api/.env itself. Before this, any push sent
+   from a cron job (the trip-watch alert, the backup alert, scheduled-ride reminders) died with "Call to undefined function etel_env()", and since error_reporting(0) hides it, the
+   whole cron run stopped before writing its heartbeat. */
+if (!function_exists('etel_wp_env')) {
+function etel_wp_env($key, $cfg_const, $default = '') {
+    if (function_exists('etel_env')) return etel_env($key, $cfg_const, $default);
+    static $env = null;
+    if ($env === null) {
+        $env = array();
+        try { require_once __DIR__ . '/env_loader.php'; $env = etel_parse_env_file(__DIR__ . '/.env'); } catch (Exception $e) { } catch (Throwable $e) { }
+    }
+    if (isset($env[$key]) && $env[$key] !== '') return $env[$key];
+    $g = getenv($key);
+    if ($g !== false && $g !== '') return $g;
+    if (defined($cfg_const) && constant($cfg_const) !== '') return constant($cfg_const);
+    return $default;
+}
+}
+
 /**
  * Send a single Web Push notification.
  * $subscription: assoc array with 'endpoint' and 'keys' => ['p256dh'=>, 'auth'=>]
@@ -161,9 +180,9 @@ function etel_webpush_encrypt($payloadPlain, $p256dhB64, $authB64) {
  */
 function etel_webpush_make_handle($subscription, $payload, &$err) {
     $err = null;
-    $vapidPrivatePem = etel_env('VAPID_PRIVATE_KEY_PEM', 'CFG_VAPID_PRIVATE_KEY_PEM', '');
-    $vapidPublicKey  = etel_env('VAPID_PUBLIC_KEY', 'CFG_VAPID_PUBLIC_KEY', '');
-    $vapidSubject    = etel_env('VAPID_SUBJECT', 'CFG_VAPID_SUBJECT', 'mailto:admin@ethelmarket.com');
+    $vapidPrivatePem = etel_wp_env('VAPID_PRIVATE_KEY_PEM', 'CFG_VAPID_PRIVATE_KEY_PEM', '');
+    $vapidPublicKey  = etel_wp_env('VAPID_PUBLIC_KEY', 'CFG_VAPID_PUBLIC_KEY', '');
+    $vapidSubject    = etel_wp_env('VAPID_SUBJECT', 'CFG_VAPID_SUBJECT', 'mailto:admin@ethelmarket.com');
     // .env stores literal "\n" for line breaks (see webpush-generate-keys.php) - restore real newlines
     $vapidPrivatePem = str_replace('\\n', "\n", $vapidPrivatePem);
 

@@ -95,6 +95,19 @@ def main():
     d, m = hb("ride_monitor_error")
     check("a good run clears the error", d == "ok", d)
     check("System health: Cron job is ok again", cron_row(tok).get("status") == "ok", cron_row(tok))
+    print("5. A push sent from the cron job (the live bug: 'Call to undefined function etel_env()' stopped every run once a push was due)")
+    etel_test_db.run_sql("DELETE FROM push_subscriptions WHERE endpoint LIKE 'https://push.invalid/%'")
+    etel_test_db.run_sql("INSERT INTO push_subscriptions (user_id, type, endpoint, endpoint_hash, p256dh, auth) VALUES (1, 'webpush', 'https://push.invalid/abc', SHA2('https://push.invalid/abc', 256), "
+                         "'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM', 'tBHItJI5svbpez7KI4CCXg')")
+    etel_test_db.run_sql("DELETE FROM etel_heartbeat WHERE name = 'backup_alert'")     # so the backup alert has to try a push (no backup file exists in the test folder)
+    out = run()
+    j = json.loads(out[out.index("{"):]) if "{" in out else {}
+    check("the run finishes with NO step errors although it sent a push", j.get("success") is True and j.get("errors") == [], j.get("errors"))
+    check("the backup alert reached the admins (it tried to push)", (j.get("backup") or {}).get("sent", 0) >= 1 or (j.get("backup") or {}).get("stale") is False, j.get("backup"))
+    d, m = hb("ride_monitor_error")
+    check("the error row says ok", d == "ok", d)
+    etel_test_db.run_sql("DELETE FROM push_subscriptions WHERE endpoint LIKE 'https://push.invalid/%'")
+    etel_test_db.run_sql("DELETE FROM etel_heartbeat WHERE name = 'backup_alert'")
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 
