@@ -17,6 +17,7 @@ if (in_array($_cors_origin, $_cors_allowed, true)) { header('Access-Control-Allo
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('upload'); } catch (Exception $e) {} catch (Throwable $e) {}
 
 /*  LOAD config.php then .env (robust cPanel reader)  */
 $_cfg_file = __DIR__ . '/config.php';

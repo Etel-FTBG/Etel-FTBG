@@ -6,6 +6,8 @@
 
 /* Load credentials: keys saved in Admin first, then .env (same bulletproof reader as api.php) */
 if (!defined('APP_VER')) define('APP_VER', 'telebirr-callback'); // satisfies the lib/ direct-access guard
+/* Etel Shield for this file (lib/shield_entry.php) */
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('callback'); } catch (Exception $e) {} catch (Throwable $e) {}
 require_once __DIR__ . '/config-etb.php';
 $_cb_env = array();
 $_cb_env_file = __DIR__ . '/.env';

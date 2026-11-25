@@ -1,6 +1,7 @@
 <?php
 // Serves a private upload (see lib/private_files.php) when the link carries a valid, unexpired signature.
 ob_start();
+try { require_once __DIR__ . '/lib/shield_entry.php'; etel_shield_entry('public'); } catch (Exception $e) {} catch (Throwable $e) {}
 error_reporting(0);
 ini_set('display_errors', '0');
 require_once __DIR__ . '/env_loader.php';
