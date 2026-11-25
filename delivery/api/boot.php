@@ -347,9 +347,20 @@ function get_bearer() {
        best-effort "still here" ping when a tab backgrounds) cannot set custom
        headers either, only a body. Both are narrow, explicitly-named, idempotent
        actions - this does not open the token param up for general use. */
-    if (!$h && isset($_GET['token']) && isset($_GET['action']) &&
-        (strpos($_GET['action'], 'sse_') === 0 || substr($_GET['action'], -12) === '_beacon_ping')) {
-        return trim($_GET['token']);
+    /* The login token is kept out of web addresses (lib/stream_ticket.php): a stream uses a 2-minute sealed ticket (?ticket=), a beacon sends the token in its body.
+       A token in the address still works for apps that are not updated yet, until the owner sets url_token_mode to refuse (Etel Shield). */
+    if (!$h && isset($_GET['action']) && (strpos($_GET['action'], 'sse_') === 0 || substr($_GET['action'], -12) === '_beacon_ping')) {
+        try {
+            require_once __DIR__ . '/lib/stream_ticket.php';
+            if (isset($_GET['ticket'])) {
+                $tk = etel_ticket_open($_GET['ticket'], $_GET['action'], isset($_GET['id']) ? $_GET['id'] : '');
+                if ($tk !== '') return $tk;
+            }
+            if (substr($_GET['action'], -12) === '_beacon_ping' && isset($GLOBALS['body']['token']) && is_string($GLOBALS['body']['token']) && $GLOBALS['body']['token'] !== '') {
+                return trim($GLOBALS['body']['token']);
+            }
+            if (isset($_GET['token']) && etel_url_token_note($_GET['action'])) return trim($_GET['token']);
+        } catch (Exception $e) { } catch (Throwable $e) { }
     }
     return (strpos($h, 'Bearer ') === 0) ? substr($h, 7) : '';
 }
@@ -1802,7 +1813,7 @@ switch ($action) {
         break;
     case 'admin_shield_get': case 'admin_shield_save': case 'admin_shield_events': case 'admin_shield_bans': case 'admin_shield_ban': case 'admin_shield_unban': case 'admin_shield_geo_check':
         require __DIR__ . '/controllers/ShieldController.php';
-    case 'session_ping': case 'admin_idle_get': case 'admin_idle_save':
+    case 'session_ping': case 'stream_ticket': case 'admin_idle_get': case 'admin_idle_save':
         require __DIR__ . '/controllers/SessionController.php';
         break;
     case 'courier_job_geo':

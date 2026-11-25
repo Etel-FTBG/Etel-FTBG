@@ -671,8 +671,18 @@ async function deleteEquityInvestor(id, name) {
 }
 
 function exportEquityInvestorsCsv() {
-  const token = Auth.getToken();
-  window.open(ETEL.api + '?action=equity_export_investors_csv&token=' + encodeURIComponent(token), '_blank');
+  /* The login token goes in the Authorization header (never in the web address, where it would end up in server logs); the file is saved from the answer. */
+  fetch(ETEL.api + '?action=equity_export_investors_csv', { headers: { 'Authorization': 'Bearer ' + Auth.getToken() } })
+    .then(function (r) {
+      var ct = r.headers.get('Content-Type') || '';
+      if (!r.ok || ct.indexOf('json') >= 0) return r.text().then(function (t) { var m = ''; try { m = JSON.parse(t).message; } catch (e) {} throw new Error(m || 'Could not export'); });
+      return r.blob();
+    })
+    .then(function (b) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'investors.csv';
+      document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    })
+    .catch(function (e) { if (typeof toast === 'function') toast(e.message || 'Could not export', 'error'); else alert(e.message || 'Could not export'); });
 }
 
 /* ---------- Profit distribution ---------- */
