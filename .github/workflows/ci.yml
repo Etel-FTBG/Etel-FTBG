@@ -131,6 +131,7 @@ jobs:
           python3 delivery/tests/ci/check_shield.py
           python3 delivery/tests/ci/check_idle_logout.py
           python3 delivery/tests/ci/check_admin_shield.py
+          python3 delivery/tests/ci/check_htaccess_protect.py
           python3 delivery/tests/ci/check_courier_dark_colors.py
           python3 delivery/tests/ci/check_admin_js_file.py
           python3 delivery/tests/ci/check_courier_bottom_buttons.py
