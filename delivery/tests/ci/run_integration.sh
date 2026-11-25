@@ -57,6 +57,7 @@ run python3 tests/shield_entry_smoke.py
 run python3 tests/stream_ticket_smoke.py
 run python3 tests/key_in_url_smoke.py
 run python3 tests/cron_ride_monitor_visible_smoke.py
+run python3 tests/cron_backup_heartbeat_smoke.py
 run python3 tests/idle_session_smoke.py
 run python3 tests/courier_location_smoke.py
 run python3 tests/courier_job_geo_smoke.py

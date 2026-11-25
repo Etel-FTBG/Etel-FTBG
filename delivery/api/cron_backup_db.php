@@ -81,7 +81,11 @@ function bk_heartbeat($detail) {
     try {
         if (!defined('APP_VER')) define('APP_VER', 'cron-backup');
         require_once __DIR__ . '/lib/system_health.php';
-        etel_health_heartbeat(bk_connect(), 'backup_db', $detail);
+        $pdo = bk_connect();
+        /* The heartbeat is written with NOW(): put this connection on the same clock as the app (Addis), like every other cron job does. Without it the time was stored 3 hours early
+           and the Backup job row on System health showed a false red for the last hour before each night's run. Only this small connection is changed: the backup itself is untouched. */
+        try { $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $e) { /* keep the server zone */ }
+        etel_health_heartbeat($pdo, 'backup_db', $detail);
     } catch (Exception $e) { error_log('[ETEL][backup] heartbeat failed: ' . $e->getMessage()); }
 }
 
