@@ -20,6 +20,8 @@ for a in sorted(set(re.findall(r"api\('((?:admin_shield|admin_idle)_[a-z_]+)'", 
         bad.append(a + ' is not routed in boot.php')
     if "case '" + a + "'" not in ctl:
         bad.append(a + ' has no handler in the controllers')
+if '#dark-theme-toggle,#_diag_fab{display:none!important}' not in page:
+    bad.append('admin-shield.html lets the floating round buttons cover the dropdowns again')
 if page.count('esc(') < 10:
     bad.append('admin-shield.html no longer escapes server text')
 if len(page.encode('utf-8')) > 30000:
