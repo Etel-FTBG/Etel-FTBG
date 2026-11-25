@@ -19,6 +19,10 @@ if cron.index("etel_health_heartbeat($pdo, 'ride_monitor'") < cron.index('etel_b
     bad.append('the heartbeat must be written after the steps (and still reached when one fails)')
 if "ride_monitor_error" not in health or 'a step fails' not in health:
     bad.append('system_health.php no longer shows why the cron job stops or a step fails')
+bk = read('api/cron_backup_db.php')
+m = re.search(r'function bk_heartbeat\(.*?\n\}', bk, re.S)
+if not m or 'SET time_zone' not in m.group(0):
+    bad.append("cron_backup_db.php: bk_heartbeat must put its connection on the app's clock (SET time_zone), or the Backup job row shows a false red")
 wp = read('api/webpush.php')
 if re.search(r"(?<!function_exists\(')(?<!_wp_)etel_env\(", re.sub(r'/\*.*?\*/', '', wp, flags=re.S).replace("return etel_env(", "return ETEL_OK(")):
     bad.append('webpush.php calls etel_env() straight: the cron jobs do not load boot.php, use etel_wp_env() (the live bug that stopped the ride monitor)')
