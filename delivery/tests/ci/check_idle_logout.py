@@ -19,6 +19,11 @@ for f in ('js/etel-idle-logout.js', 'js/etel-idle-notice.js'):
         bad.append(f + ' uses inline handlers, eval or document.write')
     if subprocess.call(['node', '--check', root + '/' + f]) != 0:
         bad.append(f + ' does not parse')
+js = read('js/etel-idle-logout.js')
+if "KEY + '_tok'" not in js or 'forgetLast();' not in js:
+    bad.append('etel-idle-logout.js lost the rule that a last-use time belongs to one sign-in and is forgotten on sign-out (the sign-out loop bug)')
+if "etel_last_active_tok" not in read('js/etel-idle-notice.js'):
+    bad.append('etel-idle-notice.js no longer clears the leftover last-use time on the sign-in pages')
 boot = read('api/boot.php')
 if 'etel_idle_expired(' not in boot:
     bad.append('boot.php get_auth_user no longer enforces the idle limit')

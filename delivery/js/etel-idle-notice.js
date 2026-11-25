@@ -2,6 +2,8 @@
    js/etel-idle-logout.js leaves a note in sessionStorage (etel_logout_reason = idle) just before it sends the person here. Shown once, can be closed. English / Amharic. */
 (function () {
   'use strict';
+  /* nobody is signed in on a sign-in page: forget the last-use time of the earlier sign-in (js/etel-idle-logout.js), so a new sign-in starts a fresh clock */
+  try { localStorage.removeItem('etel_last_active'); localStorage.removeItem('etel_last_active_tok'); } catch (e) { }
   var r = '';
   try { r = sessionStorage.getItem('etel_logout_reason') || ''; sessionStorage.removeItem('etel_logout_reason'); } catch (e) {}
   if (r !== 'idle') return;
