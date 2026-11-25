@@ -16,7 +16,7 @@ var GROUPS = [
   { id: 'catalog', label: 'Catalog & pricing', icon: '🏷️', pages: ['items', 'menucat', 'pricing', 'dfees', 'promos'] },
   { id: 'money', label: 'Money', icon: '💰', pages: ['telebirr', 'finance', 'equb', 'reports'] },
   { id: 'support', label: 'Support & records', icon: '🛟', pages: ['supportdesk', 'support', 'documents', 'launch'] },
-  { id: 'system', label: 'System', icon: '⚙️', pages: ['settings', 'serviceareas', 'branding', 'roles', 'releases', 'etelapp', 'updater', 'danger', '#2fa', '#display'] }
+  { id: 'system', label: 'System', icon: '⚙️', pages: ['settings', 'serviceareas', 'branding', 'roles', 'releases', 'etelapp', 'updater', 'danger', '#2fa', '#shield', '#display'] }
 ];
 /* Pages added by other scripts after the menu loads need a capability here (the rest are hidden by admin-roles.js). */
 var EXTRA_CAPS = { dfees: 'settings.view', customers: 'users.view', packages: 'orders.view', agents: 'agents.view', supportdesk: 'support.view', serviceareas: 'settings.view', etelapp: 'owner.only', liveops: 'rides.view', rideoffers: 'rides.view', ridedrivers: 'users.view', trust: 'rides.view' };
@@ -30,6 +30,7 @@ function sidebar() { return document.querySelector('.sidebar'); }
 function itemFor(key) {
   var sb = sidebar(); if (!sb) return null;
   if (key === '#2fa') return sb.querySelector('[data-etel-2fa-open]');
+  if (key === '#shield') return sb.querySelector('[data-etel-shield-open]');
   if (key === '#display') return sb.querySelector('[data-etel-display-open]');
   return sb.querySelector('.nav-item[data-page="' + key + '"]');
 }
