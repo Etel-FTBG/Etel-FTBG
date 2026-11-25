@@ -36,7 +36,7 @@ var DESC = {
   finance: 'Money, plans and investors.', equb: 'Equb groups.', integrations: 'Payment companies and banks (keys).', supportdesk: 'Support desk: cases and answers.',
   support: 'Messages from users.', documents: 'Company documents.', launch: 'Is the system ready to open? Checklist.', settings: 'Admin settings.', serviceareas: 'The cities Etel serves.',
   branding: 'Logos, colours, names.', roles: 'Who may do what (staff roles).', releases: 'App releases.', etelapp: 'What the ETEL phone app shows (owner).', updater: 'Upload files.',
-  danger: 'Careful: reset and delete tools.', '#2fa': 'Two-step sign-in for your account.', '#shield': 'Block attacks and people outside Ethiopia, sign out when not used, security log.', '#display': 'Make text and buttons bigger or smaller.'
+  danger: 'Careful: reset and delete tools.', '#2fa': 'Admin two-step sign-in (the code at the EtelID login page is separate: change it in the EtelID portal).', '#shield': 'Block attacks and people outside Ethiopia, sign out when not used, security log.', '#display': 'Make text and buttons bigger or smaller.'
 };
 var LBL = { ride: { pricing: 'Ride prices' }, delivery: { pricing: 'Delivery prices' } };   // the Pricing page shows the tabs of the workspace it is opened from
 var WDESC = { ride: { pricing: 'Ride fares per vehicle, peak hours, driver goals, commission, incentives.' }, delivery: { pricing: 'Delivery fees and zones, vehicle fees, courier pay, bank accounts.' } };

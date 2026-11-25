@@ -9,7 +9,10 @@ The other smokes run with the rule set to 0 (run_integration.sh). This one switc
 back to 0 at the end. (The emergency .env switch ADMIN_2FA_REQUIRED is covered by tests/phase3_unit.php; the server's .env is fixed.)
 """
 import json
+import os
+import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -54,7 +57,8 @@ def set_rule(value):
 
 
 def main():
-    s, r = call("login", {"phone": ADMIN_PHONE, "password": ADMIN_PASSWORD})
+    s, r0 = call("login", {"phone": ADMIN_PHONE, "password": ADMIN_PASSWORD})
+    r = r0
     tok = (r.get("data") or {}).get("token") if isinstance(r.get("data"), dict) else None
     if not tok:
         print("demo admin login failed: %s" % r)
@@ -78,6 +82,21 @@ def main():
         s, r = call("admin_get_2fa_rule", {}, tok)
         check("the rule card stays open and says required/default",
               s == 200 and (r.get("data") or {}).get("required") == 1 and (r.get("data") or {}).get("source") == "default", (s, r))
+
+        # a sign-in through EtelID whose authenticator code was checked counts as the admin's second step (the person is asked once)
+        uid = (r0.get("data") or {}).get("user", {}).get("id") if isinstance(r0.get("data"), dict) else 1
+        cli = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mfa_mark_cli.php")
+        out = subprocess.run(["php", cli, str(uid), tok], capture_output=True, text=True).stdout
+        check("the session of that sign-in can be marked (second step done)", "marked" in out and "ok" in out and "not ok" not in out, out)
+        s, r = call("admin_areas_list", {}, tok)
+        check("a marked session passes the admin two-step rule without the admin's own two-step", s == 200 and r.get("success") is not False, (s, r))
+        time.sleep(1.2)   # a token is made from the second it was issued: wait so the next sign-in is a different session
+        s, r1 = call("login", {"phone": ADMIN_PHONE, "password": ADMIN_PASSWORD})
+        tok2 = (r1.get("data") or {}).get("token")
+        s, r = call("admin_areas_list", {}, tok2)
+        check("a password-only sign-in is NOT marked: still refused", tok2 and tok2 != tok and s == 403 and r.get("code") == "2fa_setup_required", (s, r))
+        check("the refusal names both ways in", "EtelID" in (r.get("message") or "") and "Admin two-step" in (r.get("message") or ""), r)
+        tok = tok2   # the rest of the rule checks use the unmarked session
 
         # owner saved 1
         set_rule(1)
