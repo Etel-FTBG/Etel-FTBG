@@ -36,6 +36,20 @@ AddDefaultCharset UTF-8
 <FilesMatch "\.(env|bak|bak_[0-9]+|sql|log|sh|py|json\.bak|txt|md)$">
     Require all denied
 </FilesMatch>
+# Copies, archives, editor leftovers and tool files that must never be downloaded: a forgotten backup zip or config.php.old would hand out secrets.
+<FilesMatch "\.(zip|tar|gz|tgz|rar|7z|old|orig|save|swp|swo|ini|yml|yaml|lock|dist|dump|tmp|bk|backup|pem|key|crt|csr)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "(~|\.php[0-9]?\.[a-z0-9]+)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(composer|package)(-lock)?\.json$">
+    Require all denied
+</FilesMatch>
+# Every hidden file (.env, .git*, .htpasswd, .DS_Store ...). The .well-known folder holds only files whose names do not start with a dot, so it still works.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
 <Files ".env">
     Require all denied
 </Files>
@@ -48,9 +62,10 @@ AddDefaultCharset UTF-8
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set X-Permitted-Cross-Domain-Policies "none"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "geolocation=(self), camera=(self), microphone=(self), payment=(self)"
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none';"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none';"
     Header always unset Server
     Header always unset X-Powered-By
 </IfModule>
@@ -59,7 +74,7 @@ AddDefaultCharset UTF-8
     <IfModule mod_headers.c>
         # customer.html only: ENFORCED strict policy, the site-wide one WITHOUT 'unsafe-inline' for scripts (csp_reports was empty before this was turned on).
         # Violations are still reported to api/csp-report.php, so a missed inline script shows up there. Styles keep 'unsafe-inline'.
-        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; report-uri /delivery/api/csp-report.php"
+        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; report-uri /delivery/api/csp-report.php"
     </IfModule>
 </Files>
 
@@ -67,7 +82,7 @@ AddDefaultCharset UTF-8
     <IfModule mod_headers.c>
         # servicegiver.html only: ENFORCED strict policy, the site-wide one WITHOUT 'unsafe-inline' for scripts (csp_reports was empty before this was turned on).
         # Violations are still reported to api/csp-report.php, so a missed inline script shows up there. Styles keep 'unsafe-inline'.
-        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; report-uri /delivery/api/csp-report.php"
+        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; report-uri /delivery/api/csp-report.php"
     </IfModule>
 </Files>
 
@@ -75,14 +90,14 @@ AddDefaultCharset UTF-8
     <IfModule mod_headers.c>
         # admin.html only: EtelGroup admin's Finance & Planning tab embeds
         # this exact page in a same-origin iframe (see EtelGroup/admin.html).
-        # The site-wide policy above sends frame-ancestors 'none', which
+        # The site-wide policy above sends base-uri 'self'; object-src 'none'; frame-ancestors 'none', which
         # blocks ALL framing (including same-origin) and takes precedence
         # over X-Frame-Options: SAMEORIGIN in every modern browser - that's
         # what "ethelmarket.com refused to connect" in the iframe was.
         # Narrowed to 'self' here, scoped to just this one file, so every
         # other delivery page (customer/courier/driver-facing) keeps the
         # stricter clickjacking protection unchanged.
-        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'self';"
+        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self';"
     </IfModule>
 </Files>
 
@@ -90,6 +105,8 @@ ServerSignature Off
 Options -Indexes -MultiViews
 
 RewriteEngine On
+# Hidden folders (.git, .svn, .idea ...) are never served; .well-known stays open.
+RewriteRule (^|/)\.(?!well-known(/|$)) - [F]
 RewriteCond %{HTTPS} off
 RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
