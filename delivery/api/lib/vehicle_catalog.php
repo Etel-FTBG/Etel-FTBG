@@ -21,9 +21,10 @@ function etel_vc_courier_types() {
     );
 }
 
-// Bajaj and qute (three-wheelers) are real courier vehicles that no built-in package vehicle covers. Once, on first use, add them as one vehicle
-// type "Bajaj / Qute" (sized like a motorbike) so their couriers get package and delivery jobs. Staff can edit, switch off or delete it in
-// Admin -> Package prices; it is never added a second time (a flag in package_settings remembers). Never throws.
+// Bajaj and qute (three-wheelers) are real courier vehicles that no built-in package vehicle covers. Once, on first use, add them as TWO vehicle
+// types, "Bajaj" and "Qute" (each sized like a motorbike, each with its own picture, prices and couriers) so their couriers get package and
+// delivery jobs. Staff can edit, switch off or delete them in Admin -> Package prices and Admin -> Delivery fees; they are never added a second
+// time (a flag in package_settings remembers). Never throws.
 function etel_vc_seed_three_wheelers($pdo) {
     static $done = false;
     if ($done) return;
@@ -34,12 +35,64 @@ function etel_vc_seed_three_wheelers($pdo) {
         $q->execute(array('seeded_threewheel'));
         if ($q->fetchColumn() !== false) return;
         if (etel_vehicle_class_of('bajaj', $pdo) === '' && etel_vehicle_class_of('qute', $pdo) === '') {
-            etel_package_add_type($pdo, array('label' => 'Bajaj / Qute', 'icon' => "\xF0\x9F\x9B\xBA", 'size_like' => 'moto', 'courier_names' => 'bajaj, qute',
-                'base_fee' => 60, 'per_km' => 12, 'free_kg' => 5, 'per_kg_over' => 6, 'min_fee' => 80, 'max_weight_kg' => 100, 'active' => true));
+            $common = array('icon' => "\xF0\x9F\x9B\xBA", 'size_like' => 'moto', 'base_fee' => 60, 'per_km' => 12, 'free_kg' => 5, 'per_kg_over' => 6, 'min_fee' => 80, 'max_weight_kg' => 100, 'active' => true);
+            etel_package_add_type($pdo, array_merge($common, array('label' => 'Bajaj', 'courier_names' => 'bajaj')));
+            etel_package_add_type($pdo, array_merge($common, array('label' => 'Qute', 'courier_names' => 'qute')));
         }
         $pdo->prepare("INSERT IGNORE INTO package_settings (setting_key, setting_value, updated_at) VALUES ('seeded_threewheel', '1', NOW())")->execute();
+        $pdo->prepare("INSERT IGNORE INTO package_settings (setting_key, setting_value, updated_at) VALUES ('split_threewheel', '1', NOW())")->execute();
         etel_package_custom_defs(null, true);
     } catch (Exception $e) { error_log('[ETEL] seed three-wheelers: ' . $e->getMessage()); }
+}
+
+// One time, on an install that already has the old combined type "Bajaj / Qute" (one type for both words): make it "Bajaj" (courier word bajaj only)
+// and add "Qute" (courier word qute only) with the same prices, size and delivery fees, so the cart shows each vehicle with its own picture and
+// staff can price each one. Nothing is split if staff already changed the type so it no longer carries both words. If the new type cannot be added,
+// the old one is put back as it was. Never throws.
+function etel_vc_split_three_wheelers($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        etel_package_ensure_schema($pdo);
+        $q = $pdo->prepare('SELECT setting_value FROM package_settings WHERE setting_key = ?');
+        $q->execute(array('split_threewheel'));
+        if ($q->fetchColumn() !== false) return;
+        $both = '';
+        foreach (etel_package_custom_defs($pdo) as $k => $d) {
+            if (in_array('bajaj', $d['names'], true) && in_array('qute', $d['names'], true)) { $both = $k; break; }
+        }
+        $row = null;
+        if ($both !== '') { foreach (etel_package_rates($pdo, false) as $r) { if ($r['vehicle_class'] === $both) $row = $r; } }
+        if ($row) {
+            $keep = array('label' => 'Bajaj', 'icon' => $row['icon'], 'base_fee' => $row['base_fee'], 'per_km' => $row['per_km'], 'free_kg' => $row['free_kg'],
+                'per_kg_over' => $row['per_kg_over'], 'min_fee' => $row['min_fee'], 'max_weight_kg' => $row['max_weight_kg'], 'active' => intval($row['active']) === 1, 'courier_names' => 'bajaj');
+            $byRank = array_flip(etel_package_builtin_classes());
+            $rank = intval($row['size_rank']);
+            $a = etel_package_save_rate($pdo, $both, $keep);
+            $ok = false;
+            if ($a['ok']) {
+                $add = $keep; $add['label'] = 'Qute'; $add['courier_names'] = 'qute'; $add['size_like'] = isset($byRank[$rank]) ? $byRank[$rank] : 'moto';
+                $b = etel_package_add_type($pdo, $add);
+                if ($b['ok'] && !empty($b['vehicle_class'])) {
+                    $ok = true;
+                    foreach (array('base', 'per_km', 'min') as $f) {   // the delivery fee staff set for the old type goes to the new one too
+                        $g = $pdo->prepare('SELECT rule_value FROM pricing_rules WHERE rule_key = ?'); $g->execute(array('dfee_' . $both . '_' . $f));
+                        $v = $g->fetchColumn();
+                        if ($v !== false) $pdo->prepare('INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES (?,?,?) ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)')
+                            ->execute(array('dfee_' . $b['vehicle_class'] . '_' . $f, $v, 'Copied from Bajaj when Bajaj / Qute was split'));
+                    }
+                }
+            }
+            if (!$ok) {   // put the old type back as it was
+                $keep['label'] = isset($row['label']) ? $row['label'] : 'Bajaj / Qute'; $keep['courier_names'] = 'bajaj, qute';
+                etel_package_save_rate($pdo, $both, $keep);
+                error_log('[ETEL] split three-wheelers: could not add Qute, kept the combined type');
+            }
+        }
+        $pdo->prepare("INSERT IGNORE INTO package_settings (setting_key, setting_value, updated_at) VALUES ('split_threewheel', '1', NOW())")->execute();
+        etel_package_custom_defs(null, true);
+    } catch (Exception $e) { error_log('[ETEL] split three-wheelers: ' . $e->getMessage()); }
 }
 
 // Count couriers by the vehicle name they have. Returns array(name => array('total' => n, 'online' => n)); '' = no vehicle set.
@@ -64,6 +117,7 @@ function etel_vc_courier_counts($pdo) {
 function etel_vehicle_catalog($pdo) {
     require_once __DIR__ . '/courier_schema.php'; etel_ensure_courier_vehicle_column($pdo);
     etel_vc_seed_three_wheelers($pdo);
+    etel_vc_split_three_wheelers($pdo);
     $classes = array(); $unmapped = array();
     $counts = etel_vc_courier_counts($pdo);
     $builtin = etel_package_builtin_names();
@@ -138,7 +192,7 @@ function etel_vc_cart_vehicles($pdo) {
         $tk = etel_vc_shop_tier($pdo, $c['class']);
         if ($tk === '' || !isset($tiers[$tk])) continue;
         $out[] = array('tier_key' => $c['class'], 'vehicle_class' => $c['class'], 'label' => $c['label'], 'icon' => $c['icon'], 'rank' => $c['rank'],
-            'multiplier' => floatval($tiers[$tk]['multiplier']), 'eta_delta_min' => intval($tiers[$tk]['eta_delta_min']), 'max_weight_kg' => $c['max_weight_kg'],
+            'multiplier' => floatval($tiers[$tk]['multiplier']), 'eta_delta_min' => intval($tiers[$tk]['eta_delta_min']), 'max_weight_kg' => $c['max_weight_kg'], 'names' => $c['names'],
             'couriers' => $c['couriers'], 'online' => $c['online'], 'available' => $c['online'] > 0);
     }
     return $out;

@@ -58,7 +58,7 @@ def make_courier(tag):
     if not (r.get("data") or {}).get("token"):
         clear_limits()
         call("register", {"name": "courier %s %s" % (tag, SUFFIX), "phone": ph, "password": "testpass123", "role": "courier"})
-    etel_test_db.run_sql("UPDATE couriers c JOIN users u ON u.id = c.user_id SET c.approval_status = 'approved', c.status = 'online', c.active = 1, "
+    etel_test_db.run_sql("UPDATE couriers c JOIN users u ON u.id = c.user_id SET c.status = 'online', c.active = 1, "
                          "c.vehicle_type = 'motorcycle', c.last_lat = 7.0500000, c.last_lng = 38.4800000, c.last_seen = NOW() WHERE u.phone = '%s'" % ph)
     s, r = call("login", {"phone": ph, "password": "testpass123"})
     tok = (r.get("data") or {}).get("token")

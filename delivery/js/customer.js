@@ -1926,6 +1926,16 @@ function vpic(type, px, fallback) {
     return (window.EtelVehiclePic && EtelVehiclePic.key(type)) ? EtelVehiclePic.html(type, px, {fallback: fallback}) : (fallback || '');
 }
 
+// The name the vehicle picture is looked up by. A built-in vehicle (bike, moto, car, van) by its key. A vehicle staff added (key x1, x2 ...) by the courier
+// word it carries (bajaj, qute), so Bajaj and Qute each get their own real picture; failing that by its name.
+function _vehPicName(tier) {
+    const k = String(tier.tier_key || '');
+    if (!/^x\d+$/.test(k)) return k;
+    const names = Array.isArray(tier.names) ? tier.names : [];
+    for (let i = 0; i < names.length; i++) { if (window.EtelVehiclePic && EtelVehiclePic.key(names[i])) return names[i]; }
+    return tier.label || k;
+}
+
 function tierOptionBtn(tier, zone) {
     const active = selectedTier === tier.tier_key;
     const dq = _dfeeFor(tier.tier_key);
@@ -1933,7 +1943,7 @@ function tierOptionBtn(tier, zone) {
     const baseTime = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].time : 25;
     const eta = dq ? _dfeeMinutes(dq, tier.tier_key) : Math.max(3, baseTime + Number(tier.eta_delta_min));
     return '<button data-tier="'+tier.tier_key+'"' + _ea('selectTier', [String(tier.tier_key)]) + ' style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
-        '<span style="display:flex;justify-content:center;align-items:center;height:34px;font-size:20px;margin-bottom:2px">'+vpic(tier.tier_key, 52, tier.icon||'📦')+'</span>' +
+        '<span style="display:flex;justify-content:center;align-items:center;height:34px;font-size:20px;margin-bottom:2px">'+vpic(_vehPicName(tier), 52, tier.icon||'📦')+'</span>' +
         '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+escapeHtml(tier.label)+'</span>' +
         '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+eta+' min · ETB '+fee+'</span>' +
         (_deliveryIsVehicles ? '<span style="display:block;font-size:9.5px;margin-top:3px;font-weight:700;color:' + (tier.available ? '#2ECC71' : '#E0A33A') + '">' + (tier.available ? '● ' + Number(tier.online) + ' online' : '○ none online') + '</span>' : '') +

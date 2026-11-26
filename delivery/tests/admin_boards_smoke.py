@@ -120,9 +120,9 @@ def main():
         classes = (dd.get("vehicles") or {}).get("classes") or []
         check("the vehicle catalog lists every package vehicle with counts and the 5 km price",
               {"bike", "moto", "car", "van"} <= set(c.get("class") for c in classes) and all("couriers" in c and "online" in c and "price_5km" in c for c in classes), classes)
-        check("bajaj and qute are offered as courier vehicles and count as an added package vehicle (Bajaj / Qute)",
+        check("bajaj and qute are offered as courier vehicles and each counts as its own added package vehicle (Bajaj, Qute)",
               all(any(o.get("value") == v and o.get("class") not in ("", None) for o in dd.get("vehicle_choices") or []) for v in ("bajaj", "qute"))
-              and any(c.get("label") == "Bajaj / Qute" for c in classes), dd.get("vehicle_choices"))
+              and any(c.get("label") == "Bajaj" for c in classes) and any(c.get("label") == "Qute" for c in classes), dd.get("vehicle_choices"))
         s, r = call("admin_couriers_board", {}, admin)
         bd = r.get("data") or {}
         check("the board carries the catalog and the vehicle class of every courier", "vehicles" in bd and "vehicle_choices" in bd and all("vehicle_class" in c for c in bd.get("couriers") or []), list(bd.keys()))

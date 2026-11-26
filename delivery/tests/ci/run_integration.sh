@@ -63,6 +63,7 @@ run python3 tests/idle_session_smoke.py
 run python3 tests/courier_location_smoke.py
 run python3 tests/courier_job_geo_smoke.py
 run python3 tests/courier_choose_order_smoke.py
+run python3 tests/three_wheeler_split_smoke.py
 run python3 tests/driver_courier_smoke.py
 run python3 tests/ride_pull_smoke.py
 run python3 tests/courier_vehicle_column_smoke.py
