@@ -54,6 +54,7 @@ run python3 tests/delivery_fees_smoke.py
 run python3 tests/order_refusal_smoke.py
 run python3 tests/shield_smoke.py
 run python3 tests/shield_entry_smoke.py
+run python3 tests/idle_ride_smoke.py
 run python3 tests/stream_ticket_smoke.py
 run python3 tests/key_in_url_smoke.py
 run python3 tests/cron_ride_monitor_visible_smoke.py

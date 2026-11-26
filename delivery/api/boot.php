@@ -151,7 +151,7 @@ if (in_array($_origin, $_allowed_origins, true)) {
     header('Access-Control-Allow-Origin: ' . (isset($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] : 'null'));
 }
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Etel-App');
 header('X-App-Version: ' . APP_VER);
 /* Request id: one short id per request, sent back in the X-Request-Id header and in every error answer, and written in
    front of the server error log line, so a support screenshot ("rid 3fa9c1d27b44") leads straight to the log. */

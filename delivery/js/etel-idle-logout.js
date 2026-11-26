@@ -3,7 +3,9 @@
    One minute before the end a warning with a countdown asks "Still there?"; "Stay signed in" keeps the session, otherwise the person is signed out and sent to the
    sign-in page with a short explanation. Background refreshes do not count as use. The server enforces the same limit, so a forgotten phone or a stolen token
    stops working too. Never signs out a courier or driver who is working (online, or with a job): the server says so in the ping. The last time of use is kept in
-   localStorage (etel_last_active), so a phone reopened hours later is signed out at once and several tabs share one clock. English / Amharic (etel_lang). */
+   localStorage (etel_last_active), so a phone reopened hours later is signed out at once and several tabs share one clock. English / Amharic (etel_lang).
+   RIDE PAGES (/ride/ and /driver/) have NO timer: no warning, no sign-out. They only (1) tell the server every request is from Ride (header X-Etel-App: ride, so the
+   server does not end the session for being idle) and (2) now and then report use, so the Delivery apps' clock does not run out while a rider or driver works. */
 (function () {
   'use strict';
   if (window.__etelIdle) return;
@@ -12,6 +14,24 @@
   var AM = { 'Are you still there?': 'አሁንም እዚያ ነዎት?', 'You will be signed out in': 'ከመለያዎ የሚወጡት በ', 'seconds': 'ሰከንድ ውስጥ', 'because the app was not used.': 'መተግበሪያው ስላልተጠቀመ ነው።',
     'Stay signed in': 'ገብቼ ልቆይ', 'Sign out now': 'አሁን ውጣ' };
   var KEY = 'etel_last_active', REASON = 'etel_logout_reason';
+  var RIDE = (window.ETEL_IDLE_RIDE === true) || /\/(ride|driver)(\/|$)/.test(location.pathname);
+  /* Ride pages: mark every same-origin request as Ride (the server then never ends the session for being idle) */
+  if (RIDE && window.fetch && !window.__etelRideFetch) {
+    window.__etelRideFetch = true;
+    var nativeFetch = window.fetch;
+    window.fetch = function (input, init) {
+      try {
+        var u = new URL(typeof input === 'string' ? input : (input && input.url) || '', location.href);
+        if (u.origin === location.origin) {
+          init = init || {};
+          var h = new Headers(init.headers || (input && input.headers) || {});
+          h.set('X-Etel-App', 'ride');
+          var o = {}; for (var k in init) o[k] = init[k]; o.headers = h; init = o;
+        }
+      } catch (e) { /* send it as it was */ }
+      return nativeFetch.call(this, input, init);
+    };
+  }
   var S = { limit: 0, exempt: false, lastPing: 0, dirty: false, ready: false, warn: null, last: Date.now(), done: false };
 
   function lang() { try { return localStorage.getItem('etel_lang') === 'am' ? 'am' : 'en'; } catch (e) { return 'en'; } }
@@ -117,8 +137,17 @@
     if (S.dirty && now - S.lastPing > 120000) { S.dirty = false; ping(true); }
   }
 
+  /* Ride: no timer. Report use at most every 5 minutes so the shared sign-in stays fresh for the Delivery apps. */
+  function startRide() {
+    var last = 0;
+    function use() { var n = Date.now(); if (n - last < 300000 || !token()) return; last = n; ping(true); }
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, use, { capture: true, passive: true }); });
+    use();
+  }
+
   function start() {
     if (!token()) return;                                               /* the sign-in pages: nothing to do */
+    if (RIDE) return startRide();
     S.last = storedLast() || Date.now();
     S.limit = DEFAULTS[role()] || DEFAULTS.other; S.ready = false;
     ping(false, function () {                                           /* the server's limit and whether this person is working */

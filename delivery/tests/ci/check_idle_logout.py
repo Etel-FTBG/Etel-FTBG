@@ -34,6 +34,12 @@ if "empty($r['last_active'])) return false" not in lib:
     bad.append('idle_session.php lost the safety rule: a session that never reported activity must never expire')
 if 'IDLE_TIMEOUT_OFF' not in lib:
     bad.append('idle_session.php lost the emergency switch IDLE_TIMEOUT_OFF')
+if "X-Etel-App" not in js or 'RIDE' not in js or 'startRide' not in js:
+    bad.append('etel-idle-logout.js lost the rule that the Ride pages (/ride/, /driver/) have no timer and mark their requests with X-Etel-App: ride')
+if 'etel_idle_ride_request()' not in lib or 'HTTP_X_ETEL_APP' not in lib:
+    bad.append('idle_session.php lost the rule that a Ride request is never ended for being idle')
+if 'X-Etel-App' not in boot:
+    bad.append('boot.php no longer allows the X-Etel-App header')
 if bad:
     print('FAILED:\n' + '\n'.join(bad)); sys.exit(1)
 print('ok: idle sign-out guarded')
