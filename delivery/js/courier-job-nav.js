@@ -1,5 +1,7 @@
 /* ETEL Courier - pickup and dropoff distances, real addresses and Navigate buttons on the job cards (additive script, no bundle release).
    Jobs tab: before accepting. Active tab: the same two places with the km that still matter (no second Navigate button: the card has its own).
+   Navigate opens the courier app's OWN route and turn-by-turn screen (drawRouteOnMap + courier-nav.js), so the courier never leaves the app; only when the
+   in-app map is not ready does the link fall back to the phone's map app. The same goes for the "Open in Maps" pictures on the Active tab.
    Each place shows its address like the Ride system: a plus code with the town, e.g. "2FQM+RHF, Hawassa, Ethiopia" (worked out on the phone from the map pin).
    Asks api action courier_job_geo for the jobs on the screen: km from the courier to the pickup, km from the pickup to the dropoff, and the two map points.
    Navigate opens the phone's map app with that place. The customer's name and phone are never asked for. Fails quietly: with no GPS the pickup km is
@@ -67,7 +69,7 @@
   // nav: show the Navigate button (Jobs tab). sub: the shop's own address text, when there is one.
   function row(title, name, kmText, pt, nav, sub) {
     var go = '';
-    if (nav) go = pt ? '<a class="cjn-go" href="' + esc(mapUrl(pt)) + '" target="_blank" rel="noopener" data-cjn="' + (title === 'Pickup' ? 'pickup' : 'drop') + '">&#129517; ' + esc(T('Navigate')) + '</a>' : '<span class="cjn-na">' + esc(T('Pin not set')) + '</span>';
+    if (nav) go = pt ? '<a class="cjn-go" href="' + esc(mapUrl(pt)) + '" target="_blank" rel="noopener" data-cjn="' + (title === 'Pickup' ? 'pickup' : 'drop') + '" data-lat="' + pt.lat + '" data-lng="' + pt.lng + '" data-label="' + esc((title === 'Pickup' ? 'Pickup' : 'Dropoff') + ' \u00b7 ' + (name || '')) + '">&#129517; ' + esc(T('Navigate')) + '</a>' : '<span class="cjn-na">' + esc(T('Pin not set')) + '</span>';
     var ad = addr(pt);
     return '<div class="cjn-row"><div class="cjn-l"><div class="cjn-t">' + esc(T(title)) + '</div><div class="cjn-n">' + esc(name || '-') + '</div>' +
       (sub ? '<div class="cjn-s">' + esc(sub) + '</div>' : '') +
@@ -137,6 +139,34 @@
     var ok = function (p) { var first = !MINE; MINE = { lat: p.coords.latitude, lng: p.coords.longitude }; if (first) { CACHE = {}; ask(); } };
     try { navigator.geolocation.getCurrentPosition(ok, function () {}, { maximumAge: 60000, timeout: 8000 }); } catch (e) {}
   }
+
+  // Navigate inside the app. drawRouteOnMap (the courier app's own route) + courier-nav.js (the full-screen turn-by-turn view) do the work.
+  // True only when the in-app map really took the request; otherwise the link keeps its normal job (it opens the phone's map app).
+  function inApp(lat, lng, label) {
+    if (!isFinite(lat) || !isFinite(lng) || typeof window.drawRouteOnMap !== 'function') return false;
+    if (!(window.google && window.google.maps && window.google.maps.DirectionsService)) return false;
+    var bar = document.getElementById('map-nav-bar');
+    if (!bar || !document.getElementById('map-route-time')) return false;     // not the courier map page
+    try {
+      bar.style.display = 'none';
+      if (typeof window.__courierNavAsk === 'function') window.__courierNavAsk();   // this IS the courier's own tap
+      window.drawRouteOnMap(lat, lng, label || 'Destination');
+      return bar.style.display === 'block';                                         // drawRouteOnMap shows the bar only when the map was ready
+    } catch (e) { return false; }
+  }
+  var MAPS_DIR = /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/;
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    var lat, lng, label = a.getAttribute('data-label') || '';
+    if (a.classList.contains('cjn-go')) { lat = parseFloat(a.getAttribute('data-lat')); lng = parseFloat(a.getAttribute('data-lng')); }
+    else {   // the "Open in Maps" pictures of the Active tab (baked into the app) point at the same kind of map link
+      var m = MAPS_DIR.exec(a.getAttribute('href') || '');
+      if (!m) return;
+      lat = parseFloat(m[1]); lng = parseFloat(m[2]);
+    }
+    if (inApp(lat, lng, label)) { e.preventDefault(); try { window.scrollTo(0, 0); } catch (er) {} }
+  });
 
   var tries = 0;
   (function wait() {
