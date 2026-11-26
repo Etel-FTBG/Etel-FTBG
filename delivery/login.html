@@ -479,6 +479,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
     <link rel="stylesheet" href="css/etel-design-v4.css?v=4.4">
     <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
     <link rel="stylesheet" href="css/etel-system.css?v=1.0">
+    <link rel="stylesheet" href="css/login-light.css?v=1">
 <style>/* keep the EN/አማ switch out of the header text when the display size is enlarged */
 html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px auto;width:max-content}
 @media(max-width:560px){.del-lang-switch{position:static!important;margin:14px 16px 6px auto!important;width:max-content}}</style>
@@ -499,6 +500,7 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
 <script src="js/etel-display-settings.js?v=1.4" defer></script>
 </head>
 <body>
+<script>/* light by default; dark only when the person chose it (core.js keeps the same key) */try{if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark-theme')}catch(e){}</script>
 
 <div class="del-auth-page">
 
@@ -621,7 +623,7 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
           <div class="del-forgot-wrap"><a class="del-forgot-link" href="https://ethelmarket.com/EtelId/reset-password/" target="_blank" rel="noopener" data-i18n="forgot_password">Forgot password?</a></div>
 
           <!-- ✦ EtelID PRIMARY HERO ✦ -->
-          <div style="background:linear-gradient(135deg,rgba(42,26,6,.88),rgba(74,50,16,.78));border:1.5px solid rgba(212,175,55,.45);border-radius:14px;padding:16px;margin-top:14px;margin-bottom:16px;text-align:center">
+          <div class="del-hero-box" style="background:linear-gradient(135deg,rgba(42,26,6,.88),rgba(74,50,16,.78));border:1.5px solid rgba(212,175,55,.45);border-radius:14px;padding:16px;margin-top:14px;margin-bottom:16px;text-align:center">
             <div style="font-size:11px;font-weight:700;color:rgba(253,246,216,.5);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px" data-i18n="recommended_badge">✦ Recommended — One ID for all ETEL services ✦</div>
             <button class="del-auth-etelid" id="del-etelid-btn" type="button" onclick="doEtelIdLogin()" style="margin-bottom:4px;width:100%">
               <span class="del-etelid-mark">ኢE</span>

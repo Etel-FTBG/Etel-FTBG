@@ -1,0 +1,24 @@
+/* equb/index.html - LIGHT skin (the page has no theme button, so it is light only). Colours only. */
+body{background:#F3F6FB!important;color:#101a2a!important;background-image:radial-gradient(ellipse 1200px 800px at 10% -15%,rgba(90,169,255,.18),transparent 60%),radial-gradient(ellipse 1000px 700px at 105% 10%,rgba(212,175,55,.14),transparent 55%)!important}
+.topbar{background:rgba(250,252,255,.92)!important;border-bottom-color:rgba(31,111,209,.3)!important}
+.topbar-btn{background:#fff!important;border-color:rgba(31,111,209,.45)!important;color:#1f5fb8!important}
+.topbar-updated{color:#51607a!important}
+.hdr h1{background:linear-gradient(135deg,#1f5fb8,#2f86e8)!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important}
+.card h2{color:#1f5fb8!important}
+.hdr p,.kpi-label,th,.empty,#loading,label,.pkg-desc,.pkg-freq,.pkg-meta,[style*="#8a95a8"],[style*="#8a7f66"]{color:#51607a!important}
+.card,.pkg-card{background:#FFFFFF!important;border-color:rgba(31,111,209,.3)!important;box-shadow:0 14px 36px -14px rgba(20,50,100,.22)!important}
+.card:hover{box-shadow:0 18px 40px -14px rgba(20,50,100,.3)!important}
+.tab-btn{background:#fff!important;border-color:rgba(31,111,209,.35)!important;color:#51607a!important}
+.tab-btn.active{background:linear-gradient(135deg,#5aa9ff,#1f6fd1)!important;color:#fff!important;border:none!important}
+.kpi-value{background:linear-gradient(135deg,#1f5fb8,#2f86e8)!important;-webkit-background-clip:text!important;background-clip:text!important}
+th{border-bottom-color:rgba(31,111,209,.3)!important}
+td{color:#2b3548!important;border-bottom-color:rgba(16,26,42,.09)!important}
+td.hi,.pkg-name{color:#101a2a!important}
+.badge.active,.badge.paid{background:rgba(20,115,63,.12)!important;color:#14733f!important}
+.badge.forming,.badge.pending{background:rgba(154,91,0,.13)!important;color:#8a5200!important}
+.badge.at_risk,.badge.missed{background:rgba(179,38,30,.12)!important;color:#b3261e!important}
+.badge.completed{background:rgba(16,26,42,.07)!important;color:#51607a!important}
+input,select{background:#FFFFFF!important;border-color:rgba(31,111,209,.4)!important;color:#101a2a!important}
+.btn.secondary{background:#fff!important;color:#1f3a6a!important;border:1px solid rgba(31,111,209,.35)!important}
+#error,[style*="#ff9aa4"]{color:#b3261e!important}
+[style*="#8ec5ff"]{color:#1f5fb8!important}
