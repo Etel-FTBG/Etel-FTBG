@@ -938,7 +938,7 @@ case 'track_order': {
                 o.placed_at, o.delivered_at, o.notes,
                 o.recipient_name, o.recipient_phone, o.recipient_address, o.delivery_photo_url,
                 o.delivery_lat, o.delivery_lng,
-                o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.pickup_pin, o.delivery_pin,
+                o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.pickup_pin, o.delivery_pin, o.pkg_speed,
                 oa.status as assignment_status, oa.accepted_at, oa.pickup_qr_scanned,
                 sg.business_name as service_giver_name, sg.zone as sg_zone, sg.lat AS shop_lat, sg.lng AS shop_lng, o.pickup_lat, o.pickup_lng,
                 u_sg.phone as sg_phone,

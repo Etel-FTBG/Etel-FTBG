@@ -241,6 +241,47 @@ def main():
     check("a customer cannot change the band prices", r.get("success") is False)
     call("admin_package_setting_save", {"values": {"d1_fee": 100}}, token=admin)
 
+    print("9. Express delivery and the booking switch")
+    s, r = call("customer_package_quote", pkg, token=cust)
+    dq = r.get("data") or {}
+    mo = [o for o in dq.get("options", []) if o["vehicle_class"] == "moto"]
+    mo = mo[0] if mo else {}
+    want_x = mo.get("price", 0) + max(20, int(round(mo.get("price", 0) * 0.30)))
+    check("the quote offers Express: a shorter time and a price for each vehicle (standard + 30 %, at least 20)", (dq.get("express") or {}).get("on") is True and 10 <= dq["express"].get("eta_min", 0) <= dq.get("eta_min", 0) and mo.get("express_price") == want_x, (dq.get("express"), mo))
+    book_m = dict(pkg, vehicle_class="moto", description="Books", recipient_name="Rita", recipient_phone="0911223344", ack_prohibited=True, payment_method="cash", weight_kg=1)
+    s, r = call("customer_package_create", dict(book_m, speed="express"), token=cust)
+    dx = r.get("data") or {}
+    check("an Express booking is charged the Express price", r.get("success") and dx.get("total") == want_x and dx.get("speed") == "express", r)
+    s, t = call("track_order", {"order_id": dx.get("order_id")}, token=cust)
+    od = (t.get("data") or {}).get("order") or t.get("data") or {}
+    check("tracking shows the speed and the courier note says EXPRESS", od.get("pkg_speed") == "express" and "EXPRESS" in (od.get("notes") or ""), od.get("pkg_speed"))
+    s, r = call("customer_package_create", book_m, token=cust)
+    ds = r.get("data") or {}
+    check("no speed sent (an older app) is booked as Standard at the normal price", r.get("success") and ds.get("total") == mo.get("price") and ds.get("speed") == "standard", r)
+    s, r = call("admin_package_setting_save", {"values": {"express_on": 2}}, token=admin)
+    check("Express on/off must be 0 or 1", r.get("success") is False, r)
+    s, r = call("admin_package_setting_save", {"values": {"express_pct": 300}}, token=admin)
+    check("an Express extra over 200 % is refused", r.get("success") is False, r)
+    s, r = call("admin_package_setting_save", {"values": {"express_on": 0}}, token=cust)
+    check("a customer cannot switch Express off", r.get("success") is False)
+    s, r = call("admin_package_setting_save", {"values": {"express_on": 0}}, token=admin)
+    check("the admin switches Express off", r.get("success") is True, r)
+    s, r = call("customer_package_quote", pkg, token=cust)
+    dn = r.get("data") or {}
+    check("with Express off the quote has no Express price", (dn.get("express") or {}).get("on") is False and all("express_price" not in o for o in dn.get("options", [])), dn.get("express"))
+    s, r = call("customer_package_create", dict(book_m, speed="express"), token=cust)
+    check("an Express request while it is off is booked as Standard", r.get("success") and (r.get("data") or {}).get("total") == mo.get("price") and (r.get("data") or {}).get("speed") == "standard", r)
+    call("admin_package_setting_save", {"values": {"express_on": 1}}, token=admin)
+    s, r = call("admin_package_setting_save", {"values": {"booking_on": 0}}, token=admin)
+    check("the admin pauses package booking", r.get("success") is True, r)
+    s, r = call("customer_package_quote", pkg, token=cust)
+    check("while paused the quote says so", r.get("success") is False and "paused" in (r.get("message") or ""), r)
+    s, r = call("customer_package_create", book_m, token=cust)
+    check("while paused nothing can be booked", r.get("success") is False and "paused" in (r.get("message") or ""), r)
+    call("admin_package_setting_save", {"values": {"booking_on": 1}}, token=admin)
+    s, r = call("customer_package_quote", pkg, token=cust)
+    check("booking works again after it is switched back on", r.get("success") is True, r)
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

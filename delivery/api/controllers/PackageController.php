@@ -39,7 +39,7 @@ case 'customer_package_quote': {
     require_auth($pdo);
     $q = etel_package_quote($pdo, isset($body['pickup']) ? $body['pickup'] : null, isset($body['drop']) ? $body['drop'] : null, $body);
     if (!$q['ok']) fail($q['message'], 400);
-    ok(array('distance_km' => $q['distance_km'], 'eta_min' => $q['eta_min'], 'options' => $q['options'], 'unavailable' => $q['unavailable'],
+    ok(array('distance_km' => $q['distance_km'], 'eta_min' => $q['eta_min'], 'options' => $q['options'], 'unavailable' => $q['unavailable'], 'express' => $q['express'],
         'pickup_zone' => $q['pickup']['zone'], 'drop_zone' => $q['drop']['zone']));
     break;
 }

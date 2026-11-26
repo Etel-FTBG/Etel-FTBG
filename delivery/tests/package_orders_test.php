@@ -284,6 +284,23 @@ check('staff can change the van multiplier', etel_package_save_settings($pdo, ar
 $sv = etel_package_save_settings($pdo, array('d1_fee' => 120, 'w2_fee' => 60));
 check('staff can change a band price', $sv['ok'] === true && etel_package_setting($pdo, 'd1_fee') == 120);
 check('bands that do not grow are refused', etel_package_save_settings($pdo, array('d1_km' => 30))['ok'] === false && etel_package_save_settings($pdo, array('d1_fee' => 400))['ok'] === false);
+// Express delivery (api/lib/package_speed.php)
+require_once __DIR__ . '/../api/lib/package_speed.php';
+check('speed: only the word express means express', etel_package_speed_clean('express') === 'express' && etel_package_speed_clean(' EXPRESS ') === 'express' && etel_package_speed_clean('fast') === 'standard' && etel_package_speed_clean(null) === 'standard' && etel_package_speed_clean(array('express')) === 'standard');
+check('express extra: 30 percent of 120 is 36', etel_package_express_extra(120, 30, 20) === 36);
+check('express extra: never less than the smallest extra', etel_package_express_extra(40, 30, 20) === 20);
+check('express extra: 0 percent and 0 minimum is no extra', etel_package_express_extra(120, 0, 0) === 0);
+check('express time: a quarter shorter, never under 10 minutes', etel_package_express_eta_min(40) === 30 && etel_package_express_eta_min(11) === 10);
+check('speed rules read the defaults (on, 30 percent, 20 ETB) and booking is open', etel_package_speed_rules($pdo) == array('on' => true, 'pct' => 30.0, 'min' => 20.0) && etel_package_booking_open($pdo) === true);
+etel_package_save_settings($pdo, array('booking_on' => 0, 'express_on' => 0));
+check('the admin switches express off and pauses booking', etel_package_booking_open($pdo) === false && etel_package_speed_rules($pdo)['on'] === false);
+$qopts = array(array('price' => 100));
+$qb = etel_package_quote_speed($pdo, $qopts, 20);
+check('with express off a quote gets no express price', $qb['on'] === false && !isset($qopts[0]['express_price']));
+etel_package_save_settings($pdo, array('booking_on' => 1, 'express_on' => 1));
+$qb = etel_package_quote_speed($pdo, $qopts, 20);
+check('with express on a quote gets the express price and time', $qb['on'] === true && $qb['eta_min'] === 15 && $qopts[0]['express_price'] === 130 && $qopts[0]['express_extra'] === 30);
+check('express settings out of range are refused', etel_package_save_settings($pdo, array('express_on' => 2))['ok'] === false && etel_package_save_settings($pdo, array('express_pct' => 250))['ok'] === false);
 $pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;
