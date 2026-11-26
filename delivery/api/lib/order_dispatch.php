@@ -39,6 +39,19 @@ function etel_release_idle_couriers($pdo) {
     }
 }
 
+/**
+ * True only when the admin set pricing_rules.courier_auto_assign = 1. Then a shop order is given straight to the nearest courier (the old way).
+ * Default OFF: every online courier with the chosen vehicle is told and the first one to accept gets the order (like a package), so a
+ * courier is never given a job they had no chance to see. Never throws.
+ */
+function etel_dispatch_auto_assign_on($pdo) {
+    try {
+        $q = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key = 'courier_auto_assign' LIMIT 1");
+        $q->execute();
+        return intval($q->fetchColumn()) === 1;
+    } catch (Exception $e) { return false; }
+}
+
 /** Find the nearest online courier for an order and offer/assign it. Never throws. */
 function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
     $order_id = (int)$order_id;
@@ -95,6 +108,12 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
             $pickup_coord = array(floatval($sgCoordRow['lat']), floatval($sgCoordRow['lng']));
         }
     } catch (Exception $eCoord) {}
+    // A shop order is NOT given to one courier either (unless the admin switched courier_auto_assign on): every online courier with the chosen
+    // vehicle sees it in the Jobs tab, is told, and the first one to accept gets it (courier_accept_order claims it atomically).
+    if (!etel_dispatch_auto_assign_on($pdo)) {
+        etel_package_broadcast($pdo, $order_id, $o, $vehSql, $vehParams, $excludeSql, $pickup_coord);
+        return;
+    }
 
     try {
         // Hex-grid pre-filter instead of "20 most recently seen" -
@@ -241,7 +260,7 @@ function etel_cancel_unpaid_chapa_orders($pdo) {
 }
 
 
-/** Tell every eligible courier about an open package job (nearest first, at most 40). They accept it from the Jobs tab. Returns how many were told. Never throws. */
+/** Tell every eligible courier about an open package or shop job (nearest first, at most 40). They accept it from the Jobs tab. Returns how many were told. Never throws. */
 function etel_package_broadcast($pdo, $order_id, $o, $vehSql, $vehParams, $excludeSql, $pickup_coord) {
     $told = 0;
     try {
@@ -259,8 +278,9 @@ function etel_package_broadcast($pdo, $order_id, $o, $vehSql, $vehParams, $exclu
         }
         usort($list, function ($x, $y) { return $x['d'] <=> $y['d']; });
         $list = array_slice($list, 0, 40);
-        $title = 'New Package Job!';
-        $body = 'Package ' . $o['order_code'] . ' from ' . $o['from_zone'] . ' to ' . $o['to_zone'] . '  ETB ' . number_format((float) $o['fare_total'], 2) . ' - open Jobs to accept';
+        $isPkg = (isset($o['order_kind']) && $o['order_kind'] === 'package');
+        $title = $isPkg ? 'New Package Job!' : 'New Delivery Job!';
+        $body = ($isPkg ? 'Package ' : 'Order ') . $o['order_code'] . ' from ' . $o['from_zone'] . ' to ' . $o['to_zone'] . '  ETB ' . number_format((float) $o['fare_total'], 2) . ' - open Jobs to accept';
         foreach ($list as $c) {
             try {
                 require_once __DIR__ . '/../push.php';

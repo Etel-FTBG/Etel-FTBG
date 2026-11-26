@@ -38,6 +38,11 @@ def rows(q):
     return [line.split("\t") for line in r.stdout.strip().splitlines() if line.strip()]
 
 
+# A shop order is now offered to every courier (they choose); the old "hand it to the nearest courier" way is a switch.
+# This smoke is about taking such a hand-over back, so it runs with the switch on (like an admin assigning by hand).
+sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_auto_assign', 1, 'test') ON DUPLICATE KEY UPDATE rule_value=1")
+
+
 def php(mode):
     r = subprocess.run(["php", os.path.join(HERE, "stale_sweep_cli.php"), mode], capture_output=True, text=True, timeout=60)
     if r.returncode != 0:
@@ -173,7 +178,7 @@ check("setting 0 turns this rule off", order(p5) == ("assigned", str(cid["STCA"]
 # cleanup
 sql("DELETE FROM order_courier_offers WHERE order_id IN (SELECT id FROM orders WHERE order_code LIKE 'STALE-%'); "
     "DELETE FROM orders WHERE order_code LIKE 'STALE-%'; DELETE FROM couriers WHERE courier_code LIKE 'STC%'; "
-    "DELETE FROM users WHERE phone LIKE '+2519990000%'; DELETE FROM pricing_rules WHERE rule_key IN ('courier_stale_minutes','courier_job_max_age_minutes','courier_pickup_max_minutes')")
+    "DELETE FROM users WHERE phone LIKE '+2519990000%'; DELETE FROM pricing_rules WHERE rule_key IN ('courier_stale_minutes','courier_job_max_age_minutes','courier_pickup_max_minutes','courier_auto_assign')")
 
 print("FAILED: %d" % len(fails) if fails else "ALL PASSED")
 sys.exit(1 if fails else 0)
