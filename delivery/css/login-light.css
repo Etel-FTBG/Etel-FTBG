@@ -1,0 +1,46 @@
+/* ETEL sign-in pages (login.html, admin-login.html) - LIGHT skin, the default.
+   The original dark look comes back with body.dark-theme (the round moon button, kept by core.js in localStorage "theme").
+   Only colours change here: no layout, no logic. !important is needed because the page's own inline <style> and etel-design-v4.css set the dark colours the same way. */
+body:not(.dark-theme) .del-auth-card{color:#3A2E10!important;background:rgba(255,252,243,.97)!important;border:1px solid rgba(176,128,20,.5)!important;box-shadow:0 20px 56px rgba(70,45,0,.30)!important}
+body:not(.dark-theme) .del-auth-head{background:transparent!important;border-bottom-color:rgba(20,17,8,.12)!important}
+body:not(.dark-theme) .del-auth-org{color:#7A5600!important;text-shadow:none!important}
+body:not(.dark-theme) .del-auth-title{color:#1A1206!important;text-shadow:none!important;-webkit-text-fill-color:#1A1206!important}
+body:not(.dark-theme) .del-auth-subtitle{color:#5A4A1A!important;text-shadow:none!important}
+body:not(.dark-theme) .del-af-label{color:#7A5600!important;text-shadow:none!important}
+body:not(.dark-theme) .del-auth-card input.del-af-input{background:#FFFFFF!important;color:#1A1206!important;-webkit-text-fill-color:#1A1206!important;border:1.5px solid rgba(160,120,20,.55)!important}
+body:not(.dark-theme) .del-auth-card input.del-af-input::placeholder{color:#8C8266!important;-webkit-text-fill-color:#8C8266!important;opacity:1}
+body:not(.dark-theme) .del-auth-card input.del-af-input:focus{border-color:#B8860B!important;box-shadow:0 0 0 3px rgba(212,175,55,.28)!important;background:#FFFFFF!important}
+body:not(.dark-theme) .del-af-icon,body:not(.dark-theme) .del-pw-toggle{color:#8A6500!important;opacity:.9}
+body:not(.dark-theme) .del-forgot-link{color:#7A5600!important}
+body:not(.dark-theme) .del-auth-ghost{background:#FFF6DC!important;border:1.5px solid #C9A227!important;color:#5A3E00!important}
+body:not(.dark-theme) .del-auth-ghost:hover{background:#FFEFC2!important;color:#3A2600!important}
+body:not(.dark-theme) .del-auth-divider{color:rgba(60,40,0,.55)!important}
+body:not(.dark-theme) .del-auth-foot{color:#5A4A1A!important;text-shadow:none!important;border-top:1px solid rgba(20,17,8,.14)!important}
+body:not(.dark-theme) #auto-switch,body:not(.dark-theme) #auto-switch *{color:#5A4A1A!important}
+body:not(.dark-theme) #auto-switch button{color:#7A5600!important}
+/* the EtelID "recommended" box */
+body:not(.dark-theme) .del-hero-box{background:linear-gradient(135deg,#FFF3CF,#FBE7A6)!important;border:1.5px solid rgba(176,128,20,.6)!important}
+body:not(.dark-theme) .del-hero-box>div{color:#6A4A00!important}
+body:not(.dark-theme) .del-hero-box>p{color:#5A4A1A!important}
+/* role tabs and staff tabs */
+body:not(.dark-theme) .del-rtab,body:not(.dark-theme) .del-staff-tab{background:#FFFFFF!important;color:#3A2600!important;border:1px solid rgba(160,120,20,.45)!important;text-shadow:none!important}
+body:not(.dark-theme) .del-rtab.on,body:not(.dark-theme) .del-staff-tab.on{background:linear-gradient(135deg,#F4D56A,#D4AF37)!important;color:#2A1A00!important;border-color:transparent!important}
+/* language switch (EN / Amharic) */
+body:not(.dark-theme) .del-lang-switch{background:#FFFFFF!important;border:1px solid rgba(160,120,20,.55)!important}
+body:not(.dark-theme) .del-lang-switch button{color:#5A4A1A!important;background:transparent!important}
+body:not(.dark-theme) .del-lang-switch button.on,body:not(.dark-theme) .del-lang-switch .on{background:linear-gradient(135deg,#F4D56A,#D4AF37)!important;color:#2A1A00!important}
+/* messages */
+body:not(.dark-theme) .del-falert.err{background:#FDECEA!important;border-color:#E0968F!important;color:#8A1C14!important}
+body:not(.dark-theme) .del-falert.ok{background:#E7F6EC!important;border-color:#8FC9A2!important;color:#14602F!important}
+/* etel-design-v4.css makes every p / span / div / li / label inherit its colour (!important), and the card's own colour was pale (made for the dark card): the card now sets a dark text colour,
+   and the variables the page's inline text uses are darker too */
+body:not(.dark-theme) .del-auth-card{--ink:#1A1206;--ink1:#1A1206;--ink2:#3A2E10;--ink3:#5A4A1A}
+body:not(.dark-theme) #fv-register [data-i18n="one_id_all_services"],body:not(.dark-theme) #fv-register p button,body:not(.dark-theme) #fv-forgot a,body:not(.dark-theme) #fv-forgot p button{color:#7A5600!important}
+/* admin login only: the page behind the card is dark here (the customer login has a gold one) */
+body.del-admin-login:not(.dark-theme){background:#F3EFE4!important}
+body.del-admin-login:not(.dark-theme) .del-auth-page{background:linear-gradient(180deg,#FBF7EA,#EFE8D4)!important}
+body.del-admin-login:not(.dark-theme) .del-auth-page::before,body.del-admin-login:not(.dark-theme) .del-auth-page::after{display:none!important}
+body.del-admin-login:not(.dark-theme) .del-auth-right{background:linear-gradient(180deg,#FBF7EA,#EFE8D4)!important;background-image:none!important}
+body.del-admin-login:not(.dark-theme) .del-auth-right::before,body.del-admin-login:not(.dark-theme) .del-auth-right::after{display:none!important}
+/* admin login: "Forgot password?" is a dark gold button here, so its text stays pale */
+body.del-admin-login:not(.dark-theme) .del-forgot-link{color:#FDF6D8!important}

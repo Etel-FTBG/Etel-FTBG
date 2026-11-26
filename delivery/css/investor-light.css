@@ -1,0 +1,18 @@
+/* investor/index.html - LIGHT skin (the page has no theme button, so it is light only). Colours only. */
+body{background:#F6F3EC!important;color:#1A1206!important;background-image:radial-gradient(ellipse 1100px 700px at 12% -10%,rgba(212,175,55,.20),transparent 60%)!important}
+.topbar{background:rgba(255,252,243,.92)!important;border-bottom-color:rgba(176,128,20,.35)!important}
+.topbar-btn{background:#fff!important;border-color:rgba(160,120,20,.5)!important;color:#7A5600!important}
+.topbar-updated{color:#6a5f45!important}
+.hdr h1,.card h2{color:#7A5600!important}
+.hdr p,.kpi-label,th,.empty,.locked,#loading{color:#5f5540!important}
+[style*="#8a7f66"]{color:#5f5540!important}
+.card{background:#FFFFFF!important;border-color:rgba(176,128,20,.4)!important;box-shadow:0 14px 36px -14px rgba(70,45,0,.25)!important}
+.kpi-value{background:linear-gradient(135deg,#8A6500,#B8860B)!important;-webkit-background-clip:text!important;background-clip:text!important}
+th{border-bottom-color:rgba(176,128,20,.35)!important}
+td{color:#3A352B!important;border-bottom-color:rgba(20,17,8,.09)!important}
+td.hi{color:#1A1206!important}
+.badge.paid,.badge.signed{background:rgba(20,115,63,.12)!important;color:#14733f!important}
+.badge.pending,.badge.sent{background:rgba(154,91,0,.13)!important;color:#8a5200!important}
+.badge.unpaid{background:rgba(179,38,30,.12)!important;color:#b3261e!important}
+.badge.draft{background:rgba(20,17,8,.07)!important;color:#5c5640!important}
+#error{color:#b3261e!important}
