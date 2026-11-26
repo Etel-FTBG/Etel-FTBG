@@ -12,7 +12,7 @@ var K = window.AdminKit;
 if (!K) return;
 var esc = K.esc;
 var RATES = [], CAT = null, TAB = 'overview';
-var SETTINGS = { late_cancel_fee: 30, tier_on: 1, d1_km: 5, d1_fee: 100, d2_km: 10, d2_fee: 200, d3_km: 25, d3_fee: 300, beyond_per_km: 15, w1_kg: 5, w1_fee: 0, w2_kg: 10, w2_fee: 50, w3_kg: 20, w3_fee: 100, w4_kg: 50, w4_fee: 200, w_beyond_per_kg: 10, mult_bike: 1, mult_moto: 1, mult_car: 1.5, mult_van: 2.5 };
+var SETTINGS = { express_on: 1, express_pct: 30, express_min: 20, booking_on: 1, late_cancel_fee: 30, tier_on: 1, d1_km: 5, d1_fee: 100, d2_km: 10, d2_fee: 200, d3_km: 25, d3_fee: 300, beyond_per_km: 15, w1_kg: 5, w1_fee: 0, w2_kg: 10, w2_fee: 50, w3_kg: 20, w3_fee: 100, w4_kg: 50, w4_fee: 200, w_beyond_per_kg: 10, mult_bike: 1, mult_moto: 1, mult_car: 1.5, mult_van: 2.5 };
 var RANK = { bike: 1, moto: 2, car: 3, van: 4 };
 var CALC = { km: 5, kg: 3 };
 var BUILTIN = { bike: 1, moto: 1, car: 1, van: 1 };
@@ -185,8 +185,19 @@ function bands() {
 }
 
 /* ---------- Rules ---------- */
+function speedCard() {
+  var t = SETTINGS, num = function (n, v, mx) { return '<input name="' + n + '" type="number" inputmode="decimal" min="0" max="' + mx + '" step="any" value="' + esc(v) + '" class="ak-input" style="width:110px">'; };
+  return '<form data-speed="1" class="ak-card" style="cursor:default;margin-bottom:14px">' +
+    '<div style="font-weight:800;margin-bottom:2px">⚡ Express delivery and the booking switch</div>' +
+    '<div class="pkp-note" style="margin-bottom:10px">With Express on, the customer can choose Express for a higher price (the delivery fee plus the percent below, never less than the smallest extra). The courier sees EXPRESS in the order notes. Pause booking to stop new packages for a while (for example when there are no couriers or on a holiday). Packages already booked are not touched.</div>' +
+    '<label style="display:block;font-size:13px;margin-bottom:8px"><input type="checkbox" name="express_on"' + (Number(t.express_on) === 1 ? ' checked' : '') + '> Express delivery is offered</label>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px"><label style="font-size:12px">Express extra (% of the fee)' + '<br>' + num('express_pct', t.express_pct, 200) + '</label>' +
+    '<label style="font-size:12px">Smallest extra (ETB)<br>' + num('express_min', t.express_min, 5000) + '</label></div>' +
+    '<label style="display:block;font-size:13px;margin-bottom:10px"><input type="checkbox" name="booking_on"' + (Number(t.booking_on) === 1 ? ' checked' : '') + '> Customers can book packages (untick to pause)</label>' +
+    '<button type="submit" class="ak-btn gold">Save</button><div data-note role="status" style="font-size:12.5px;min-height:18px;margin-top:6px"></div></form>';
+}
 function rules() {
-  return '<form data-setting="late_cancel_fee" class="ak-card" style="cursor:default;margin-bottom:14px">' +
+  return speedCard() + '<form data-setting="late_cancel_fee" class="ak-card" style="cursor:default;margin-bottom:14px">' +
     '<div style="font-weight:800;margin-bottom:2px">↩️ Cancelling after a courier accepted</div>' +
     '<div class="pkp-note" style="margin-bottom:10px">A sender can cancel for free until a courier accepts. After that, if they paid online, this fee is kept out of their refund to pay for the courier\'s trip. Cash packages are never charged. Put 0 to keep cancelling always free.</div>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><label style="font-size:12px">Cancel fee (ETB)<input name="value" type="number" inputmode="decimal" min="0" max="5000" step="any" value="' + esc(SETTINGS.late_cancel_fee) + '" class="ak-in" style="width:150px"></label>' +
@@ -246,8 +257,8 @@ function wireOnce(el) {
   el.addEventListener('submit', function (e) {
     var f = e.target; e.preventDefault();
     var btn = f.querySelector('button[type=submit]');
-    if (f.hasAttribute('data-tiers')) {
-      var vals = {}; Array.prototype.forEach.call(f.elements, function (x) { if (x.name === 'tier_on') vals.tier_on = x.checked ? 1 : 0; else if (x.name) vals[x.name] = x.value; });
+    if (f.hasAttribute("data-tiers") || f.hasAttribute("data-speed")) {
+      var vals = {}; Array.prototype.forEach.call(f.elements, function (x) { if (x.type === 'checkbox' && x.name) vals[x.name] = x.checked ? 1 : 0; else if (x.name) vals[x.name] = x.value; });
       btn.disabled = true; note(f, 'Saving…');
       K.api('admin_package_setting_save', { values: vals }).then(function (res) {
         btn.disabled = false;

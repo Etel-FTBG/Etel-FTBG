@@ -8,14 +8,14 @@
     if (window.PkgWaybill) return;
     ETEL_I18N.register('customer-package-wb', {
         en: { pkgw_brand: 'ETEL DELIVERY', pkgw_wb: 'Package waybill', pkgw_track_no: 'Tracking number', pkgw_from: 'From', pkgw_to: 'To', pkgw_to_who: 'Recipient',
-            pkgw_vehicle: 'Vehicle', pkgw_pack: 'Package', pkgw_dist: 'Distance', pkgw_pay: 'Payment', pkgw_total: 'Total',
+            pkgw_vehicle: 'Vehicle', pkgw_pack: 'Package', pkgw_dist: 'Distance', pkgw_speed: 'Speed', pkgw_sp_standard: 'Standard', pkgw_sp_express: 'Express', pkgw_pay: 'Payment', pkgw_total: 'Total',
             pkgw_tl_t: 'Delivery timeline', pkgw_tl1: 'Package booked', pkgw_tl2: 'Courier on the way to pick it up', pkgw_tl3: 'Package picked up', pkgw_tl4: 'On the way to the recipient', pkgw_tl5: 'Delivered',
             pkgw_share: 'Share', pkgw_copy: 'Copy number', pkgw_receipt: 'Receipt / PDF', pkgw_copied: 'Tracking number copied',
             pkgw_msg: 'ETEL Delivery package {code}. From {from} to {to}. Track it in the ETEL app: ethelmarket.com/delivery', pkgw_eta: 'about {min} min', pkgw_kg: 'kg',
             pkgw_pay_cash: 'Cash', pkgw_pay_telebirr: 'Telebirr', pkgw_pay_wallet: 'Etel Pay wallet', pkgw_pay_chapa: 'Chapa (online)', pkgw_pay_abysinia: 'Abyssinia Bank', pkgw_pay_cbe: 'CBE',
             pkgw_print_fail: 'Could not open the receipt. Allow pop-ups and try again.', pkgw_pins: 'Keep your pickup and delivery PINs private. Only give them to the courier.' },
         am: { pkgw_brand: 'ኢትኤል ዴሊቨሪ', pkgw_wb: 'የጥቅል ደረሰኝ', pkgw_track_no: 'የመከታተያ ቁጥር', pkgw_from: 'ከ', pkgw_to: 'ወደ', pkgw_to_who: 'ተቀባይ',
-            pkgw_vehicle: 'ተሽከርካሪ', pkgw_pack: 'ጥቅል', pkgw_dist: 'ርቀት', pkgw_pay: 'ክፍያ', pkgw_total: 'ጠቅላላ',
+            pkgw_vehicle: 'ተሽከርካሪ', pkgw_pack: 'ጥቅል', pkgw_dist: 'ርቀት', pkgw_speed: 'ፍጥነት', pkgw_sp_standard: 'መደበኛ', pkgw_sp_express: 'ፈጣን (Express)', pkgw_pay: 'ክፍያ', pkgw_total: 'ጠቅላላ',
             pkgw_tl_t: 'የመላኪያ ሂደት', pkgw_tl1: 'ጥቅሉ ተይዟል', pkgw_tl2: 'መልእክተኛው ሊወስድ በመንገድ ላይ ነው', pkgw_tl3: 'ጥቅሉ ተወስዷል', pkgw_tl4: 'ወደ ተቀባዩ በመንገድ ላይ', pkgw_tl5: 'ደርሷል',
             pkgw_share: 'አጋራ', pkgw_copy: 'ቁጥር ቅዳ', pkgw_receipt: 'ደረሰኝ / PDF', pkgw_copied: 'የመከታተያ ቁጥሩ ተቀድቷል',
             pkgw_msg: 'የኢትኤል ዴሊቨሪ ጥቅል {code}። ከ {from} ወደ {to}። በኢትኤል መተግበሪያ ይከታተሉ: ethelmarket.com/delivery', pkgw_eta: 'ወደ {min} ደቂቃ', pkgw_kg: 'ኪ.ግ',
@@ -45,7 +45,7 @@
             '<div class="pkgw-pt"><span class="pkgw-d b">B</span><div><div class="pkgw-k">' + esc(T('pkgw_to')) + '</div><div class="pkgw-addr">' + esc(wb.to) + '</div></div></div></div>' +
             '<div class="pkgw-veh"><span class="pkgw-vp" aria-hidden="true">' + pic(wb) + '</span><span class="pkgw-vn">' + esc(wb.vehicle) + '</span></div>' +
             row('pkgw_to_who', wb.recipient) + row('pkgw_pack', wb.size + ' · ' + wb.weight + ' ' + T('pkgw_kg') + ' · ' + wb.desc) +
-            row('pkgw_dist', wb.km + ' km · ' + T('pkgw_eta').replace('{min}', wb.eta)) + row('pkgw_pay', payName(wb.pay)) +
+            row('pkgw_dist', wb.km + ' km · ' + T('pkgw_eta').replace('{min}', wb.eta)) + row('pkgw_speed', T(wb.speed === 'express' ? 'pkgw_sp_express' : 'pkgw_sp_standard')) + row('pkgw_pay', payName(wb.pay)) +
             '<div class="pkgw-total"><span>' + esc(T('pkgw_total')) + '</span><span>ETB ' + esc(total) + '</span></div></div>' +
             '<div class="pkgw-sec"><h3 class="pkgw-h">' + esc(T('pkgw_tl_t')) + '</h3>' + timeline() + '</div>' +
             '<div class="pkgw-btns"><button type="button" class="pkgw-b"' + EtelActions.attrs('pkgShare') + '>' + esc(T('pkgw_share')) + '</button>' +
@@ -82,7 +82,7 @@
         document.body.appendChild(holder);
         if (qr(holder, LAST.code, 120)) { var c = holder.querySelector('canvas'), i = holder.querySelector('img'); try { img = c ? c.toDataURL('image/png') : (i ? i.src : ''); } catch (e) {} }
         document.body.removeChild(holder);
-        var rows = [['pkgw_from', w.from], ['pkgw_to', w.to], ['pkgw_to_who', w.recipient], ['pkgw_vehicle', w.vehicle], ['pkgw_pack', w.size + ' - ' + w.weight + ' ' + T('pkgw_kg') + ' - ' + w.desc], ['pkgw_dist', w.km + ' km'], ['pkgw_pay', payName(w.pay)]];
+        var rows = [['pkgw_from', w.from], ['pkgw_to', w.to], ['pkgw_to_who', w.recipient], ['pkgw_vehicle', w.vehicle], ['pkgw_pack', w.size + ' - ' + w.weight + ' ' + T('pkgw_kg') + ' - ' + w.desc], ['pkgw_dist', w.km + ' km'], ['pkgw_speed', T(w.speed === 'express' ? 'pkgw_sp_express' : 'pkgw_sp_standard')], ['pkgw_pay', payName(w.pay)]];
         var d = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(LAST.code) + '</title><style>' +
             'body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:18px;color:#0B1530}.c{max-width:420px;margin:0 auto;border:2px solid #0B1530;border-radius:14px;overflow:hidden}' +
             '.t{background:#0B1530;color:#D4AF37;padding:14px 16px;display:flex;justify-content:space-between;font-weight:800;letter-spacing:.08em}' +

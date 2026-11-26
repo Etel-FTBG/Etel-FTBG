@@ -49,11 +49,11 @@ const BANKS = [{ bank_key: 'abysinia', display_name: 'Bank of Abyssinia', accoun
     t(n + 'the vehicle shows its real picture', await p.evaluate(() => { const i = document.querySelector('.pkgw-vp img'); return !!i && /moto\.png/.test(i.getAttribute('src')); }));
     t(n + 'the old buttons (Track package, Done) are still there', await p.evaluate(() => /Track package/.test(document.querySelector('.pkg-foot').innerText)));
     // actions
-    const shared = await p.evaluate(async () => { let got = null; navigator.share = function (o) { got = o; return Promise.resolve(); }; pkgShare(); return got; });
+    const shared = await p.evaluate(async () => { let got = null; navigator.share = function (o) { got = o; return Promise.resolve(); }; [].slice.call(document.querySelectorAll('.pkgw-b'))[0].click(); return got; });
     t(n + 'Share gives the phone share sheet a text with the code, from and to', shared && /PKG-20261126-0077/.test(shared.text) && /Tabor home/.test(shared.text), JSON.stringify(shared));
-    const copied = await p.evaluate(async () => { let got = ''; Object.defineProperty(navigator, 'clipboard', { value: { writeText: v => { got = v; return Promise.resolve(); } }, configurable: true }); pkgCopy(); return got; });
+    const copied = await p.evaluate(async () => { let got = ''; Object.defineProperty(navigator, 'clipboard', { value: { writeText: v => { got = v; return Promise.resolve(); } }, configurable: true }); [].slice.call(document.querySelectorAll('.pkgw-b'))[1].click(); return got; });
     t(n + 'Copy puts the tracking number on the clipboard', copied === 'PKG-20261126-0077', copied);
-    const rec = await p.evaluate(() => { let html = ''; window.open = function () { return { document: { open() {}, write(h) { html = h; }, close() {} } }; }; pkgReceipt(); return html; });
+    const rec = await p.evaluate(() => { let html = ''; window.open = function () { return { document: { open() {}, write(h) { html = h; }, close() {} } }; }; [].slice.call(document.querySelectorAll('.pkgw-b'))[2].click(); return html; });
     t(n + 'Receipt writes a printable page with the code, total and a QR image', /PKG-20261126-0077/.test(rec) && /ETB 120\.00/.test(rec) && /<img src="data:image\/png/.test(rec) && /window\.print/.test(rec), rec.slice(0, 120));
     // readable: every text in the card has contrast >= 4.5 on its own background
     const bad = await p.evaluate(() => {

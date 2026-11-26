@@ -9,7 +9,8 @@ const srv = http.createServer((q, r) => { let p = path.join(ROOT, decodeURICompo
 const rate = (k, label, icon, rank, base, km, max, extra) => Object.assign({ vehicle_class: k, label, icon, base_fee: base, per_km: km, free_kg: 5, per_kg_over: 6, min_fee: 80, max_weight_kg: max, sort_order: rank, active: 1, size_rank: rank, courier_names: '' }, extra || {});
 const BASE = () => [rate('bike', 'Bicycle', '\u{1F6B2}', 1, 40, 8, 5), rate('moto', 'Motorbike', '\u{1F6F5}', 2, 60, 12, 25), rate('car', 'Car', '\u{1F697}', 3, 150, 25, 150), rate('van', 'Van / pickup', '\u{1F690}', 4, 350, 45, 1000)];
 let RATES = BASE();
-const SET = { late_cancel_fee: 30, tier_on: 1, d1_km: 5, d1_fee: 100, d2_km: 10, d2_fee: 200, d3_km: 25, d3_fee: 300, beyond_per_km: 15, w1_kg: 5, w1_fee: 0, w2_kg: 10, w2_fee: 50, w3_kg: 20, w3_fee: 100, w4_kg: 50, w4_fee: 200, w_beyond_per_kg: 10, mult_bike: 1, mult_moto: 1, mult_car: 1.5, mult_van: 2.5 };
+let speedSaved = null;
+const SET = { express_on: 1, express_pct: 30, express_min: 20, booking_on: 1, late_cancel_fee: 30, tier_on: 1, d1_km: 5, d1_fee: 100, d2_km: 10, d2_fee: 200, d3_km: 25, d3_fee: 300, beyond_per_km: 15, w1_kg: 5, w1_fee: 0, w2_kg: 10, w2_fee: 50, w3_kg: 20, w3_fee: 100, w4_kg: 50, w4_fee: 200, w_beyond_per_kg: 10, mult_bike: 1, mult_moto: 1, mult_car: 1.5, mult_van: 2.5 };
 const cat = () => ({ classes: RATES.map(r => ({ class: r.vehicle_class, label: r.label, icon: r.icon, rank: r.size_rank, active: true, couriers: r.vehicle_class === 'moto' ? 6 : r.vehicle_class === 'car' ? 1 : 0, online: r.vehicle_class === 'moto' ? 2 : 0, max_weight_kg: r.max_weight_kg })), unmapped: [{ name: 'bajaj', couriers: 2, online: 0 }] });
 (async () => {
   await new Promise(r => srv.listen(0, r)); const HOST = 'http://127.0.0.1:' + srv.address().port;
@@ -24,6 +25,7 @@ const cat = () => ({ classes: RATES.map(r => ({ class: r.vehicle_class, label: r
       if (a === 'admin_get_my_capabilities') data = { capabilities: ['*'], role: 'admin' };
       else if (a === 'admin_package_rates_get') data = { rates: RATES, settings: SET, vehicles: cat() };
       else if (a === 'admin_package_type_add') { added = d; RATES = RATES.concat([rate('x1', d.label, d.icon, 2, d.base_fee, d.per_km, d.max_weight_kg, { courier_names: d.courier_names })]); data = { message: 'Added.', vehicle_class: 'x1', rates: RATES }; }
+      else if (a === 'admin_package_setting_save' && d.values) { speedSaved = d.values; data = { message: 'Prices saved.', settings: Object.assign({}, SET, d.values) }; }
       else if (a === 'admin_package_rates_save') { saved = d; data = { message: 'Saved.', rates: RATES }; }
       r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
     });
@@ -49,6 +51,10 @@ const cat = () => ({ classes: RATES.map(r => ({ class: r.vehicle_class, label: r
     t(mode.n + ': the Distance and weight tab shows a live example that moves when a band changes', /^\d+$/.test(eg0) && (await p.innerText('[data-tier-eg]')) !== eg0, eg0 + ' -> ' + await p.innerText('[data-tier-eg]'));
     await p.locator('.pkp-tabs [data-tab="rules"]').click(); await p.waitForTimeout(300);
     t(mode.n + ': the Rules tab has the late cancel fee', (await p.locator('form[data-setting="late_cancel_fee"]').count()) === 1);
+    t(mode.n + ': the Rules tab has the Express and booking-switch card with the saved values', (await p.locator('form[data-speed]').count()) === 1 && (await p.inputValue('form[data-speed] [name=express_pct]')) === '30' && (await p.isChecked('form[data-speed] [name=express_on]')) && (await p.isChecked('form[data-speed] [name=booking_on]')));
+    await p.fill('form[data-speed] [name=express_pct]', '40'); await p.uncheck('form[data-speed] [name=booking_on]');
+    await p.locator('form[data-speed] button[type=submit]').click(); await p.waitForTimeout(500);
+    t(mode.n + ': saving sends express on, 40 %, smallest extra 20 and booking paused (0)', speedSaved && speedSaved.express_on === 1 && String(speedSaved.express_pct) === '40' && String(speedSaved.express_min) === '20' && speedSaved.booking_on === 0, JSON.stringify(speedSaved));
     t(mode.n + ': no page errors', errs.length === 0, errs.join('|'));
     await ctx.close();
   }

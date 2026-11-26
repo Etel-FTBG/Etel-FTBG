@@ -122,7 +122,7 @@ function etel_package_ensure_schema($pdo) {
             'pickup_pin' => 'VARCHAR(6) NULL DEFAULT NULL', 'delivery_pin' => 'VARCHAR(6) NULL DEFAULT NULL',
             'sender_name' => "VARCHAR(120) NULL DEFAULT ''", 'sender_phone' => "VARCHAR(25) NULL DEFAULT ''",
             'pickup_lat' => 'DECIMAL(10,7) NULL DEFAULT NULL', 'pickup_lng' => 'DECIMAL(10,7) NULL DEFAULT NULL',
-            'recipient_address' => "VARCHAR(255) NULL DEFAULT ''",
+            'recipient_address' => "VARCHAR(255) NULL DEFAULT ''", 'pkg_speed' => "VARCHAR(10) NOT NULL DEFAULT 'standard'",
         );
         $add = array();
         foreach ($want as $name => $def) { if (empty($have[$name])) $add[] = 'ADD COLUMN `' . $name . '` ' . $def; }
@@ -253,6 +253,8 @@ function etel_package_details($in) {
 // Which vehicles can carry it, with price and time for each. $pickup/$drop are the raw inputs from the app.
 // Returns array('ok' => true, 'distance_km', 'eta_min', 'options' => [...], 'pickup' => point, 'drop' => point, 'details' => ...) or array('ok' => false, 'message').
 function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
+    require_once __DIR__ . '/package_speed.php';
+    if (!etel_package_booking_open($pdo)) return array('ok' => false, 'message' => 'Package booking is paused for a short while. Please try again later.');
     $p = etel_package_point($pickup_in, 'pickup');
     if (is_string($p)) return array('ok' => false, 'message' => $p);
     $d = etel_package_point($drop_in, 'drop-off');
@@ -286,7 +288,9 @@ function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
             'price' => etel_package_price($r, $km, $det['weight'], $tiers, $classes[$r['vehicle_class']]), 'max_weight_kg' => floatval($r['max_weight_kg']), 'rank' => intval($classes[$r['vehicle_class']]));
     }
     if (!$options) return array('ok' => false, 'message' => 'No vehicle can carry this package. Check the weight and size, or contact support.');
-    return array('ok' => true, 'distance_km' => $km, 'eta_min' => etel_package_eta_min($km), 'options' => $options, 'unavailable' => $unavailable, 'pickup' => $p, 'drop' => $d, 'details' => $det);
+    $eta = etel_package_eta_min($km);
+    $express = etel_package_quote_speed($pdo, $options, $eta);
+    return array('ok' => true, 'distance_km' => $km, 'eta_min' => $eta, 'express' => $express, 'options' => $options, 'unavailable' => $unavailable, 'pickup' => $p, 'drop' => $d, 'details' => $det);
 }
 
 function etel_package_pin() {
@@ -339,7 +343,10 @@ function etel_package_create($pdo, $user, $in) {
 
         // orders.package_type is an ENUM('document','parcel','food','bulk') on the live database, so only those words fit; the real size is in pkg_size.
         $code = 'ETP-' . strtoupper(bin2hex(random_bytes(3)));
-        $price = intval($chosen['price']);
+        $speed = etel_package_speed_clean(isset($in['speed']) ? $in['speed'] : '');
+        if ($speed === 'express' && empty($q['express']['on'])) $speed = 'standard';   // Express switched off: book it as Standard
+        $price = ($speed === 'express') ? intval($chosen['express_price']) : intval($chosen['price']);
+        if ($speed === 'express') $notes = trim('EXPRESS delivery - go straight to the recipient. ' . $notes);
         $pdo->beginTransaction();
         try {
             $pdo->prepare("INSERT INTO orders (order_code, customer_id, from_zone, to_zone, package_type, delivery_tier, recipient_name, recipient_phone, recipient_address, notes,
@@ -353,6 +360,7 @@ function etel_package_create($pdo, $user, $in) {
                     $class, $q['pickup']['address'], $q['details']['size'], $q['details']['weight'], $desc, $value, $q['distance_km'], etel_package_pin(), etel_package_pin(),
                     $sname, $sphone, $q['pickup']['lat'], $q['pickup']['lng']));
             $order_id = intval($pdo->lastInsertId());
+            $pdo->prepare('UPDATE orders SET pkg_speed = ? WHERE id = ?')->execute(array($speed, $order_id));
             $pdo->commit();
         } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 
@@ -361,7 +369,7 @@ function etel_package_create($pdo, $user, $in) {
             etel_dispatch_order($pdo, $order_id);
         }
         return array('ok' => true, 'order_id' => $order_id, 'order_code' => $code, 'status' => 'pending', 'total' => $price, 'delivery_fee' => $price,
-            'vehicle_class' => $class, 'distance_km' => $q['distance_km'], 'eta_min' => $q['eta_min'], 'payment_method' => $method, 'message' => 'Package booked.');
+            'vehicle_class' => $class, 'distance_km' => $q['distance_km'], 'eta_min' => $q['eta_min'], 'speed' => $speed, 'payment_method' => $method, 'message' => 'Package booked.');
     } catch (Exception $e) {
         error_log('[ETEL] package create: ' . $e->getMessage());
         return array('ok' => false, 'message' => 'Could not book the package. Please try again.');
@@ -491,7 +499,9 @@ function etel_package_setting_defaults() {
         'tier_on' => 1,   // 1 = price by distance band + weight band (below); 0 = each vehicle's own base + per km + per kg
         'd1_km' => 5, 'd1_fee' => 100, 'd2_km' => 10, 'd2_fee' => 200, 'd3_km' => 25, 'd3_fee' => 300, 'beyond_per_km' => 15,
         'w1_kg' => 5, 'w1_fee' => 0, 'w2_kg' => 10, 'w2_fee' => 50, 'w3_kg' => 20, 'w3_fee' => 100, 'w4_kg' => 50, 'w4_fee' => 200, 'w_beyond_per_kg' => 10,
-        'mult_bike' => 1, 'mult_moto' => 1, 'mult_car' => 1.5, 'mult_van' => 2.5);   // vehicle size multipliers on the distance fee
+        'mult_bike' => 1, 'mult_moto' => 1, 'mult_car' => 1.5, 'mult_van' => 2.5,
+        'express_on' => 1, 'express_pct' => 30, 'express_min' => 20,   // Express delivery: extra % on the fee, at least this many ETB (package_speed.php)
+        'booking_on' => 1);   // 0 = customers cannot book a package for now   // vehicle size multipliers on the distance fee
 }
 
 function etel_package_setting($pdo, $key) {
@@ -524,6 +534,8 @@ function etel_package_save_settings($pdo, $values) {
         if (!is_numeric($v) || floatval($v) < 0 || floatval($v) > 5000) return array('ok' => false, 'message' => 'Every number must be from 0 to 5000.');
         $cur[$k] = round(floatval($v), 2);
     }
+    foreach (array('express_on', 'booking_on') as $fk) { if ($cur[$fk] != 0 && $cur[$fk] != 1) return array('ok' => false, 'message' => 'On / off must be 0 or 1.'); }
+    if ($cur['express_pct'] > 200) return array('ok' => false, 'message' => 'The Express extra cannot be more than 200 %.');
     foreach (array('mult_bike', 'mult_moto', 'mult_car', 'mult_van') as $mk) { if ($cur[$mk] < 0.5 || $cur[$mk] > 10) return array('ok' => false, 'message' => 'A vehicle multiplier must be from 0.5 to 10.'); }
     if (!($cur['mult_bike'] <= $cur['mult_moto'] && $cur['mult_moto'] <= $cur['mult_car'] && $cur['mult_car'] <= $cur['mult_van'])) return array('ok' => false, 'message' => 'A bigger vehicle cannot have a lower multiplier than a smaller one.');
     if (!($cur['d1_km'] > 0 && $cur['d1_km'] < $cur['d2_km'] && $cur['d2_km'] < $cur['d3_km'])) return array('ok' => false, 'message' => 'The distance bands must grow: first less than second less than third.');
