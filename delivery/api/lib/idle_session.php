@@ -107,9 +107,19 @@ function etel_idle_row($pdo, $token) {
     return $r ? $r : null;
 }
 
+/* true when this request comes from the Ride apps (the rider and the ride driver), which have no idle timer: the app sends the header X-Etel-App: ride, and the live
+   streams (which cannot send a header) are recognised by their action. Ride use also counts as use, so it keeps the shared sign-in fresh for the Delivery apps. */
+function etel_idle_ride_request() {
+    $h = isset($_SERVER['HTTP_X_ETEL_APP']) ? strtolower(trim((string) $_SERVER['HTTP_X_ETEL_APP'])) : '';
+    if ($h === 'ride') return true;
+    $a = isset($_GET['action']) ? (string) $_GET['action'] : '';
+    return ($a === 'sse_ride_status' || $a === 'sse_driver_stream' || $a === 'driver_beacon_ping');
+}
+
 /* Called by get_auth_user for every authenticated request. true = the session ended because the person did not use the app. */
 function etel_idle_expired($pdo, $uid, $role, $token) {
     try {
+        if (etel_idle_ride_request()) return false;                              /* Ride has no idle timer */
         $limit = etel_idle_limit($pdo, $role);
         if ($limit <= 0) return false;
         etel_idle_ensure_column($pdo);

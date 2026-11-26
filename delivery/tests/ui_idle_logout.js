@@ -87,6 +87,23 @@ const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; if (u =
     t('19 the sign-in page clears a leftover last-use time', await p.evaluate(() => localStorage.getItem('etel_last_active') === null && localStorage.getItem('etel_last_active_tok') === null)); });
   await run({ lang: 'am' }, async (p) => { await adv(p, 4 * 60000 + 10000);
     t('17 the warning is in Amharic when the app is', /አሁንም እዚያ ነዎት/.test(await p.innerText('.eil-card')) && /ገብቼ ልቆይ/.test(await p.innerText('.eil-card')), await p.innerText('.eil-card').catch(() => '')); });
+  /* Ride pages have no timer: no warning, no sign-out, every request carries X-Etel-App: ride, use is reported at most every 5 minutes */
+  { EXTRA = 'window.ETEL_IDLE_RIDE = true;'; const ctx = await b.newContext({ serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { localStorage.setItem('etel_token', 'T'); localStorage.setItem('etel_user', JSON.stringify({ id: 1, role: 'customer' })); });
+    const p = await ctx.newPage(); const seen = []; const errs2 = []; p.on('pageerror', e => errs2.push(e.message));
+    await p.route(/boot\.php/, r => { let d = {}; try { d = JSON.parse(r.request().postData() || '{}'); } catch (e) {} seen.push({ app: r.request().headers()['x-etel-app'], active: d.active, action: d.action });
+      r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: { idle_minutes: 5, exempt: false, seconds_left: null } }) }); });
+    await p.clock.install(); await p.goto(HOST + '/t.html'); await adv(p, 300);
+    t('20 Ride page: the first use report goes out with the Ride header', seen.length >= 1 && seen[0].app === 'ride' && seen[0].active === true, JSON.stringify(seen));
+    await adv(p, 30 * 60000);
+    t('20 Ride page: 30 minutes without use (limit 5): no warning and no sign-out', (await warn(p)) === 0 && (await out(p)) === 0, 'warn=' + (await warn(p)) + ' out=' + (await out(p)));
+    const n0 = seen.length; await p.click('#b'); await adv(p, 1000);
+    t('20 Ride page: a tap after the 5-minute pause reports use again', seen.length > n0 && seen[seen.length - 1].active === true, JSON.stringify(seen.slice(-2)));
+    const n1 = seen.length; for (let i = 0; i < 6; i++) { await p.click('#b'); await adv(p, 1000); }
+    t('20 Ride page: many taps do not flood the server', seen.length === n1, seen.length - n1);
+    await p.evaluate(() => fetch('/api/boot.php', { method: 'POST', body: '{"action":"x"}' }).catch(() => {})); await p.waitForTimeout(100);
+    t('20 Ride page: any request to its own server carries X-Etel-App: ride', seen.some(x => x.action === 'x' && x.app === 'ride'), JSON.stringify(seen.slice(-2)));
+    t('20 Ride page: no page errors', errs2.length === 0, errs2.join('|')); await ctx.close(); EXTRA = ''; }
   // the sign-in page says why
   { const ctx = await b.newContext({ serviceWorkers: 'block' }); const p = await ctx.newPage();
     await p.goto(HOST + '/login.html'); await p.evaluate(() => sessionStorage.setItem('etel_logout_reason', 'idle')); await p.reload(); await p.waitForTimeout(200);
