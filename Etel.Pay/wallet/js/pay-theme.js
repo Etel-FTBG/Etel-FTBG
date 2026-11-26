@@ -1,7 +1,7 @@
 /**
  * ኢE Pay - theme and text-size controls (light / dark, three text sizes).
  * Loaded in <head> of every page (no defer) so the saved choice is applied before first paint.
- * The choice is kept per device in localStorage; the default is the existing dark gold look.
+ * The choice is kept per device in localStorage; the default (nothing chosen yet) is LIGHT. A saved choice of dark is kept.
  * Nothing here touches money logic, login or the API.
  */
 (function () {
@@ -12,7 +12,7 @@
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function put(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
 
-  var theme = get(KEY_T) === 'light' ? 'light' : 'dark';
+  var theme = get(KEY_T) === 'dark' ? 'dark' : 'light';
   var sizes = ['md', 'lg', 'xl'];
   var size = sizes.indexOf(get(KEY_S)) >= 0 ? get(KEY_S) : 'md';
 
@@ -99,7 +99,7 @@
 
   // other tabs / windows keep in step
   window.addEventListener('storage', function (e) {
-    if (e.key === KEY_T) { theme = e.newValue === 'light' ? 'light' : 'dark'; apply(); }
+    if (e.key === KEY_T) { theme = e.newValue === 'dark' ? 'dark' : 'light'; apply(); }
     if (e.key === KEY_S && sizes.indexOf(e.newValue) >= 0) { size = e.newValue; apply(); }
   });
   window.EtelPayTheme = { get: function () { return theme; }, set: function (v) { theme = v === 'light' ? 'light' : 'dark'; put(KEY_T, theme); apply(); } };

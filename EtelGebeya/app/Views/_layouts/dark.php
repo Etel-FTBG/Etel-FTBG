@@ -31,7 +31,7 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
   <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
   <!-- Light theme (only active under html[data-theme="light"]) + the switch; loaded sync so the saved theme applies before first paint -->
   <link rel="stylesheet" href="<?= View::asset('css/etel-theme-light.css') ?>?v=1.0">
-  <script src="<?= View::asset('js/etel-theme.js') ?>?v=1.0"></script>
+  <script src="<?= View::asset('js/etel-theme.js') ?>?v=1.1"></script>
   <!-- Display size controller: the panels have a "Display size" row in the sidebar, so no floating button -->
   <script>window.ETEL_DISPLAY_USER = <?= json_encode((string)($user['id'] ?? '')) ?>;</script>
   <?php if (!empty($user['id'])): ?>

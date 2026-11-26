@@ -9,7 +9,7 @@
   var SIZES = ['md', 'lg', 'xl'];
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function put(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
-  function theme() { return get(KEY_T) === 'light' ? 'light' : 'dark'; }
+  function theme() { return get(KEY_T) === 'dark' ? 'dark' : 'light'; }   // light until a driver or officer picks dark
   function size() { var s = get(KEY_S); return SIZES.indexOf(s) >= 0 ? s : 'md'; }
 
   root.setAttribute('data-textsize', size());                       // before first paint

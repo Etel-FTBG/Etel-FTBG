@@ -93,7 +93,7 @@ function etelaiClearAdminKey() {
 // their own choice, not a reset to dark every visit.
 const ETELAI_THEME_STORAGE = 'etelai_theme';
 function etelaiGetTheme() {
-  try { return localStorage.getItem(ETELAI_THEME_STORAGE) || 'dark'; } catch { return 'dark'; }
+  try { return localStorage.getItem(ETELAI_THEME_STORAGE) === 'dark' ? 'dark' : 'light'; } catch { return 'light'; }   // light until a member picks dark
 }
 function etelaiApplyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
