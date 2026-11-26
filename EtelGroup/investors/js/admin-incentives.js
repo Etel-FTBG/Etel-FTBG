@@ -33,6 +33,7 @@ var FIELDS = {
   new_riders:        { kind: 'vol', label: 'Other new riders (not through agents)', def: 0, per: 'month', hint: 'Customers who find the app on their own and also get the discount' },
   promo_discount:    { kind: 'amt', label: 'New-rider discount', def: 20, unit: 'pct', trips: 'promo_rides', hint: 'Your plan: a % off the completed trip. The driver still gets the full fare; the company pays the discount to the driver' },
   promo_rides:       { kind: 'num', label: 'Discounted rides per new rider', def: 1, hint: 'How many first rides get the discount' },
+  promo_cap:         { kind: 'num', label: 'Most the company pays per discounted ride (ETB, 0 = no limit)', def: 0, hint: 'Stops the % discount from growing on a long, expensive trip. Example: 10 % off, at most ETB 30' },
   avg_fare:          { kind: 'num', label: 'Average fare (ETB)', def: 150, hint: 'Used when an amount is given as a % of fares' },
   settle:            { kind: 'sel', label: 'Company pays drivers the discount every', def: 'week', hint: 'How often drivers collect the discounts from the company' }
 };
@@ -41,7 +42,7 @@ var GROUPS = [
   ['Marketing agents at busy places', ['agents', 'agent_trips', 'completion_pct', 'agent_per_trip', 'agent_base', 'other_marketing', 'agent_per_driver', 'driver_qual_trips', 'drivers_per_agent']],
   ['Driver bonuses', ['drivers_active', 'work_days', 't1_trips', 't1_bonus', 't1_share', 't2_trips', 't2_bonus', 't2_share', 't3_trips', 't3_bonus', 't3_share']],
   ['Driver referrals', ['ref_reward', 'ref_per_month']],
-  ['New-rider discount (paid by the company to the driver)', ['promo_discount', 'promo_rides', 'avg_fare', 'settle', 'new_riders']]
+  ['New-rider discount (paid by the company to the driver)', ['promo_discount', 'promo_rides', 'promo_cap', 'avg_fare', 'settle', 'new_riders']]
 ];
 var BUDGET = {};                 // launch budget lines from the Launch period page
 function $(id) { return document.getElementById(id); }
@@ -101,6 +102,7 @@ function calc(s) {
   var refs = perMonth(v.ref_per_month, s.p.ref_per_month), refUnit = amount(s, 'ref_reward');
   var refMonthly = refUnit * refs;
   var otherRiders = perMonth(v.new_riders, s.p.new_riders), discountPerRider = amount(s, 'promo_discount');
+  if (v.promo_cap > 0) discountPerRider = Math.min(discountPerRider, v.promo_cap * Math.max(1, v.promo_rides));   // optional ceiling per discounted ride
   var newUsers = completed + otherRiders;                                               // new riders who get the discount
   var promoMonthly = newUsers * discountPerRider;                                       // the company pays this to the drivers
   var total = marketingMonthly + driverBonusMonthly + refMonthly + promoMonthly;
@@ -212,6 +214,9 @@ async function loadBudget() {
     }
   } catch (e) { /* the planner still works without the budget lines */ }
 }
+// Used by the "Fit my budget" box (admin-incentives-fit.js) and by tests: the same calculation and starting numbers.
+window.irIncentiveCalc = calc;
+window.irIncentiveDefaults = defaults;
 // Used by the Growth planner: the plan's spend per month and over the whole plan (works even if this page was never opened).
 window.irIncentivePlan = function () {
   var host = $('ip-fields'), s = (host && host.getAttribute('data-built')) ? read() : load(), c = calc(s);
