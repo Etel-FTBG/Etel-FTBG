@@ -334,6 +334,8 @@
             if (S !== mine) return;
             if (!res || !res.success) { S.busy = false; S.err = (res && res.message) || T('pkg_load_fail'); render(); return; }
             S.done = res.data;
+            S.done.wb = { from: S.pickup.address.trim(), to: S.drop.address.trim(), vehicle: c.label, vclass: c.vehicle_class, icon: c.icon, size: T('pkg_size_' + S.size), weight: S.weight, desc: S.desc.trim(),
+                km: S.quote ? S.quote.distance_km : '', eta: S.quote ? S.quote.eta_min : '', pay: S.payment, recipient: S.recipient_name.trim() };
             var pm = S.payment, oid = res.data.order_id, tot = res.data.total;
             if (pm === 'telebirr') {
                 S.done.pay_note = T('pkg_done_tb');
@@ -505,7 +507,8 @@
         var d = S.done;
         return '<div class="pkg-done"><div class="pkg-done-ico" aria-hidden="true">✓</div><h2 class="pkg-done-t">' + esc(T('pkg_done_title')) + '</h2>' +
             '<p class="pkg-done-s">' + esc(T('pkg_done_sub')) + '</p>' + (d.pay_note ? '<p class="pkg-done-s pkg-done-pay">' + esc(d.pay_note) + '</p>' : '') +
-            '<div class="pkg-code">' + esc(d.order_code) + '</div><div class="pkg-total pkg-done-total"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(d.total) + '</span></div></div>' +
+            (window.PkgWaybill && d.wb ? '</div>' + window.PkgWaybill.html(d.wb, d.order_code, d.total) :
+            '<div class="pkg-code">' + esc(d.order_code) + '</div><div class="pkg-total pkg-done-total"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(d.total) + '</span></div></div>') +
             '<section class="pkg-card pkg-next"><h3 class="pkg-h">' + esc(T('pkg_done_next_t')) + '</h3><ol class="pkg-next-l"><li>' + esc(T('pkg_done_next1')) + '</li><li>' + esc(T('pkg_done_next2')) + '</li><li>' + esc(T('pkg_done_next3')) + '</li></ol></section>';
     }
 
@@ -553,6 +556,7 @@
             '<div id="pkg-scroll" class="pkg-scroll">' + body + '</div><div class="pkg-foot">' + foot + '</div>';
         var sc = v0.querySelector('#pkg-scroll'); if (sc) sc.scrollTop = scroll;
         bindPlaces();
+        if (S.done && window.PkgWaybill) { try { window.PkgWaybill.mount(v0, S.done.order_code); } catch (e) {} }
         if (S.errField) {
             var bad = document.getElementById(S.errField);
             if (bad) { bad.classList.add('pkg-bad'); try { bad.scrollIntoView({ block: 'center' }); if (bad.focus && bad.tagName !== 'DIV' && bad.tagName !== 'LABEL') bad.focus({ preventScroll: true }); } catch (e) {} }

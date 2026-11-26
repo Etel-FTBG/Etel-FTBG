@@ -1819,3 +1819,38 @@ body.dark-theme .pkg-badge { color: #4ADE80; }
 .pkg-acct b { font-size: 18px; letter-spacing: .5px; }
 .pkg-done-pay { font-weight: 700; }
 body:not(.dark-theme) .pkg-veh.off .pkg-veh-sub { color: #92400E; }
+
+/* Send a package: the premium waybill on the booking confirmation (Etel navy + gold) */
+.pkgw { margin: 4px 0 14px; border-radius: 20px; overflow: hidden; border: 1.5px solid #0B1530; background: #fff; color: #0B1530; text-align: left; box-shadow: 0 10px 30px rgba(11,21,48,.18); }
+.pkgw-top { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; background-color: #0B1530; background-image: linear-gradient(135deg, #0B1530, #14275A); color: #D4AF37; font-weight: 800; letter-spacing: .1em; font-size: 12px; }
+.pkgw-tag { color: #fff; font-weight: 600; letter-spacing: .04em; opacity: .85; }
+.pkgw-id { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1.5px dashed #C9A93A; }
+.pkgw-k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; font-weight: 700; }
+.pkgw-code { font-size: 22px; font-weight: 800; letter-spacing: 1px; color: #0B1530; word-break: break-all; }
+.pkgw-qr { width: 84px; height: 84px; flex-shrink: 0; background: #fff; }
+.pkgw-qr img, .pkgw-qr canvas { width: 84px !important; height: 84px !important; }
+.pkgw-body { padding: 12px 16px; }
+.pkgw-route { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+.pkgw-pt { display: flex; gap: 10px; align-items: flex-start; }
+.pkgw-d { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; background: #D4AF37; color: #0B1530; }
+.pkgw-d.b { background: #0B1530; color: #D4AF37; }
+.pkgw-addr { font-size: 14px; font-weight: 600; color: #0B1530; overflow-wrap: anywhere; }
+.pkgw-veh { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #E6E8EE; border-bottom: 1px solid #E6E8EE; margin-bottom: 4px; }
+.pkgw-vp { width: 56px; height: 42px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.pkgw-vp img { max-width: 56px; max-height: 42px; object-fit: contain; }
+.pkgw-vn { font-size: 15px; font-weight: 800; }
+.pkgw-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid #F0F1F5; }
+.pkgw-v { font-weight: 700; text-align: right; overflow-wrap: anywhere; color: #0B1530; }
+.pkgw-total { display: flex; justify-content: space-between; margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: #FFF1C2; font-size: 19px; font-weight: 800; color: #0B1530; }
+.pkgw-sec { padding: 4px 16px 6px; }
+.pkgw-h { margin: 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #5B6478; }
+.pkgw-tl { list-style: none; margin: 0; padding: 0; }
+.pkgw-st { position: relative; display: flex; align-items: center; gap: 12px; padding: 7px 0; font-size: 13px; color: #5B6478; }
+.pkgw-st:not(:last-child)::after { content: ''; position: absolute; left: 10px; top: 28px; width: 2px; height: 14px; background: #D9DCE5; }
+.pkgw-st.done { color: #0B1530; font-weight: 700; }
+.pkgw-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #C5C9D6; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; background: #fff; }
+.pkgw-st.done .pkgw-dot { background: #15803D; border-color: #15803D; color: #fff; }
+.pkgw-btns { display: flex; gap: 8px; padding: 8px 16px 4px; }
+.pkgw-b { flex: 1; min-height: 44px; border-radius: 12px; border: 1.5px solid #0B1530; background: #fff; color: #0B1530; font-weight: 700; font-size: 13px; cursor: pointer; }
+.pkgw-b:active { background: #FFF1C2; }
+.pkgw-note { margin: 8px 16px 14px; font-size: 12px; color: #5B6478; }
