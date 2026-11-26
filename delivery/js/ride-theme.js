@@ -2,9 +2,9 @@
 
    The rider app was dark only, which is hard to read in strong daylight. This sets
    <html data-etel-theme="light|dark"> (css/ride-light.css does the rest), remembers the rider's choice on this
-   device (localStorage key etel_ride_theme), follows the phone's own light/dark setting until the rider picks one,
+   device (localStorage key etel_ride_theme), starts LIGHT until the rider picks dark,
    adds a sun/moon button to the header, and switches the Google map between its dark and light styles
-   (EtelUI.mapStyles). Fails quietly: with no storage it just follows the phone setting. */
+   (EtelUI.mapStyles). Fails quietly: with no storage it just stays light. */
 (function () {
     'use strict';
     if (window.__etelRideTheme) return;
@@ -15,7 +15,7 @@
 
     function stored() { try { var v = localStorage.getItem(KEY); return (v === 'light' || v === 'dark') ? v : null; } catch (e) { return null; } }
     function systemLight() { try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches); } catch (e) { return false; } }
-    function current() { return stored() || (systemLight() ? 'light' : 'dark'); }
+    function current() { return stored() || 'light'; }   // light until the rider picks dark (the phone's own setting no longer decides)
 
     function applyMeta(t) {
         var m = document.querySelector('meta[name="theme-color"]');

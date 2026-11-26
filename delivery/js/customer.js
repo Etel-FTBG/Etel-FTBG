@@ -27,11 +27,11 @@ if (user) document.getElementById('current-location').textContent = user.name ||
 // Customer app is dark by default; the saved light/dark choice (set by the
 // floating toggle in core.js) always wins. Applied here first so there is no
 // flash, core.js then keeps the toggle icon in step with the same value.
-window.ETEL_THEME_DEFAULT = 'dark';
+window.ETEL_THEME_DEFAULT = 'light';   // light unless the person chose dark (the floating toggle in core.js remembers the choice)
 (function () {
     var t = null;
     try { t = localStorage.getItem('theme'); } catch (e) {}
-    document.body.classList.toggle('dark-theme', t !== 'light');
+    document.body.classList.toggle('dark-theme', t === 'dark');
 })();
 
 // Keep the sticky search bar directly under the header whatever the header's
