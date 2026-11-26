@@ -1,8 +1,8 @@
-/* Etel Group master page - light / dark toggle. Dark (the original gold look) is the default; the choice is remembered
+/* Etel Group master page - light / dark toggle. Light is the default (the original dark gold look stays one tap away); the choice is remembered
    and shared (localStorage 'theme') with the Delivery, Madeya and investor admin screens. */
 (function () {
   'use strict';
-  function read() { var t = null; try { t = localStorage.getItem('theme'); } catch (e) {} return t === 'light' ? 'light' : 'dark'; }
+  function read() { var t = null; try { t = localStorage.getItem('theme'); } catch (e) {} return t === 'dark' ? 'dark' : 'light'; }
   function paint(t) {
     document.documentElement.setAttribute('data-theme', t);
     if (document.body) document.body.classList.toggle('dark-theme', t === 'dark');

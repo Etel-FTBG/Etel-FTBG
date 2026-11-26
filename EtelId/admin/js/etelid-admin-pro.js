@@ -4,7 +4,7 @@
   var root = document.documentElement;
   function read() {
     var t = null; try { t = localStorage.getItem('theme'); } catch (e) { /* none */ }
-    if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    if (t !== 'dark' && t !== 'light') t = 'light'   /* light until someone picks dark (the phone's own setting no longer decides) */;
     return t;
   }
   function paint(t) {

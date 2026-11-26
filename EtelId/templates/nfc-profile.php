@@ -559,7 +559,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
   .nfc-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 <link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-theme.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-theme.css' ) ); ?>">
-<script src="<?php echo esc_url( ETELID_URL . 'public/js/etelid-theme.js?v=' . (int) @filemtime( ETELID_PATH . 'public/js/etelid-theme.js' ) ); ?>" data-default="dark"></script>
+<script src="<?php echo esc_url( ETELID_URL . 'public/js/etelid-theme.js?v=' . (int) @filemtime( ETELID_PATH . 'public/js/etelid-theme.js' ) ); ?>" data-default="light"></script>
 </head>
 <body class="eid-nfc">
   <div class="brand-hero">

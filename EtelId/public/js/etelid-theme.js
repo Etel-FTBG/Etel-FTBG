@@ -3,13 +3,13 @@
  * Used on the NFC card page and the sign-in page. Loaded in <head> (no defer) so the saved choice is applied before first paint.
  * The theme is stored in localStorage 'theme' - the SAME key the EtelID portal and admin console, the Delivery admin and the
  * Group admins already use - so one choice follows the person across the systems. Text size is stored in 'etel_textsize'.
- * data-default="light|dark" on the script tag is the look used when nothing is saved yet.
+ * data-default="light|dark" on the script tag is the look used when nothing is saved yet (light when the tag has none).
  */
 (function () {
   'use strict';
   var root = document.documentElement;
   var cs = document.currentScript;
-  var def = (cs && cs.getAttribute('data-default') === 'light') ? 'light' : 'dark';
+  var def = (cs && cs.getAttribute('data-default') === 'dark') ? 'dark' : 'light';   // light unless a page asks for dark
   var KEY_T = 'theme', KEY_S = 'etel_textsize';
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function put(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
