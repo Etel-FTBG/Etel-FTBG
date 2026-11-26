@@ -142,7 +142,7 @@ function paint() {
   $('pt-main').innerHTML = sCover() + sProblem() + sProduct() + sTraction() + sEarn() + sRaise() + sLaunch() + sScen() + sFunds() + sGroup() + sSafe() + sWind() + sLimits() + sNext();
 }
 function setTheme(m) { document.documentElement.setAttribute('data-theme', m); try { localStorage.setItem('theme', m); } catch (er) { /* not saved */ } }
-(function () { var m = 'dark'; try { m = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'; } catch (er) { /* keep dark */ } document.documentElement.setAttribute('data-theme', m); })();
+(function () { var m = 'light'; try { m = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'; } catch (er) { /* keep light */ } document.documentElement.setAttribute('data-theme', m); })();
 $('pt-theme').addEventListener('click', function () { setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
 $('pt-print').addEventListener('click', function () { window.print(); });
 Array.prototype.forEach.call(document.querySelectorAll('.pt-lang button'), function (b) { b.addEventListener('click', function () { lang = b.getAttribute('data-lang'); try { localStorage.setItem('etel_deal_lang', lang); } catch (er) { /* not saved */ } paint(); }); });

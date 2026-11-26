@@ -157,7 +157,7 @@ function etelid_admin_assets( $hook ) {
         'etelid-admin-pro',
         ETELID_URL . 'admin/js/etelid-admin-pro.js',
         array(),
-        ETELID_VERSION,
+        ETELID_VERSION . '-' . (int) @filemtime( ETELID_PATH . 'admin/js/etelid-admin-pro.js' ),
         false
     );
     wp_enqueue_script(

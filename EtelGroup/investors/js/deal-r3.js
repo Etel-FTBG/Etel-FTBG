@@ -129,7 +129,7 @@ function showDone() {
 
 /* ---- light / dark (shared 'theme' key with the other Etel pages) ---- */
 function setTheme(m) { document.documentElement.setAttribute('data-theme', m); try { localStorage.setItem('theme', m); } catch (e) { /* not saved */ } }
-(function () { var m = 'dark'; try { m = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'; } catch (e) { /* keep dark */ } document.documentElement.setAttribute('data-theme', m); })();
+(function () { var m = 'light'; try { m = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'; } catch (e) { /* keep light */ } document.documentElement.setAttribute('data-theme', m); })();
 $('dl-theme').addEventListener('click', function () { setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
 
 resetPad(); paint();

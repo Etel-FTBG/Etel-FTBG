@@ -45,7 +45,7 @@ $asset = function ( $rel ) { return esc_url( ETELID_URL . $rel . '?v=' . (int) @
 <link rel="stylesheet" href="<?php echo $asset( 'public/css/etelid-fonts.css' ); ?>">
 <link rel="stylesheet" href="<?php echo $asset( 'public/css/etelid-console.css' ); ?>">
 <script>window.EtelIDConsole=<?php echo wp_json_encode( $cfg ); ?>;
-(function(){var t=null;try{t=localStorage.getItem('theme');}catch(e){}if(t!=='dark'&&t!=='light')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-eid-theme',t);})();</script>
+(function(){var t=null;try{t=localStorage.getItem('theme');}catch(e){}if(t!=='dark'&&t!=='light')t='light';document.documentElement.setAttribute('data-eid-theme',t);})();</script>
 </head>
 <body>
 <div class="ec-shell">

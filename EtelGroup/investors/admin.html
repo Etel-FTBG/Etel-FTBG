@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/ir-pro.css?v=3">
 <script>/* theme before first paint: same key as the Delivery admin */
-try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',function(){document.body.classList.toggle('dark-theme',t==='dark')})}catch(e){}
+try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t='light';document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',function(){document.body.classList.toggle('dark-theme',t==='dark')})}catch(e){}
 </script>
 </head>
 <body>
@@ -440,6 +440,6 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 <script src="js/admin-incentives.js?v=6"></script>
 <script src="js/admin-incentives-fit.js?v=1"></script>
 <script src="js/admin-growth-link.js?v=1"></script>
-<script src="js/ir-shell.js?v=3"></script>
+<script src="js/ir-shell.js?v=4"></script>
 </body>
 </html>
