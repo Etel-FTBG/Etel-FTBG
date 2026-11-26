@@ -1609,6 +1609,7 @@ function applySavedPlace(a) {
     var la = parseFloat(a.lat), ln = parseFloat(a.lng);
     _deliveryLat = isNaN(la) ? null : la;
     _deliveryLng = isNaN(ln) ? null : ln;
+    _deliveryAddr = _addrWithCode(_deliveryAddr, _deliveryLat, _deliveryLng);
     if (a.zone) selectedZone = a.zone;
     else if (_deliveryLat !== null && _deliveryLng !== null) selectedZone = getNearestHawassaZone(_deliveryLat, _deliveryLng);
 }
@@ -1622,16 +1623,23 @@ function useSavedPlace(id) {
     renderCartDrawer();
     setTimeout(function() { var inp = document.getElementById('co-address'); if (inp) inp.value = _deliveryAddr; }, 10);
 }
+// The same place, with or without the plus code (js/etel-plus-code.js), counts as the same saved address.
+function _addrSame(a, b) {
+    var x = (a || '').trim().toLowerCase(), y = (b || '').trim().toLowerCase();
+    if (!x || !y) return false;
+    if (x === y) return true;
+    try { return !!(window.EtelPlusCode && window.EtelPlusCode.same(x, y)); } catch (e) { return false; }
+}
 function _addrKnown(text) {
     var t = (text || '').trim().toLowerCase();
-    return !!t && _savedPlaces.some(function(a) { return (a.address_line || '').trim().toLowerCase() === t; });
+    return !!t && _savedPlaces.some(function(a) { return _addrSame(a.address_line, t); });
 }
 function savedPlacesRow() {
     if (!_savedPlaces.length) return '';
     var cur = (_deliveryAddr || '').trim().toLowerCase();
     return '<div class="sp-title">' + escapeHtml(ETEL_I18N.t('saved_places')) + '</div><div class="sp-row">' +
         _savedPlaces.slice(0, 6).map(function(a) {
-            var on = cur && (a.address_line || '').trim().toLowerCase() === cur;
+            var on = cur && _addrSame(a.address_line, cur);
             return '<button type="button" class="sp-chip' + (on ? ' on' : '') + '"' + _ea('useSavedPlace', [Number(a.id)]) + '>' +
                 (a.is_default ? '🏠 ' : '📍 ') + escapeHtml(a.label || a.address_line) + '</button>';
         }).join('') + '</div>';
@@ -1910,8 +1918,9 @@ function initDeliveryAutocomplete() {
         if (!place || !place.geometry) return;
         _deliveryLat  = place.geometry.location.lat();
         _deliveryLng  = place.geometry.location.lng();
-        _deliveryAddr = place.formatted_address || place.name || input.value;
+        _deliveryAddr = _addrWithCode(place.name || place.formatted_address || input.value, _deliveryLat, _deliveryLng);
         selectedZone  = getNearestHawassaZone(_deliveryLat, _deliveryLng);
+        input.value = _deliveryAddr;   // Google has put its own text in the box; renderCartDrawer keeps what is typed there, so the name + code must be there first
         renderCartDrawer();
         // Re-fill the input after re-render
         setTimeout(function() {
@@ -2076,6 +2085,12 @@ function changeQty(idx, delta) {
 
 // Stores GPS coords captured via the 📍 button — sent with the order
 let _deliveryLat = null, _deliveryLng = null;
+// The address text for a map point as a name plus a plus code, like the Ride system and the courier app: "Piassa, 2FQM+RHF, Hawassa, Ethiopia"
+// (js/etel-plus-code.js). Without that file, or without a point, the text stays exactly as it was.
+function _addrWithCode(text, lat, lng) {
+    try { if (window.EtelPlusCode && lat !== null && lng !== null && lat !== undefined && lng !== undefined) return window.EtelPlusCode.withCode(text, lat, lng); } catch (e) {}
+    return text;
+}
 
 async function getMyLocation() {
     const btn   = document.getElementById('gps-btn');
@@ -2105,10 +2120,10 @@ async function getMyLocation() {
                     a.suburb || a.neighbourhood || a.quarter,
                     a.city || a.town || a.village || a.county
                 ].filter(Boolean);
-                _deliveryAddr = parts.join(', ') || data.display_name || (lat.toFixed(5) + ', ' + lon.toFixed(5));
+                _deliveryAddr = _addrWithCode(parts.join(', ') || data.display_name || (lat.toFixed(5) + ', ' + lon.toFixed(5)), lat, lon);
                 input.value = _deliveryAddr;
             } catch (_) {
-                _deliveryAddr = lat.toFixed(5) + ', ' + lon.toFixed(5);
+                _deliveryAddr = _addrWithCode(lat.toFixed(5) + ', ' + lon.toFixed(5), lat, lon);
                 input.value = _deliveryAddr;
             }
             btn.textContent = '✓';
