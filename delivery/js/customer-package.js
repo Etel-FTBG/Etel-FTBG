@@ -43,6 +43,13 @@
             pkg_w_less: 'Less weight', pkg_w_more: 'More weight',
             pkg_pins_title: 'Safe hand-over with PINs', pkg_pins_note: 'After booking you get two 4-digit PINs. The courier needs the pickup PIN to collect the package and the recipient\'s delivery PIN to hand it over.',
             pkg_best_price: 'Best price',
+            pkg_veh_size: 'Too small for this package', pkg_veh_weight: 'Max {kg} kg - too light for this package',
+            pkg_pay_tb: 'Telebirr', pkg_pay_tb_sub: 'Pay from your Telebirr (dial *150#)', pkg_pay_wallet_soon: 'Coming soon',
+            pkg_pay_aby: 'Abyssinia Bank', pkg_pay_aby_sub: 'Bank transfer, we check your reference', pkg_pay_cbe: 'Commercial Bank of Ethiopia', pkg_pay_cbe_sub: 'Bank transfer, we check your reference',
+            pkg_pay_na: 'Not available yet', pkg_tb_phone: 'Your Telebirr number', pkg_tb_note: 'After you book, dial *150# and pay. We confirm your payment.',
+            pkg_bank_send: 'Send the money to this account, then type the reference number:', pkg_bank_acct: 'Account', pkg_bank_ref: 'Transfer reference number', pkg_bank_note: 'We check the payment within 1-2 hours.',
+            pkg_err_tb: 'Enter your Telebirr phone number.', pkg_err_ref: 'Enter the reference number of your bank transfer.',
+            pkg_done_tb: 'Dial *150# and pay with Telebirr. We confirm your payment.', pkg_done_bank: 'We will check your bank transfer within 1-2 hours.',
             pkg_done_next_t: 'What happens next', pkg_done_next1: 'A nearby courier accepts your package.', pkg_done_next2: 'Give the pickup PIN to the courier when they arrive.', pkg_done_next3: 'Give the delivery PIN to the recipient to confirm the hand-over.'
         },
         am: {
@@ -82,6 +89,13 @@
             pkg_w_less: 'ክብደት ቀንስ', pkg_w_more: 'ክብደት ጨምር',
             pkg_pins_title: 'በፒን የተጠበቀ ርክክብ', pkg_pins_note: 'ከተያዘ በኋላ ሁለት ባለ 4 አሃዝ ፒኖች ያገኛሉ። ሹፌሩ ጥቅሉን ለመውሰድ የመረከቢያ ፒን፣ ለማስረከብ ደግሞ የተቀባዩን የማስረከቢያ ፒን ይፈልጋል።',
             pkg_best_price: 'ርካሽ',
+            pkg_veh_size: 'ለዚህ ጥቅል በጣም ትንሽ ነው', pkg_veh_weight: 'እስከ {kg} ኪ.ግ ብቻ - ለዚህ ጥቅል ቀላል ነው',
+            pkg_pay_tb: 'ቴሌብር', pkg_pay_tb_sub: 'ከቴሌብር ይክፈሉ (*150# ይደውሉ)', pkg_pay_wallet_soon: 'በቅርቡ',
+            pkg_pay_aby: 'አቢሲንያ ባንክ', pkg_pay_aby_sub: 'የባንክ ዝውውር፣ ማረጋገጫ ቁጥርዎን እናያለን', pkg_pay_cbe: 'የኢትዮጵያ ንግድ ባንክ', pkg_pay_cbe_sub: 'የባንክ ዝውውር፣ ማረጋገጫ ቁጥርዎን እናያለን',
+            pkg_pay_na: 'ገና አልተዘጋጀም', pkg_tb_phone: 'የቴሌብር ስልክ ቁጥርዎ', pkg_tb_note: 'ካስያዙ በኋላ *150# ደውለው ይክፈሉ። ክፍያዎን እናረጋግጣለን።',
+            pkg_bank_send: 'ገንዘቡን ወደዚህ አካውንት ይላኩ፣ ከዚያ የማረጋገጫ ቁጥሩን ይጻፉ:', pkg_bank_acct: 'አካውንት', pkg_bank_ref: 'የዝውውር ማረጋገጫ ቁጥር', pkg_bank_note: 'ክፍያውን በ1-2 ሰዓት ውስጥ እናረጋግጣለን።',
+            pkg_err_tb: 'የቴሌብር ስልክ ቁጥርዎን ያስገቡ።', pkg_err_ref: 'የባንክ ዝውውርዎን የማረጋገጫ ቁጥር ያስገቡ።',
+            pkg_done_tb: '*150# ደውለው በቴሌብር ይክፈሉ። ክፍያዎን እናረጋግጣለን።', pkg_done_bank: 'የባንክ ዝውውርዎን በ1-2 ሰዓት ውስጥ እናረጋግጣለን።',
             pkg_done_next_t: 'ቀጥሎ ምን ይሆናል', pkg_done_next1: 'አቅራቢያ ያለ ሹፌር ጥቅልዎን ይቀበላል።', pkg_done_next2: 'ሹፌሩ ሲመጣ የመረከቢያ ፒኑን ይስጡት።', pkg_done_next3: 'ርክክቡን ለማረጋገጥ የማስረከቢያ ፒኑን ለተቀባዩ ይስጡ።'
         }
     });
@@ -98,7 +112,7 @@
     function fresh() {
         var u = {}; try { u = Auth.getUser() || {}; } catch (e) {}
         return { step: 1, pickup: side(), drop: side(), sender_name: u.name || '', sender_phone: u.phone || '', recipient_name: '', recipient_phone: '',
-            size: '', weight: '', desc: '', value: '', notes: '', ack: false, vehicle: '', quote: null, payment: 'cash', busy: false, err: '', opts: null, done: null, loadFail: false };
+            size: '', weight: '', desc: '', value: '', notes: '', ack: false, vehicle: '', quote: null, payment: 'cash', tb_phone: '', bank_ref: '', banks: null, busy: false, err: '', opts: null, done: null, loadFail: false };
     }
     function a(name, args, o) { return EtelActions.attrs(name, args, o); }
     function validPhone(p) { var d = String(p || '').replace(/[^0-9]/g, ''); return /^(251)?0?[79]\d{8}$/.test(d); }
@@ -307,6 +321,8 @@
         if (!S || S.busy) return;
         var c = chosen();
         if (!c) { S.err = T('pkg_err_vehicle'); render(); return; }
+        if (S.payment === 'telebirr' && String(S.tb_phone).replace(/\D/g, '').length < 9) { S.err = T('pkg_err_tb'); S.errField = 'pkg-f-tb_phone'; render(); return; }
+        if ((S.payment === 'abysinia' || S.payment === 'cbe') && (!bankAcct(S.payment) || String(S.bank_ref).trim().length < 4)) { S.err = T('pkg_err_ref'); S.errField = 'pkg-f-bank_ref'; render(); return; }
         S.busy = true; S.err = ''; render();
         var mine = S;
         api('customer_package_create', {
@@ -318,6 +334,14 @@
             if (S !== mine) return;
             if (!res || !res.success) { S.busy = false; S.err = (res && res.message) || T('pkg_load_fail'); render(); return; }
             S.done = res.data;
+            var pm = S.payment, oid = res.data.order_id, tot = res.data.total;
+            if (pm === 'telebirr') {
+                S.done.pay_note = T('pkg_done_tb');
+                api('initiate_telebirr_payment', { order_id: oid, amount: tot, phone: S.tb_phone.trim() }).then(function (r2) { if (S === mine && (!r2 || !r2.success)) { showToast('Package booked, but we could not record the Telebirr payment. Pay the courier in cash or tell support.', 'err'); } });
+            } else if (pm === 'abysinia' || pm === 'cbe') {
+                S.done.pay_note = T('pkg_done_bank');
+                api('confirm_bank_payment', { order_id: oid, bank: pm, amount: tot, reference_no: S.bank_ref.trim() }).then(function (r3) { if (S === mine && (!r3 || !r3.success)) { showToast('Package booked, but we could not record your payment reference. Tell support the reference number.', 'err'); } });
+            }
             if (S.payment === 'chapa') {
                 return api('chapa_init', { kind: 'order', id: res.data.order_id }).then(function (pay) {
                     if (pay && pay.success && pay.data && pay.data.checkout_url) { window.location.href = pay.data.checkout_url; return; }
@@ -401,6 +425,12 @@
         return '<div class="pkg-mini"><span class="pkg-dot a">A</span><span class="pkg-mini-t">' + esc(S.pickup.address) + '</span></div>' +
             '<div class="pkg-mini"><span class="pkg-dot b">B</span><span class="pkg-mini-t">' + esc(S.drop.address) + '</span></div>';
     }
+    function vehPic(o) {
+        var k = '';
+        try { k = window.EtelVehiclePic ? (EtelVehiclePic.key(o.vehicle_class) ? o.vehicle_class : (EtelVehiclePic.key(o.label) ? o.label : '')) : ''; } catch (e) {}
+        if (k) { try { return EtelVehiclePic.html(k, 64, { fallback: o.icon || '🚚' }); } catch (e2) {} }
+        return esc(o.icon || '🚚');
+    }
     function stepVehicle() {
         if (S.busy && !S.quote) return '<div class="pkg-loading" role="status">' + esc(T('pkg_loading')) + '</div>';
         if (!S.quote) return '';
@@ -408,22 +438,53 @@
         var head = '<section class="pkg-card pkg-hero">' + routeLine() + '<div class="pkg-trip">' + esc(T('pkg_trip').replace('{km}', q.distance_km).replace('{min}', q.eta_min)) + '</div></section>';
         var cheapest = null;
         q.options.forEach(function (o) { if (cheapest === null || parseFloat(o.price) < cheapest) cheapest = parseFloat(o.price); });
-        var list = q.options.map(function (o) {
+        // every vehicle type, smallest first; the ones that cannot take this package are greyed out with the reason
+        var all = q.options.map(function (o) { return { o: o, off: false, rank: Number(o.rank) || 0 }; })
+            .concat((q.unavailable || []).map(function (o) { return { o: o, off: true, rank: Number(o.rank) || 0 }; }));
+        all.sort(function (x, y) { return x.rank - y.rank; });
+        var list = all.map(function (e) {
+            var o = e.o;
+            if (e.off) {
+                var why = o.reason === 'weight' ? T('pkg_veh_weight').replace('{kg}', o.max_weight_kg) : T('pkg_veh_size');
+                return '<div class="pkg-veh off" aria-disabled="true"><span class="pkg-veh-ico pkg-veh-pic" aria-hidden="true">' + vehPic(o) + '</span>' +
+                    '<span class="pkg-veh-txt"><span class="pkg-veh-name">' + esc(o.label) + '</span><span class="pkg-veh-sub">' + esc(why) + '</span></span></div>';
+            }
             var on = S.vehicle === o.vehicle_class;
             var best = q.options.length > 1 && parseFloat(o.price) === cheapest;
             return '<button type="button" class="pkg-veh' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '"' + a('pkgVehicle', [o.vehicle_class]) + '>' +
-                '<span class="pkg-veh-ico" aria-hidden="true">' + esc(o.icon || '🚚') + '</span>' +
+                '<span class="pkg-veh-ico pkg-veh-pic" aria-hidden="true">' + vehPic(o) + '</span>' +
                 '<span class="pkg-veh-txt"><span class="pkg-veh-name">' + esc(o.label) + (best ? ' <i class="pkg-badge">' + esc(T('pkg_best_price')) + '</i>' : '') + '</span><span class="pkg-veh-sub">' + esc(T('pkg_up_to').replace('{kg}', o.max_weight_kg)) + '</span></span>' +
                 '<span class="pkg-veh-price">ETB ' + esc(o.price) + '</span><span class="pkg-check" aria-hidden="true">' + (on ? '✓' : '') + '</span></button>';
         }).join('');
         return head + '<div class="pkg-vehicles" role="group" aria-label="' + esc(T('pkg_choose_vehicle')) + '">' + list + '</div>';
     }
-    function payOpt(m, ico, title, sub) {
+    function payOpt(m, ico, title, sub, off) {
         var on = S.payment === m;
+        if (off) return '<div class="pkg-pay off" aria-disabled="true"><span class="pkg-pay-ico" aria-hidden="true">' + ico + '</span>' +
+            '<span class="pkg-pay-txt"><span class="pkg-pay-t">' + esc(title) + '</span><span class="pkg-pay-s">' + esc(sub) + '</span></span></div>';
         return '<button type="button" class="pkg-pay' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '"' + a('pkgPay', [m]) + '><span class="pkg-pay-ico" aria-hidden="true">' + ico + '</span>' +
             '<span class="pkg-pay-txt"><span class="pkg-pay-t">' + esc(title) + '</span><span class="pkg-pay-s">' + esc(sub) + '</span></span><span class="pkg-check" aria-hidden="true">' + (on ? '✓' : '') + '</span></button>';
     }
+    function walletLive() { return typeof etelPayLive !== 'undefined' && !!etelPayLive; }
+    function bankAcct(k) {
+        var l = (S && S.banks) || [];
+        for (var i = 0; i < l.length; i++) { if (l[i].bank_key === k) return l[i]; }
+        return null;
+    }
+    function payExtra() {
+        if (S.payment === 'telebirr') return '<div class="pkg-payx">' + field(T('pkg_tb_phone'), 'tb_phone', S.tb_phone, { type: 'tel', mode: 'tel', auto: 'tel', ph: '09...' }) + '<p class="pkg-payx-n">' + esc(T('pkg_tb_note')) + '</p></div>';
+        var b = (S.payment === 'abysinia' || S.payment === 'cbe') ? bankAcct(S.payment) : null;
+        if (b) return '<div class="pkg-payx"><p class="pkg-payx-n">' + esc(T('pkg_bank_send')) + '</p><div class="pkg-acct"><span>' + esc(b.display_name || '') + '</span><b>' + esc(b.account_number || '') + '</b><span>' + esc(b.account_name || '') + '</span></div>' +
+            field(T('pkg_bank_ref'), 'bank_ref', S.bank_ref, { ph: '' }) + '<p class="pkg-payx-n">' + esc(T('pkg_bank_note')) + '</p></div>';
+        return '';
+    }
+    function loadBanks() {
+        if (!S || S.banks) return;
+        var mine = S; S.banks = [];
+        api('get_bank_accounts', {}).then(function (r) { if (r && r.success && r.data && r.data.accounts) { mine.banks = r.data.accounts; if (S === mine && S.step === 4) render(); } });
+    }
     function stepPay() {
+        loadBanks();
         var c = chosen();
         var sum = '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_summary')) + '</h3>' + routeLine() +
             '<div class="pkg-sum"><span>' + esc(SIZE_ICON[S.size] || '📦') + '</span><span>' + esc(T('pkg_size_' + S.size)) + ' · ' + esc(S.weight) + ' kg · ' + esc(S.desc) + '</span></div>' +
@@ -432,15 +493,18 @@
             '<div class="pkg-total"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(c ? c.price : '') + '</span></div></section>';
         var pays = '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_pay_title')) + '</h3><div class="pkg-pays">' +
             payOpt('cash', '💵', T('pkg_pay_cash'), T('pkg_pay_cash_sub')) +
-            (typeof etelPayLive !== 'undefined' && etelPayLive ? payOpt('wallet', '👛', T('pkg_pay_wallet'), T('pkg_pay_wallet_sub')) : '') +
-            payOpt('chapa', '💳', T('pkg_pay_chapa'), T('pkg_pay_chapa_sub')) + '</div></section>';
+            payOpt('telebirr', '📱', T('pkg_pay_tb'), T('pkg_pay_tb_sub')) +
+            (walletLive() ? payOpt('wallet', '👛', T('pkg_pay_wallet'), T('pkg_pay_wallet_sub')) : payOpt('wallet', '👛', T('pkg_pay_wallet'), T('pkg_pay_wallet_soon'), true)) +
+            payOpt('chapa', '💳', T('pkg_pay_chapa'), T('pkg_pay_chapa_sub')) +
+            payOpt('abysinia', '🏦', T('pkg_pay_aby'), bankAcct('abysinia') ? T('pkg_pay_aby_sub') : T('pkg_pay_na'), !bankAcct('abysinia')) +
+            payOpt('cbe', '🏛️', T('pkg_pay_cbe'), bankAcct('cbe') ? T('pkg_pay_cbe_sub') : T('pkg_pay_na'), !bankAcct('cbe')) + '</div>' + payExtra() + '</section>';
         var pin = '<section class="pkg-card pkg-safe"><span class="pkg-safe-ico" aria-hidden="true">🔐</span><div><div class="pkg-safe-t">' + esc(T('pkg_pins_title')) + '</div><div class="pkg-safe-s">' + esc(T('pkg_pins_note')) + '</div></div></section>';
         return sum + pays + pin;
     }
     function stepDone() {
         var d = S.done;
         return '<div class="pkg-done"><div class="pkg-done-ico" aria-hidden="true">✓</div><h2 class="pkg-done-t">' + esc(T('pkg_done_title')) + '</h2>' +
-            '<p class="pkg-done-s">' + esc(T('pkg_done_sub')) + '</p>' +
+            '<p class="pkg-done-s">' + esc(T('pkg_done_sub')) + '</p>' + (d.pay_note ? '<p class="pkg-done-s pkg-done-pay">' + esc(d.pay_note) + '</p>' : '') +
             '<div class="pkg-code">' + esc(d.order_code) + '</div><div class="pkg-total pkg-done-total"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(d.total) + '</span></div></div>' +
             '<section class="pkg-card pkg-next"><h3 class="pkg-h">' + esc(T('pkg_done_next_t')) + '</h3><ol class="pkg-next-l"><li>' + esc(T('pkg_done_next1')) + '</li><li>' + esc(T('pkg_done_next2')) + '</li><li>' + esc(T('pkg_done_next3')) + '</li></ol></section>';
     }

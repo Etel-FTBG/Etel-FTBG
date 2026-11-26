@@ -76,6 +76,12 @@ def main():
     d = r.get("data") or {}
     prices = [o["price"] for o in d.get("options", [])]
     check("quote gives distance, time and at least the four built-in vehicles, cheapest first (the Bajaj and Qute types are added too)", r.get("success") and d.get("distance_km", 0) > 1 and prices == sorted(prices) and len(prices) >= 4 and set(["bike", "moto", "car", "van"]) <= set(o["vehicle_class"] for o in d.get("options", [])), r)
+    ok_cls = set(o["vehicle_class"] for o in d.get("options", []))
+    off = d.get("unavailable")
+    check("the quote also lists the vehicles that cannot take it (none of them twice), each with a reason and a rank", isinstance(off, list) and all(o.get("reason") in ("size", "weight") and "rank" in o for o in off) and not (ok_cls & set(o["vehicle_class"] for o in off)), off)
+    s, r = call("customer_package_quote", dict(pkg, size="large", weight_kg=60), token=cust)
+    d2 = r.get("data") or {}
+    check("a heavy large package: the small vehicles are listed as unavailable (size or weight) and cannot be booked", r.get("success") and any(o["vehicle_class"] in ("bike", "moto") and o["reason"] in ("size", "weight") for o in d2.get("unavailable", [])) and "bike" not in [o["vehicle_class"] for o in d2.get("options", [])], d2.get("unavailable"))
     s, r = call("customer_package_quote", dict(pkg, weight_kg=0), token=cust)
     check("a quote with no weight is refused", r.get("success") is False)
 

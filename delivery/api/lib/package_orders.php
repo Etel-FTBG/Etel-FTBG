@@ -271,14 +271,22 @@ function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
     $minRank = $classes[$sizes[$det['size']]['min_class']];
     $options = array();
     $tiers = etel_package_settings($pdo);
+    $unavailable = array();
     foreach (etel_package_rates($pdo, true) as $r) {
-        if ($classes[$r['vehicle_class']] < $minRank) continue;
-        if (floatval($r['max_weight_kg']) < $det['weight']) continue;
+        // vehicles that cannot take this package are still listed (greyed out, with the reason) so the customer sees every type
+        if ($classes[$r['vehicle_class']] < $minRank) {
+            $unavailable[] = array('vehicle_class' => $r['vehicle_class'], 'label' => $r['label'], 'icon' => $r['icon'], 'reason' => 'size', 'max_weight_kg' => floatval($r['max_weight_kg']), 'rank' => intval($classes[$r['vehicle_class']]));
+            continue;
+        }
+        if (floatval($r['max_weight_kg']) < $det['weight']) {
+            $unavailable[] = array('vehicle_class' => $r['vehicle_class'], 'label' => $r['label'], 'icon' => $r['icon'], 'reason' => 'weight', 'max_weight_kg' => floatval($r['max_weight_kg']), 'rank' => intval($classes[$r['vehicle_class']]));
+            continue;
+        }
         $options[] = array('vehicle_class' => $r['vehicle_class'], 'label' => $r['label'], 'icon' => $r['icon'],
-            'price' => etel_package_price($r, $km, $det['weight'], $tiers, $classes[$r['vehicle_class']]), 'max_weight_kg' => floatval($r['max_weight_kg']));
+            'price' => etel_package_price($r, $km, $det['weight'], $tiers, $classes[$r['vehicle_class']]), 'max_weight_kg' => floatval($r['max_weight_kg']), 'rank' => intval($classes[$r['vehicle_class']]));
     }
     if (!$options) return array('ok' => false, 'message' => 'No vehicle can carry this package. Check the weight and size, or contact support.');
-    return array('ok' => true, 'distance_km' => $km, 'eta_min' => etel_package_eta_min($km), 'options' => $options, 'pickup' => $p, 'drop' => $d, 'details' => $det);
+    return array('ok' => true, 'distance_km' => $km, 'eta_min' => etel_package_eta_min($km), 'options' => $options, 'unavailable' => $unavailable, 'pickup' => $p, 'drop' => $d, 'details' => $det);
 }
 
 function etel_package_pin() {

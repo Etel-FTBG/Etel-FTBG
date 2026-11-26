@@ -1807,3 +1807,15 @@ body.dark-theme .pkg-badge { color: #4ADE80; }
 .pac-container { z-index: 400; }
 .pkg-more summary::after { content: '▾'; margin-left: 8px; font-size: 12px; }
 .pkg-more[open] summary::after { content: '▴'; }
+
+/* Send a package: every vehicle with its real picture (greyed out when it cannot take the package), and the payment choices */
+.pkg-veh-pic { width: 64px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.pkg-veh-pic img { max-width: 64px; max-height: 48px; object-fit: contain; }
+.pkg-veh.off, .pkg-pay.off { opacity: .55; cursor: not-allowed; filter: grayscale(.8); }
+.pkg-veh.off .pkg-veh-sub { color: #B45309; font-weight: 600; }
+.pkg-payx { margin-top: 12px; padding: 12px; border-radius: 14px; border: 1px dashed var(--glass-border); }
+.pkg-payx-n { margin: 8px 0 0; font-size: 12px; color: var(--text-muted); }
+.pkg-acct { display: flex; flex-direction: column; gap: 2px; margin: 8px 0 10px; padding: 10px 12px; border-radius: 12px; background: rgba(212,175,55,.12); font-size: 13px; }
+.pkg-acct b { font-size: 18px; letter-spacing: .5px; }
+.pkg-done-pay { font-weight: 700; }
+body:not(.dark-theme) .pkg-veh.off .pkg-veh-sub { color: #92400E; }
