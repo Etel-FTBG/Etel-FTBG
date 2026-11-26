@@ -1,6 +1,6 @@
 /* Etel Gebeya - dark / light theme switch.
    Loaded synchronously in <head> so the saved theme is on <html> before the
-   first paint (no flash). Dark is the default. Any element with
+   first paint (no flash). Light is the default; a saved dark choice is kept. Any element with
    [data-etel-theme-toggle] becomes a toggle; it always shows the mode you
    would switch TO. The choice is per browser (localStorage) and follows
    across open tabs. */
@@ -10,7 +10,7 @@
   var root = document.documentElement;
 
   function read() {
-    try { return localStorage.getItem(KEY) === 'light' ? 'light' : 'dark'; } catch (e) { return 'dark'; }
+    try { return localStorage.getItem(KEY) === 'dark' ? 'dark' : 'light'; } catch (e) { return 'light'; }
   }
   function paintButtons(theme) {
     var toLight = theme === 'dark';

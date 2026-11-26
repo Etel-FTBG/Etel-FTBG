@@ -21,7 +21,7 @@ $T = function ($pair) use ($E) { return '<span' . ($pair['am'] !== '' ? ' data-t
     <link rel="stylesheet" href="assets/css/madeya-stations-r4.css">
     <link rel="stylesheet" href="assets/css/madeya-access.css">
     <link rel="stylesheet" href="assets/css/madeya-mine-r1.css">
-    <script src="assets/js/madeya-pro-r2.js"></script>
+    <script src="assets/js/madeya-pro-r2.js?v=2"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
 </head>
 <body>

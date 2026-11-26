@@ -10,7 +10,7 @@ const TAXI = { apiBase: 'api/boot.php' };
 // in Delivery or any other Etel Group app.
 const TAXI_THEME_STORAGE = 'etaxi_theme';
 function taxiGetTheme() {
-  try { return localStorage.getItem(TAXI_THEME_STORAGE) || 'dark'; } catch (e) { return 'dark'; }
+  try { return localStorage.getItem(TAXI_THEME_STORAGE) === 'dark' ? 'dark' : 'light'; } catch (e) { return 'light'; }   // light until someone picks dark
 }
 function taxiApplyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
