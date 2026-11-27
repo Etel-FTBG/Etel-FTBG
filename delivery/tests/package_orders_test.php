@@ -346,6 +346,10 @@ $c2 = etel_contacts_clean(array('name' => 'a', 'address' => 'x', 'lat' => '999',
 check('contact clean: an impossible or 0,0 map point becomes none', $c2['lat'] === null && $c2['lng'] === null && etel_contacts_clean(array('name' => 'a', 'address' => 'x', 'lat' => 0, 'lng' => 0), '+251911556677')['lat'] === null);
 $cr = etel_contacts_row(array('id' => '5', 'label' => 'Mom', 'name' => 'Hana', 'phone' => '+2519', 'address' => 'Tabor', 'lat' => '7.0600000', 'lng' => null, 'zone' => 'Tabor'));
 check('contact row: id is a number, a missing coordinate is null', $cr['id'] === 5 && $cr['lat'] === 7.06 && $cr['lng'] === null);
+// Express first in the courier's list (api/lib/package_speed.php)
+check('express first: an empty or non-list input comes back unchanged', etel_package_express_first($pdo, array()) === array() && etel_package_express_first($pdo, null) === null);
+$ef = etel_package_express_first($pdo, array(array('id' => 900000001), array('id' => 900000002)));
+check('express first: orders that are not in the database stay in order and say express false', $ef[0]['id'] === 900000001 && $ef[1]['id'] === 900000002 && $ef[0]['express'] === false && $ef[1]['express'] === false);
 $pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;
