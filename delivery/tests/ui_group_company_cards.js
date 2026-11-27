@@ -1,7 +1,7 @@
 // The Etel Group master page, "Our Companies": the ETEL Group logo in a slowly turning gold ring with six dots, and every company card shows its picture inside the same ring
 // on a navy plate. Companies that have an ETEL family badge (Madeya, Market/Gebeya, Delivery, Ride, Pay, ID) show that transparent badge (matched by slug and name, so an old
 // logo_path in the database does not win); other companies keep their own logo (round) or their icon. The old "Many companies. One ETEL." section is gone.
-// The Platform launcher cards still show the badge as their background. Light and dark theme, phone and desktop.   Real page and files, fake company list.   node delivery/tests/ui_group_company_cards.js
+// The Platform launcher cards below have the same navy plate and turning ring. Light and dark theme, phone and desktop.   Real page and files, fake company list.   node delivery/tests/ui_group_company_cards.js
 const { chromium } = require('playwright'); const http = require('http'); const fs = require('fs'); const path = require('path');
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
 const ROOT = path.join(__dirname, '..', '..');
@@ -60,9 +60,14 @@ const probe = (sel) => {
     // the badge pictures are real, transparent and square
     const pics = await p.evaluate(() => Promise.all(['etel-madeya', 'etel-gebeya', 'etel-transport', 'etel-pay', 'etel-id'].map(k => new Promise(res => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight; const x = c.getContext('2d'); x.drawImage(i, 0, 0); res({ k, w: i.naturalWidth, h: i.naturalHeight, a: [x.getImageData(0, 0, 1, 1).data[3], x.getImageData(c.width - 1, c.height - 1, 1, 1).data[3]] }); }; i.onerror = () => res({ k, w: 0 }); i.src = '/EtelGroup/icons/brand/' + k + '.webp'; }))));
     t(n + 'the five badge pictures load, are square and transparent in the corners', pics.every(x => x.w > 0 && x.w === x.h && x.a[0] === 0 && x.a[1] === 0), JSON.stringify(pics));
-    // the Platform launcher cards follow the same rule
-    const lc = await p.evaluate(() => [].slice.call(document.querySelectorAll('.launcher-card')).map(c => ({ name: (c.querySelector('.lc-name') || {}).textContent, bg: c.style.backgroundImage || '' })));
-    t(n + 'launcher cards: Madeya, Delivery, ID and Ride show their badge too', ['Etel Madeya', 'Etel Delivery', 'Etel ID', 'Etel Ride'].every(nm => (lc.find(c => c.name === nm) || { bg: '' }).bg.indexOf('/EtelGroup/icons/brand/') > -1), JSON.stringify(lc));
+    // the Platform launcher cards: the same navy plate and turning ring, the picture inside the ring
+    const lc = await p.evaluate(() => [].slice.call(document.querySelectorAll('.launcher-card')).map(c => { const im = c.querySelector('.lc-orb .co-orb-img'); const ring = c.querySelector('.lc-orb .co-orb-ring'); return { name: (c.querySelector('.lc-name') || {}).textContent, img: im ? im.getAttribute('src') : '', dots: c.querySelectorAll('.lc-orb .co-orb-ring i').length, spin: ring ? getComputedStyle(ring).animationName : '', bgc: getComputedStyle(c).backgroundColor, bgi: c.style.backgroundImage || '', clip: getComputedStyle(c).clipPath }; }));
+    const lcBy = (nm) => lc.find(c => c.name === nm) || { img: '' };
+    t(n + 'launcher cards: the four live companies are drawn', lc.length === 4, JSON.stringify(lc.map(c => c.name)));
+    t(n + 'launcher cards: Madeya, Delivery, ID and Ride show their badge inside the ring', [['Etel Madeya', 'etel-madeya.webp'], ['Etel Delivery', 'etel-transport.webp'], ['Etel ID', 'etel-id.webp'], ['Etel Ride', 'etel-transport.webp']].every(([nm, f]) => lcBy(nm).img.indexOf('/EtelGroup/icons/brand/' + f) > -1), JSON.stringify(lc));
+    t(n + 'launcher cards: gold ring with six dots that turns, navy plate, no background picture', lc.every(c => c.dots === 6 && c.spin === 'co-orb-spin' && c.bgc === 'rgb(12, 20, 48)' && !c.bgi && c.clip === 'none'), JSON.stringify(lc.map(c => [c.dots, c.spin, c.bgc, c.bgi, c.clip])));
+    const l1 = await p.evaluate(probe, '.launcher-card.lc-orb-card .lc-name'), l2 = await p.evaluate(probe, '.launcher-card.lc-orb-card .lc-desc');
+    t(n + 'launcher cards: name and description are readable (contrast 4.5+)', l1.ratio >= 4.5 && l2.ratio >= 4.5, JSON.stringify([l1, l2]));
     // text on the cards is readable
     const c1 = await p.evaluate(probe, '#services .co-card-has-logo .co-name'), c2 = await p.evaluate(probe, '#services .co-card-has-logo .co-desc');
     t(n + 'name and description on a badge card are readable (contrast 4.5+)', c1.ratio >= 4.5 && c2.ratio >= 4.5, JSON.stringify([c1, c2]));

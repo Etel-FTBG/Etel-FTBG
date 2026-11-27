@@ -37,13 +37,6 @@
     return '<svg viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="' + (strokeWidth || 1.6) + '" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>';
   }
 
-  // Card background style when a logo is set: the logo image fills the
-  // whole card (not just a small icon box), with a dark gradient baked
-  // into the same background-image stack (CSS layers multiple
-  // backgrounds with the first listed on top) so the name/category/
-  // description text sitting on top of it stays readable regardless of
-  // how bright or busy the logo image itself is. Falls back to nothing
-  // extra (just the existing solid card background) when no logo is set.
   // The ETEL family badges (transparent pictures in EtelGroup/icons/brand/) are used for the companies that have one, matched by the company's
   // slug and name, so they win over an old logo_path. Delivery and Ride share the transport logo. Other companies keep their logo_path.
   var BADGE_BASE = '/EtelGroup/icons/brand/';
@@ -57,19 +50,6 @@
     return '';
   }
   function logoPath(c) { return badgeFor(c) || c.logo_path || ''; }
-
-  function logoBgDecl(c) {
-    var badge = badgeFor(c);
-    if (badge) {
-      // a transparent badge on a navy card: the badge sits on the right, the dark gradient on the left keeps the text readable
-      return ';background-color:#0A1230;background-image:linear-gradient(90deg, rgba(6,9,24,.97) 0%, rgba(6,9,24,.86) 52%, rgba(6,9,24,.30) 100%), url(\'' + badge + '\');' +
-        'background-size:cover,auto 94%;background-position:center,right 8px center;background-repeat:no-repeat,no-repeat';
-    }
-    if (!c.logo_path) return '';
-    var url = esc(c.logo_path).replace(/'/g, "\\'");
-    return ';background-image:linear-gradient(180deg, rgba(10,8,4,.28) 0%, rgba(10,8,4,.58) 55%, rgba(8,6,3,.92) 100%), url(\'' + url + '\');' +
-      'background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat';
-  }
 
   // Renders a company's actual logo image when one has been set in the
   // admin panel (Companies -> Logo path), falling back to the existing
@@ -117,6 +97,14 @@
     return h + '</span>';
   }
 
+  // The picture inside a ring: the ETEL badge if the company has one, else its own logo (round), else its icon (round disc).
+  function orbPicHtml(c) {
+    var badge = badgeFor(c);
+    if (badge) return '<img class="co-orb-img" src="' + esc(badge) + '" width="640" height="640" alt="' + esc(c.name) + ' logo" loading="lazy" decoding="async">';
+    if (c.logo_path) return '<img class="co-orb-img co-orb-round" src="' + esc(c.logo_path) + '" alt="' + esc(c.name) + ' logo" loading="lazy" decoding="async">';
+    return '<div class="co-icon co-orb-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>';
+  }
+
   function coCardHtml(c, i) {
     var isLive = c.status === 'live';
     var href = isLive ? esc(c.url) : '#';
@@ -124,11 +112,7 @@
     var badgeText = isLive ? 'Live' : 'Coming Soon';
     var badge = badgeFor(c);
     var hasLogo = !!logoPath(c);
-    // The picture inside the ring: the ETEL badge if the company has one, else its own logo (round), else its icon.
-    var pic;
-    if (badge) pic = '<img class="co-orb-img" src="' + esc(badge) + '" width="640" height="640" alt="' + esc(c.name) + ' logo" loading="lazy" decoding="async">';
-    else if (c.logo_path) pic = '<img class="co-orb-img co-orb-round" src="' + esc(c.logo_path) + '" alt="' + esc(c.name) + ' logo" loading="lazy" decoding="async">';
-    else pic = '<div class="co-icon co-orb-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>';
+    var pic = orbPicHtml(c);
     // Live: a real online/offline dot (same check the Platform launcher uses). Coming soon: launch text + "Notify me".
     var extra = '';
     if (isLive) {
@@ -218,13 +202,13 @@
       var tags = (c.tags || '').split(',').filter(Boolean).map(function (t) { return '<span>' + esc(t.trim()) + '</span>'; }).join('');
       var hasLogo = !!logoPath(c);
       return (
-        '<div class="launcher-card js-lcard' + (hasLogo ? ' co-card-has-logo' : '') + (badgeFor(c) ? ' co-card-badge' : '') + '" style="' + logoBgDecl(c).replace(/^;/, '') + '" data-url="' + esc(c.url) + '" data-delay="' + Math.min(i, 9) + '">' +
+        '<div class="launcher-card lc-orb-card js-lcard' + (hasLogo ? ' co-card-has-logo' : '') + (badgeFor(c) ? ' co-card-badge' : '') + '" style="--lc-color:' + esc(c.dot_color) + '" data-url="' + esc(c.url) + '" data-delay="' + Math.min(i, 9) + '">' +
         '<div class="lc-status-bar">' +
         '<span class="lc-dot" id="ls-' + esc(c.slug) + '"></span>' +
         '<span class="lc-label" id="ll-' + esc(c.slug) + '">checking...</span>' +
         '<span class="lc-tag lc-tag-live">' + esc(c.tagline) + '</span>' +
         '</div>' +
-        (hasLogo ? '' : '<div class="lc-icon" style="--lc-color:' + esc(c.dot_color) + '">' + iconSvg(c.icon_key, 'currentColor', 1.5) + '</div>') +
+        '<div class="co-orb lc-orb">' + ringHtml() + orbPicHtml(c) + '</div>' +
         '<div class="lc-body">' +
         '<p class="lc-num">' + num + '</p>' +
         '<p class="lc-name">' + esc(c.name) + '</p>' +

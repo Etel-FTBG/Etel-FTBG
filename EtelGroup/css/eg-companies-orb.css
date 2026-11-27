@@ -47,5 +47,19 @@ html[data-theme="light"] .co-hub-img { filter: drop-shadow(0 20px 30px rgba(40,2
 html[data-theme="light"] .co-card.co-orb-card { background-color: #0C1430; background-image: radial-gradient(120% 90% at 50% 0%, rgba(40,58,108,.85), rgba(10,16,38,.96)); border-color: rgba(212,175,55,.45); box-shadow: 0 16px 40px rgba(40,28,0,.28); }
 html[data-theme="light"] .co-card.co-orb-card:hover { box-shadow: 0 26px 60px rgba(40,28,0,.4), 0 0 40px rgba(212,175,55,.2); }
 
-/* Platform launcher cards that show an ETEL badge (companies-r4.js, renderLauncherGrid): lighter text on the navy side */
-html .co-card-badge .lc-desc, html[data-theme="light"] .co-card-badge .lc-desc { color: #F3E7B8; }
+/* ---- Platform launcher cards: the same navy plate and turning ring ---- */
+.launcher-card.lc-orb-card { clip-path: none; border-radius: 26px; align-items: center; text-align: center; gap: 12px; color: #F5E6A3;
+  border: 1px solid rgba(212,175,55,.32); background-color: #0C1430; background-image: radial-gradient(120% 90% at 50% 0%, rgba(40,58,108,.85), rgba(10,16,38,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.32); }
+html[data-theme="light"] .launcher-card.lc-orb-card, html[data-theme="light"] .launcher-card.lc-orb-card:hover { background-color: #0C1430; background-image: radial-gradient(120% 90% at 50% 0%, rgba(40,58,108,.85), rgba(10,16,38,.96)); border-color: rgba(212,175,55,.45); box-shadow: 0 16px 40px rgba(40,28,0,.28); }
+.launcher-card.lc-orb-card:hover { border-color: rgba(212,175,55,.8); }
+.lc-orb-card .lc-status-bar { align-self: stretch; justify-content: center; }
+.lc-orb-card .lc-orb { width: min(100%, 200px); margin: 0 auto; }
+.lc-orb-card .lc-body { align-items: center; }
+html .lc-orb-card .lc-name, html[data-theme="light"] .lc-orb-card .lc-name { color: #F5E6A3; }
+html .lc-orb-card .lc-cat, html[data-theme="light"] .lc-orb-card .lc-cat { color: rgba(212,175,55,.95); }
+html .lc-orb-card .lc-desc, html[data-theme="light"] .lc-orb-card .lc-desc { color: #F3E7B8; }
+html .lc-orb-card .lc-label, html[data-theme="light"] .lc-orb-card .lc-label { color: #F3E7B8; }
+html .lc-orb-card .lc-label.online { color: #4ade80; } html .lc-orb-card .lc-label.offline { color: #f87171; }
+html[data-theme="light"] .lc-orb-card .lc-num { color: rgba(245,230,163,.5); }
+.lc-orb-card .lc-tags { justify-content: center; }
+.lc-orb-card .lc-btn { align-self: center; }
