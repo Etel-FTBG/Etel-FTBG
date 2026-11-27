@@ -50,3 +50,26 @@ function etel_package_quote_speed($pdo, &$options, $eta_min) {
     }
     return array('on' => true, 'eta_min' => etel_package_express_eta_min($eta_min));
 }
+
+// The courier's job list: Express packages first (the list is oldest first, so each group keeps its order), and every job says express true/false.
+// $orders = rows with an 'id'. A database without orders.pkg_speed (no package was ever quoted) has no Express orders: the list stays as it is.
+function etel_package_express_first($pdo, $orders) {
+    if (!is_array($orders) || !$orders) return $orders;
+    $ids = array();
+    foreach ($orders as $o) { if (isset($o['id'])) $ids[] = intval($o['id']); }
+    $ex = array();
+    if ($ids) {
+        try {
+            $q = $pdo->prepare('SELECT id FROM orders WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ") AND pkg_speed = 'express'");
+            $q->execute($ids);
+            foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $i) $ex[intval($i)] = true;
+        } catch (Exception $e) { /* no pkg_speed column yet */ }
+    }
+    $first = array(); $rest = array();
+    foreach ($orders as $o) {
+        $is = isset($o['id']) && !empty($ex[intval($o['id'])]);
+        $o['express'] = $is;
+        if ($is) $first[] = $o; else $rest[] = $o;
+    }
+    return array_merge($first, $rest);
+}

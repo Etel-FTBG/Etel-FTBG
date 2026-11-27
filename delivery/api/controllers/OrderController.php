@@ -321,6 +321,8 @@ case 'courier_get_available_orders': {
             $orders = $s->fetchAll();
         } catch (Exception $e2) { fail_ex($e2, 'Query failed', 500); }
     }
+    // Express packages first (the customer paid extra for a quicker delivery)
+    try { require_once __DIR__ . '/../lib/package_speed.php'; $orders = etel_package_express_first($pdo, $orders); } catch (Exception $xe) {}
     // City scope: a courier sees only jobs in the city they are in (their last known position). Unknown position or unknown job place = shown.
     try {
         require_once __DIR__ . '/../lib/service_areas.php';
