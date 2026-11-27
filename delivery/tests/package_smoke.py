@@ -282,6 +282,37 @@ def main():
     s, r = call("customer_package_quote", pkg, token=cust)
     check("booking works again after it is switched back on", r.get("success") is True, r)
 
+    print("10. Public tracking link")
+    s, r = call("customer_package_create", dict(book_m, speed="standard"), token=cust)
+    dp = r.get("data") or {}
+    tok, pcode, poid = dp.get("track_token", ""), dp.get("order_code", ""), dp.get("order_id")
+    check("a new package comes with a random 12-digit tracking token", r.get("success") and len(tok) == 12 and all(c in "0123456789abcdef" for c in tok), tok)
+    s, r = call("public_track_package", {"code": pcode, "token": tok}, token=None)
+    pv = r.get("data") or {}
+    check("the link works without signing in and shows the status, the areas and the vehicle", r.get("success") and pv.get("order_code") == pcode and pv.get("status") == "pending" and pv.get("vehicle_class") == "moto" and "from_zone" in pv and "to_zone" in pv, r)
+    leaked = [k for k in pv.keys() if any(w in k for w in ("phone", "pin", "address", "price", "fare", "fee", "lat", "lng", "recipient", "sender", "email", "notes", "value"))]
+    check("the public view has no phone, PIN, address, price, position or notes", not leaked, leaked)
+    s, r = call("public_track_package", {"code": pcode, "token": "0" * 12}, token=None)
+    check("a wrong token shows nothing (404)", r.get("success") is False and s == 404, (s, r))
+    s, r = call("public_track_package", {"code": pcode}, token=None)
+    check("a code without a token shows nothing (404)", r.get("success") is False and s == 404, (s, r))
+    s, r = call("public_track_package", {"code": "ETP-000000", "token": tok}, token=None)
+    check("an unknown code gives the same 404 answer", r.get("success") is False and s == 404 and r.get("message") == (call("public_track_package", {"code": pcode, "token": "1" * 12}, token=None)[1] or {}).get("message"), (s, r))
+    s, r = call("public_track_package", {"code": pcode, "token": "xyz'; DROP TABLE orders;--"}, token=None)
+    check("a bad token text is refused, not run", r.get("success") is False and s == 404, (s, r))
+    s, r = call("public_track_package", {"code": pcode, "token": tok}, token=None, qs="")
+    s2, r2 = call("public_track_package", {}, token=None, qs="?code=" + pcode + "&token=" + tok)
+    check("the link also works as a plain web address (GET), which track.html uses", r2.get("success") and (r2.get("data") or {}).get("order_code") == pcode, r2)
+    if poid:
+        call("customer_cancel_order", {"order_id": poid, "reason": "other"}, token=cust)
+        s, r = call("public_track_package", {"code": pcode, "token": tok}, token=None)
+        check("after cancelling, the link shows cancelled", (r.get("data") or {}).get("status") == "cancelled", r)
+    s, r = call("customer_package_create", dict(book_m), token=cust)
+    d_b = r.get("data") or {}
+    check("every package has its own token", d_b.get("track_token") and d_b.get("track_token") != tok, d_b.get("track_token"))
+    s, r = call("public_track_package", {"code": pcode, "token": d_b.get("track_token", "")}, token=None)
+    check("another package's token does not open this package", r.get("success") is False and s == 404, (s, r))
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

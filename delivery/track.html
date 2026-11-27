@@ -186,6 +186,14 @@
         { key: 'in_transit', icon: '🚗', label: 'On the Way',           sub: 'Your order is en route to you' },
         { key: 'delivered',  icon: '✅', label: 'Delivered',            sub: 'Order successfully delivered' },
     ];
+    // a shared package link (track.html?c=CODE&t=TOKEN): package wording, and no price on the page
+    var PKG_STEPS = [
+        { key: 'pending',    icon: '📋', label: 'Package booked',            sub: 'We are finding a courier' },
+        { key: 'assigned',   icon: '🛵', label: 'Courier on the way',        sub: 'The courier is going to pick it up' },
+        { key: 'picked_up',  icon: '📦', label: 'Package picked up',         sub: 'The courier has the package' },
+        { key: 'in_transit', icon: '🚗', label: 'On the way to the recipient', sub: 'It is heading to the delivery address' },
+        { key: 'delivered',  icon: '✅', label: 'Delivered',                 sub: 'Handed over to the recipient with their PIN' },
+    ];
     var STATUS_ORDER = ['pending','assigned','picked_up','in_transit','delivered'];
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -254,7 +262,11 @@
         var code = document.getElementById('code-input').value.trim().toUpperCase();
         if (!code) return;
         document.getElementById('error-msg').style.display = 'none';
-        fetch(ETEL.api + '?action=track_order&code=' + encodeURIComponent(code))
+        var qs = new URLSearchParams(location.search), pubTok = qs.get('t'), pubCode = qs.get('c');
+        var isPub = !!(pubTok && pubCode);
+        var steps = isPub ? PKG_STEPS : ETEL_STEPS;
+        fetch(isPub ? ETEL.api + '?action=public_track_package&code=' + encodeURIComponent(pubCode) + '&token=' + encodeURIComponent(pubTok)
+                    : ETEL.api + '?action=track_order&code=' + encodeURIComponent(code))
             .then(function(r){ return r.json(); })
             .then(function(res) {
                 if (!res.success || !res.data) {
@@ -269,11 +281,15 @@
                 document.getElementById('res-from').textContent = o.from_zone || '—';
                 document.getElementById('res-to').textContent = o.to_zone || '—';
                 document.getElementById('res-pkg').textContent = (o.package_type || 'parcel').replace('_',' ');
-                document.getElementById('res-fare').textContent = 'ETB ' + parseFloat(o.fare_total||0).toFixed(2);
+                var fareEl = document.getElementById('res-fare');
+                if (isPub) {   // the public view never has a price
+                    fareEl.parentNode.style.display = 'none';
+                    document.getElementById('res-pkg').textContent = (o.package_type === 'document' ? 'document' : 'parcel') + (o.speed === 'express' ? ' · Express' : '') + (o.courier_first_name ? ' · courier ' + o.courier_first_name : '');
+                } else fareEl.textContent = 'ETB ' + parseFloat(o.fare_total||0).toFixed(2);
 
                 var curIdx = STATUS_ORDER.indexOf(o.status);
                 var html = '';
-                ETEL_STEPS.forEach(function(step, i) {
+                steps.forEach(function(step, i) {
                     var isDone   = i < curIdx;
                     var isActive = i === curIdx;
                     var cls = isDone ? 'step done' : (isActive ? 'step active' : 'step');
@@ -283,6 +299,10 @@
                           + '<div class="step-text"><div class="label">' + step.label + '</div>'
                           + '<div class="sub">' + step.sub + '</div></div></div>';
                 });
+                if (isPub && o.status === 'delivered') {
+                    html += '<div class="step done step-reveal"><div class="step-icon">🔐</div><div class="step-text"><div class="label">Handed over with the recipient\'s PIN</div>' +
+                        '<div class="sub">' + (o.delivered_at ? 'Delivered ' + String(o.delivered_at).replace(/[<>&"]/g, '') : '') + '</div></div></div>';
+                }
                 document.getElementById('timeline').innerHTML = html;
 
                 var firstShow = document.getElementById('result').style.display !== 'block';
@@ -306,7 +326,10 @@
 
     // Auto-track if code in URL e.g. track?code=ETD-2255
     var urlCode = new URLSearchParams(location.search).get('code');
-    if (urlCode) {
+    if (new URLSearchParams(location.search).get('t') && new URLSearchParams(location.search).get('c')) {
+        document.getElementById('code-input').value = new URLSearchParams(location.search).get('c');
+        trackOrder();
+    } else if (urlCode) {
         document.getElementById('code-input').value = urlCode;
         trackOrder();
     }
