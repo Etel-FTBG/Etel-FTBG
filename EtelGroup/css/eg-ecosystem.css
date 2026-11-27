@@ -1,5 +1,5 @@
-/* ETEL Group master page - the Ecosystem section: the master mark with six orbiting dots, the company badges (Pay, Gebeya) and chips for the others.
-   Plain HTML in EtelGroup/index.html (#ecosystem), no script. The logos keep their marble background. Light theme = html[data-theme="light"]. */
+/* ETEL Group master page - the Ecosystem section: the master logo and the six company badges (Pay, Gebeya, Ride, Delivery, Madeya, ID).
+   Plain HTML in EtelGroup/index.html (#ecosystem), no script. The logos are transparent WebP (EtelGroup/icons/brand/). Light theme = html[data-theme="light"]. */
 #ecosystem { position: relative; padding: 96px 24px 88px; overflow: hidden; background: radial-gradient(1000px 520px at 50% 0%, rgba(212,175,55,.10), transparent 70%); }
 .eco-head { max-width: 760px; margin: 0 auto 44px; text-align: center; }
 .eco-eyebrow { margin: 0 0 14px; font-family: var(--font-mono, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--gold, #D4AF37); }
@@ -7,58 +7,35 @@
 .eco-title span { color: var(--gold, #D4AF37); }
 .eco-sub { margin: 18px auto 0; max-width: 600px; font-size: 16px; line-height: 1.65; color: rgba(245,230,163,.78); }
 
-.eco-stage { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 400px) 1fr; gap: 48px; align-items: center; }
-.eco-hub { position: relative; display: flex; flex-direction: column; align-items: center; padding: 28px 0 8px; }
-.eco-master { position: relative; z-index: 1; width: min(320px, 74vw); height: auto; aspect-ratio: 1; border-radius: 28px; object-fit: cover; border: 1px solid rgba(212,175,55,.55);
-  box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 6px rgba(212,175,55,.08), 0 0 70px rgba(212,175,55,.22); background: #0b0c12; }
-/* the orbit: a thin gold ring turning slowly behind the logo with six dots, one for each company */
-.eco-orbit { position: absolute; z-index: 0; left: 50%; top: calc(28px + min(320px, 74vw) / 2); --w: min(430px, calc(100vw - 40px)); --r: calc(var(--w) / 2); width: var(--w); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  border: 1px dashed rgba(212,175,55,.38); animation: eco-spin 60s linear infinite; }
-.eco-orbit i { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFF3B8, #D4AF37 60%, #8A6A12);
-  box-shadow: 0 0 14px rgba(212,175,55,.7); }
-.eco-orbit i:nth-child(1) { transform: translate(0, calc(-1 * var(--r))); }
-.eco-orbit i:nth-child(2) { transform: rotate(60deg) translate(0, calc(-1 * var(--r))); }
-.eco-orbit i:nth-child(3) { transform: rotate(120deg) translate(0, calc(-1 * var(--r))); }
-.eco-orbit i:nth-child(4) { transform: rotate(180deg) translate(0, calc(-1 * var(--r))); }
-.eco-orbit i:nth-child(5) { transform: rotate(240deg) translate(0, calc(-1 * var(--r))); }
-.eco-orbit i:nth-child(6) { transform: rotate(300deg) translate(0, calc(-1 * var(--r))); }
-@keyframes eco-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
-.eco-hub-cap { position: relative; z-index: 1; margin: 62px 0 0; font-family: var(--font-mono, monospace); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-light, #F5E6A3); }
+.eco-stage { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 40px; align-items: center; }
+.eco-hub { display: flex; flex-direction: column; align-items: center; }
+/* the master logo has no box: its own gold ring and six orbit dots float on the page */
+.eco-master { display: block; width: min(360px, 82vw); height: auto; aspect-ratio: 1; filter: drop-shadow(0 22px 34px rgba(0,0,0,.5)) drop-shadow(0 0 34px rgba(212,175,55,.22)); }
+.eco-hub-cap { margin: 20px 0 0; font-family: var(--font-mono, monospace); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-light, #F5E6A3); text-align: center; }
 
-.eco-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.eco-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 12px 12px 18px; border-radius: 26px; text-decoration: none; color: inherit;
-  border: 1px solid rgba(212,175,55,.3); background: linear-gradient(150deg, rgba(255,255,255,.06), rgba(255,255,255,.015)); transition: transform .3s, box-shadow .3s, border-color .3s; }
-.eco-card:hover, .eco-card:focus-visible { transform: translateY(-5px); border-color: rgba(212,175,55,.75); box-shadow: 0 24px 60px rgba(0,0,0,.5), 0 0 40px rgba(212,175,55,.18); outline: none; }
-.eco-card img { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 18px; object-fit: cover; background: #0b0c12; }
-.eco-card-t { display: flex; flex-direction: column; gap: 3px; padding: 0 8px; }
-.eco-card-t b { font-family: var(--font-head, 'Syne', sans-serif); font-size: 18px; font-weight: 800; color: var(--gold-light, #F5E6A3); }
-.eco-card-t em { font-style: normal; font-size: 13px; line-height: 1.4; color: rgba(245,230,163,.78); }
-.eco-go { position: absolute; right: 22px; bottom: 18px; font-size: 20px; color: var(--gold, #D4AF37); transition: transform .3s; }
-.eco-card:hover .eco-go { transform: translateX(5px); }
+.eco-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+/* a dark navy plate under each badge, in light and dark theme, so the gold ring and the orbit stay clear */
+.eco-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 12px 18px; border-radius: 24px; text-decoration: none; color: #F5E6A3;
+  border: 1px solid rgba(212,175,55,.32); background-color: #0C1430; background-image: radial-gradient(120% 90% at 50% 0%, rgba(40,58,108,.85), rgba(10,16,38,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.32);
+  transition: transform .3s, box-shadow .3s, border-color .3s; }
+.eco-card:hover, .eco-card:focus-visible { transform: translateY(-5px); border-color: rgba(212,175,55,.8); box-shadow: 0 26px 60px rgba(0,0,0,.5), 0 0 40px rgba(212,175,55,.2); outline: none; }
+.eco-card img { display: block; width: 100%; max-width: 230px; height: auto; aspect-ratio: 1; filter: drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
+.eco-card-t { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; padding: 0 6px; }
+.eco-card-t b { font-family: var(--font-head, 'Syne', sans-serif); font-size: 17px; font-weight: 800; color: #F5E6A3; }
+.eco-card-t em { font-style: normal; font-size: 12.5px; line-height: 1.4; color: rgba(245,230,163,.8); }
+.eco-go { position: absolute; right: 14px; top: 12px; font-size: 18px; color: #D4AF37; opacity: .85; transition: transform .3s; }
+.eco-card:hover .eco-go { transform: translateX(4px); }
 
-.eco-more { max-width: 1080px; margin: 48px auto 0; text-align: center; }
-.eco-more-t { margin: 0 0 16px; font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: rgba(245,230,163,.7); }
-.eco-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.eco-chips a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 20px; border-radius: 999px; text-decoration: none; border: 1px solid rgba(212,175,55,.4);
-  background: rgba(212,175,55,.08); color: var(--gold-light, #F5E6A3); font-family: var(--font-head, 'Syne', sans-serif); font-size: 14px; font-weight: 700; transition: background .25s, transform .25s, box-shadow .25s; }
-.eco-chips a:hover, .eco-chips a:focus-visible { background: rgba(212,175,55,.2); transform: translateY(-2px); box-shadow: 0 10px 26px rgba(212,175,55,.2); outline: none; }
-.eco-chips i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255,255,255,.1); }
+@media (max-width: 1000px) { .eco-stage { grid-template-columns: 1fr; gap: 30px; } }
+@media (max-width: 760px) { #ecosystem { padding: 72px 16px 64px; } .eco-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; } .eco-card-t b { font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .eco-card, .eco-go { transition: none; } }
 
-@media (max-width: 900px) { .eco-stage { grid-template-columns: 1fr; gap: 36px; } .eco-hub { padding-top: 40px; } #ecosystem { padding: 72px 16px 64px; } }
-@media (max-width: 520px) { .eco-cards { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .eco-orbit { animation: none; } .eco-card, .eco-chips a, .eco-go { transition: none; } }
-
-/* light theme: the page is light, the logos stay dark; the section text turns dark */
+/* light theme: only the text outside the dark plates turns dark */
 html[data-theme="light"] #ecosystem { background: radial-gradient(1000px 520px at 50% 0%, rgba(184,134,11,.12), transparent 70%); }
 html[data-theme="light"] .eco-eyebrow { color: #7A5A00; }
 html[data-theme="light"] .eco-title { color: #1A0E00; }
 html[data-theme="light"] .eco-title span { color: #8A6200; }
-html[data-theme="light"] .eco-sub, html[data-theme="light"] .eco-more-t { color: #4A3A1A; }
+html[data-theme="light"] .eco-sub { color: #4A3A1A; }
 html[data-theme="light"] .eco-hub-cap { color: #5A4200; }
-html[data-theme="light"] .eco-orbit { border-color: rgba(138,98,0,.5); }
-html[data-theme="light"] .eco-master, html[data-theme="light"] .eco-card { box-shadow: 0 22px 60px rgba(60,40,0,.28); }
-html[data-theme="light"] .eco-card { background: linear-gradient(150deg, #FFFDF5, #F6EBC8); border-color: rgba(138,98,0,.4); }
-html[data-theme="light"] .eco-card-t b { color: #1A0E00; }
-html[data-theme="light"] .eco-card-t em { color: #4A3A1A; }
-html[data-theme="light"] .eco-go { color: #7A5A00; }
-html[data-theme="light"] .eco-chips a { background: #FFF8E1; border-color: rgba(138,98,0,.45); color: #3A2600; }
+html[data-theme="light"] .eco-master { filter: drop-shadow(0 20px 30px rgba(40,28,0,.35)) drop-shadow(0 0 24px rgba(138,98,0,.25)); }
+html[data-theme="light"] .eco-card { box-shadow: 0 16px 40px rgba(40,28,0,.28); }
