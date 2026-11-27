@@ -1872,3 +1872,35 @@ body:not(.dark-theme) .pkg-veh.off .pkg-veh-sub { color: #92400E; }
 .pkgw-go { background: #0B1530; color: #D4AF37; }
 .pkgw-sheet .pkgw-b { color: #0B1530; }
 .pkgw-sheet .pkgw-go { color: #D4AF37; }
+
+/* Send a package: Send again strip and the My packages list */
+.pkgh-strip { margin-bottom: 12px; }
+.pkgh-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.pkgh-h { margin: 0 0 2px; }
+.pkgh-sub { font-size: 12px; color: var(--text-muted); }
+.pkgh-all { min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--gold, #D4AF37); background: transparent; color: var(--text); font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.pkgh-chips { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px; }
+.pkgh-chip { flex: 0 0 auto; min-width: 120px; max-width: 170px; text-align: left; padding: 9px 12px; border-radius: 12px; border: 1.5px solid var(--glass-border); background: var(--glass-2, rgba(212,175,55,.08)); cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.pkgh-chip-n { font-weight: 800; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkgh-chip-s { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkgh-view { position: fixed; inset: 0; z-index: 100000; background: #F6F7FB; color: #0B1530; overflow-y: auto; }
+.pkgh-in { max-width: 520px; margin: 0 auto; padding: 14px 16px calc(24px + env(safe-area-inset-bottom)); }
+.pkgh-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.pkgh-t { margin: 0; font-size: 20px; color: #0B1530; }
+.pkgh-x { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid #0B1530; background: #fff; color: #0B1530; font-size: 16px; cursor: pointer; }
+.pkgh-filters { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 2px; }
+.pkgh-f { flex: 0 0 auto; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #C5C9D6; background: #fff; color: #0B1530; font-weight: 700; font-size: 13px; cursor: pointer; }
+.pkgh-f.on { background: #0B1530; border-color: #0B1530; color: #D4AF37; }
+.pkgh-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pkgh-item { background: #fff; border: 1.5px solid #E1E4EC; border-radius: 16px; padding: 12px 14px; }
+.pkgh-row1 { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pkgh-code { font-size: 15px; color: #0B1530; }
+.pkgh-st { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: #FFF1C2; color: #7A5B00; }
+.pkgh-st.g-delivered { background: #DCFCE7; color: #166534; }
+.pkgh-st.g-cancelled { background: #FEE2E2; color: #991B1B; }
+.pkgh-route { margin: 6px 0 2px; font-size: 13px; color: #0B1530; overflow-wrap: anywhere; }
+.pkgh-meta { font-size: 12px; color: #5B6478; }
+.pkgh-btns { display: flex; gap: 8px; margin-top: 10px; }
+.pkgh-b { flex: 1; min-height: 42px; border-radius: 12px; border: 1.5px solid #0B1530; background: #fff; color: #0B1530; font-weight: 700; font-size: 13px; cursor: pointer; }
+.pkgh-go { background: #0B1530; color: #D4AF37; }
+.pkgh-empty { text-align: center; padding: 30px 10px; color: #5B6478; font-size: 14px; }

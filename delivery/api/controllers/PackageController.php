@@ -44,6 +44,18 @@ case 'customer_package_quote': {
     break;
 }
 
+case 'customer_package_recent': {
+    // The signed-in customer's own last packages (api/lib/package_history.php): the My packages list and Send again.
+    require_once __DIR__ . '/../lib/package_history.php';
+    $pdo = db();
+    $u = require_auth($pdo);
+    etel_package_ensure_schema($pdo);
+    try { $list = etel_package_history($pdo, $u['id'], 40); }
+    catch (Exception $e) { error_log('[ETEL] package history: ' . $e->getMessage()); fail('Could not load your packages. Try again.', 500); }
+    ok(array('packages' => $list));
+    break;
+}
+
 case 'public_track_package': {
     // No sign-in: the link the sender shares. Needs the order code and its random token; shows steps and times only (api/lib/package_public.php).
     require_once __DIR__ . '/../lib/package_public.php';

@@ -132,6 +132,7 @@
         try { loadSavedPlaces(); } catch (e) {}
         render();
         loadOptions();
+        if (window.PkgHistory) { var mineS = S; window.PkgHistory.load(function () { if (S === mineS && S.step === 1 && !S.pickup.address && !S.drop.address && !S.recipient_name) render(); }); }
         if (placesTimer) clearInterval(placesTimer);
         var tries = 0;
         placesTimer = setInterval(function () {
@@ -362,6 +363,19 @@
             S.busy = false; render();
         });
     };
+    // "Send again": start the wizard with the details of an earlier package (the sender still ticks the no-prohibited-items box and gets a fresh price)
+    window.pkgApply = function (p) {
+        if (!S || !p) return;
+        function sd(x) { var has = x.lat !== null && x.lng !== null; return { address: x.address || '', lat: has ? x.lat : null, lng: has ? x.lng : null, zone: has ? '' : (x.zone || ''), placeText: has ? (x.address || '') : '' }; }
+        S.pickup = sd(p.pickup); S.drop = sd(p.drop);
+        if (p.sender_name) S.sender_name = p.sender_name;
+        if (p.sender_phone) S.sender_phone = p.sender_phone;
+        S.recipient_name = p.recipient_name || ''; S.recipient_phone = p.recipient_phone || '';
+        S.size = p.size || ''; S.weight = p.weight_kg !== null && p.weight_kg !== undefined ? String(p.weight_kg) : ''; S.desc = p.desc || '';
+        S.speed = p.speed === 'express' ? 'express' : 'standard';
+        S.ack = false; S.vehicle = ''; S.quote = null; S.err = '';
+        S.step = 2; S.top = true; render();
+    };
     window.pkgTheme = function () { try { customerToggleTheme(); } catch (e) {} };
     window.pkgTrack = function (id) { window.pkgClose(); try { openTrackOrder(id); } catch (e) {} };
     window.pkgDone = function () { window.pkgClose(); try { switchCategory('orders'); } catch (e) {} };
@@ -408,7 +422,8 @@
         if (S.pickup.lat !== null && S.drop.lat !== null) {
             d = '<div class="pkg-dist" role="status">↔ ' + esc(T('pkg_route_km').replace('{km}', km(S.pickup.lat, S.pickup.lng, S.drop.lat, S.drop.lng).toFixed(1))) + '</div>';
         }
-        return '<section class="pkg-card pkg-route">' +
+        var again = (window.PkgHistory && !S.pickup.address && !S.drop.address && !S.recipient_name) ? window.PkgHistory.strip() : '';
+        return again + '<section class="pkg-card pkg-route">' +
             stop('pickup', T('pkg_pickup'), T('pkg_sender'), 'sender_name', 'sender_phone', T('pkg_sender_name'), T('pkg_sender_phone'), 'tel') +
             stop('drop', T('pkg_drop'), T('pkg_recipient'), 'recipient_name', 'recipient_phone', T('pkg_rcpt_name'), T('pkg_rcpt_phone'), 'off') + d + '</section>';
     }
