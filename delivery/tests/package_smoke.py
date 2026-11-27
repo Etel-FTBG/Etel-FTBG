@@ -423,6 +423,26 @@ def main():
     else:
         print("  SKIP could not find the test customer id")
 
+    print("13. Tracking link for an older package")
+    old_id = int(h2.get("order_id"))
+    old_code = h2.get("order_code")
+    etel_test_db.run_sql("UPDATE orders SET track_token = NULL WHERE id = %d" % old_id)
+    s, r = call("public_track_package", {"code": old_code, "token": "a" * 12})
+    check("a package booked before the links has no public link yet (404)", r.get("success") is False and s == 404, (s, r))
+    s, r = call("track_order", {"order_id": old_id}, token=cust)
+    tk = ((r.get("data") or {}).get("order") or {}).get("track_token", "")
+    check("the sender opening it gets a token (12 hex digits)", len(tk) == 12 and all(c in "0123456789abcdef" for c in tk), tk)
+    okq, outq, _ = etel_test_db.query_text("SELECT track_token FROM orders WHERE id = %d" % old_id)
+    check("the token is saved on the order", okq and outq.strip().split("\n")[-1] == tk, outq)
+    s, r = call("public_track_package", {"code": old_code, "token": tk})
+    check("and the public link now works for it", r.get("success") is True and (r.get("data") or {}).get("order_code") == old_code, r)
+    s, r2 = call("track_order", {"order_id": old_id}, token=cust)
+    check("asking again gives the same token (it is made once)", ((r2.get("data") or {}).get("order") or {}).get("track_token") == tk)
+    s, r3 = call("track_order", {"order_id": old_id}, token=other)
+    check("another customer cannot open the package and never gets the token", r3.get("success") is False and tk not in json.dumps(r3), r3)
+    s, r4 = call("track_order", {"order_id": old_id}, token=moto)
+    check("a courier account that is not on it never gets the token either", tk not in json.dumps(r4), str(r4)[:100])
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

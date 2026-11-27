@@ -96,6 +96,7 @@ EtelActions.expose([
     "pkgMineAgain",
     "pkgMineTrack",
     "pkgProofShow",
+    "pkgShareLink",
     "pkgContactsOpen",
     "pkgContactsClose",
     "pkgContactSave",

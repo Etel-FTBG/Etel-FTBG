@@ -838,5 +838,6 @@
             rows.map(function (r) { return '<div class="pkg-trk-row"><span class="pkg-trk-ic" aria-hidden="true">' + r[2] + '</span><span class="pkg-trk-k">' + esc(r[0]) + '</span><span class="pkg-trk-v">' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
         if (box.querySelector('[data-pt-from]') && !JT.timer) JT.timer = setInterval(tickJourney, 1000);
         if (window.PkgProof) { try { window.PkgProof.attach(box, o); } catch (e) {} }
+        if (window.PkgWaybill && window.PkgWaybill.linkHtml) { try { box.insertAdjacentHTML('beforeend', window.PkgWaybill.linkHtml(o)); } catch (e) {} }   // share the public tracking link
     };
 })();
