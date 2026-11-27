@@ -480,6 +480,8 @@ case 'admin_update_order': {
     try {
         $extra = ($status === 'delivered') ? ', delivered_at=NOW()' : '';
         $pdo->prepare("UPDATE orders SET status=? $extra WHERE id=?")->execute(array($status, $order_id));
+        // the courier's open "please confirm" requests follow the new status, so the customer is not left on an old "pay now" card
+        try { require_once __DIR__ . '/../lib/order_confirmations.php'; $au2 = require_admin($pdo, 'orders.manage'); etel_confirmations_settle_for_status($pdo, $order_id, $status, $au2['id']); } catch (Exception $ce) { error_log('[ETEL] settle confirmations: ' . $ce->getMessage()); }
         if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         ok(array('message' => 'Order updated', 'order_id' => $order_id, 'status' => $status));
     } catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
