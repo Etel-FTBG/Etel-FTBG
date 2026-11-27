@@ -147,7 +147,7 @@
 <link rel="stylesheet" href="EtelGroup/css/eg-groups-r2.css">
 <link rel="stylesheet" href="EtelGroup/css/eg-light-r2.css">
 <link rel="stylesheet" href="EtelGroup/css/eg-apps.css?v=3">
-<link rel="stylesheet" href="EtelGroup/css/eg-ecosystem.css?v=5">
+<link rel="stylesheet" href="EtelGroup/css/eg-companies-orb.css?v=3">
 <script src="EtelGroup/js/eg-master-theme.js"></script>
 </head>
 <body>
@@ -372,6 +372,15 @@
     <div class="sec-rule js-reveal"></div>
   </div>
 
+  <!-- The ETEL Group logo in its slowly turning ring, then the companies (cards drawn by js/companies-r4.js, each with the same ring) -->
+  <div class="co-hub">
+    <div class="co-hub-stage">
+      <span class="co-hub-ring" aria-hidden="true"><i style="--a:0deg"></i><i style="--a:60deg"></i><i style="--a:120deg"></i><i style="--a:180deg"></i><i style="--a:240deg"></i><i style="--a:300deg"></i></span>
+      <img class="co-hub-img" src="EtelGroup/icons/brand/etel-group-master.webp?v=1" width="442" height="442" alt="ETEL Group logo: the blue ኢE mark, ETEL ኢትኤል and GROUP inside a gold ring" loading="lazy" decoding="async">
+    </div>
+    <p class="co-hub-cap" data-en="ETEL Group &nbsp;·&nbsp; ኢትኤል ቡድን" data-am="ኢትኤል ቡድን &nbsp;·&nbsp; ETEL Group">ETEL Group &nbsp;·&nbsp; ኢትኤል ቡድን</p>
+  </div>
+
   <!-- Grid -->
   <!-- Live companies first, then the ones still coming (filled by js/companies-r4.js) -->
   <div class="co-group co-group-live" id="co-group-live">
@@ -390,57 +399,6 @@
   </div>
 
 </section>
-<!-- ════════════════════════════════════════
-     ECOSYSTEM - the master mark and the company badges (EtelGroup/css/eg-ecosystem.css, plain HTML, no script; the logos are transparent WebP)
-════════════════════════════════════════ -->
-<section id="ecosystem" aria-labelledby="eco-title">
-  <div class="eco-head">
-    <p class="eco-eyebrow" data-en="One ID &nbsp;·&nbsp; One Ecosystem" data-am="አንድ መታወቂያ &nbsp;·&nbsp; አንድ ሥነ-ምህዳር">One ID &nbsp;·&nbsp; One Ecosystem</p>
-    <h2 class="eco-title" id="eco-title" data-en="Many companies.<br><span>One ETEL.</span>" data-am="ብዙ ኩባንያዎች።<br><span>አንድ ኢትኤል።</span>">Many companies.<br><span>One ETEL.</span></h2>
-    <p class="eco-sub" data-en="Every ETEL company wears the same gold ring and the same navy disc. Same trust, same ID, one family." data-am="እያንዳንዱ የኢትኤል ኩባንያ ተመሳሳይ የወርቅ ቀለበት እና ተመሳሳይ ሰማያዊ ክብ ይለብሳል። አንድ እምነት፣ አንድ መታወቂያ፣ አንድ ቤተሰብ።">Every ETEL company wears the same gold ring and the same navy disc. Same trust, same ID, one family.</p>
-  </div>
-
-  <div class="eco-stage">
-    <div class="eco-hub">
-      <img class="eco-master" src="EtelGroup/icons/brand/etel-group-master.webp?v=1" width="442" height="442" alt="ETEL Group logo: the blue ኢE mark, ETEL ኢትኤል and GROUP inside a gold ring with six orbiting dots" loading="lazy" decoding="async">
-      <p class="eco-hub-cap" data-en="ETEL Group &nbsp;·&nbsp; ኢትኤል ቡድን" data-am="ኢትኤል ቡድን &nbsp;·&nbsp; ETEL Group">ETEL Group &nbsp;·&nbsp; ኢትኤል ቡድን</p>
-    </div>
-
-    <div class="eco-cards">
-      <a class="eco-card" id="eco-pay" href="https://ethelmarket.com/Etel.Pay/" target="_blank" rel="noopener">
-        <img src="EtelGroup/icons/brand/etel-pay.webp?v=1" width="640" height="640" alt="ETEL Pay logo: a gold wallet next to the ኢE mark, ክፍያ" loading="lazy" decoding="async">
-        <span class="eco-card-t"><b>ETEL Pay</b><em data-en="Wallet and payments" data-am="የኪስ ቦርሳ እና ክፍያ">Wallet and payments</em></span>
-        <span class="eco-go" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="eco-card" id="eco-gebeya" href="https://ethelmarket.com/EtelGebeya/" target="_blank" rel="noopener">
-        <img src="EtelGroup/icons/brand/etel-gebeya.webp?v=1" width="640" height="640" alt="ETEL Gebeya logo: a market basket next to the ኢE mark, ገበያ" loading="lazy" decoding="async">
-        <span class="eco-card-t"><b>ETEL Gebeya</b><em data-en="Marketplace" data-am="የገበያ ቦታ">Marketplace</em></span>
-        <span class="eco-go" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="eco-card" id="eco-ride" href="https://ethelmarket.com/EtelTaxi/" target="_blank" rel="noopener">
-        <img src="EtelGroup/icons/brand/etel-ride.webp?v=1" width="640" height="640" alt="ETEL Ride logo: a gold car next to the ኢE mark, ጉዞ" loading="lazy" decoding="async">
-        <span class="eco-card-t"><b>ETEL Ride</b><em data-en="Rides and transport" data-am="ጉዞ እና ትራንስፖርት">Rides and transport</em></span>
-        <span class="eco-go" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="eco-card" id="eco-delivery" href="https://ethelmarket.com/delivery/" target="_blank" rel="noopener">
-        <img src="EtelGroup/icons/brand/etel-delivery.webp?v=1" width="640" height="640" alt="ETEL Delivery logo: a gold parcel next to the ኢE mark, ማድረስ" loading="lazy" decoding="async">
-        <span class="eco-card-t"><b>ETEL Delivery</b><em data-en="Delivery and packages" data-am="ማድረስ እና እሽጎች">Delivery and packages</em></span>
-        <span class="eco-go" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="eco-card" id="eco-madeya" href="https://ethelmarket.com/etel.madeya/" target="_blank" rel="noopener">
-        <img src="EtelGroup/icons/brand/etel-madeya.webp?v=1" width="640" height="640" alt="ETEL Madeya logo: a gold fuel pump next to the ኢE mark, ማደያ" loading="lazy" decoding="async">
-        <span class="eco-card-t"><b>ETEL Madeya</b><em data-en="Fuel stations" data-am="የነዳጅ ማደያ">Fuel stations</em></span>
-        <span class="eco-go" aria-hidden="true">&rarr;</span>
-      </a>
-      <a class="eco-card" id="eco-id" href="https://ethelmarket.com/EtelId/etel-id/apply/" target="_blank" rel="noopener">
-        <img src="EtelGroup/icons/brand/etel-id.webp?v=1" width="640" height="640" alt="ETEL ID logo: a gold ID card next to the ኢE mark, መታወቂያ" loading="lazy" decoding="async">
-        <span class="eco-card-t"><b>ETEL ID</b><em data-en="One ID for everything" data-am="አንድ መታወቂያ ለሁሉም">One ID for everything</em></span>
-        <span class="eco-go" aria-hidden="true">&rarr;</span>
-      </a>
-    </div>
-  </div>
-</section>
-
 <!-- ════════════════════════════════════════
      ABOUT — BRAND STORY + HERITAGE
 ════════════════════════════════════════ -->
@@ -1381,7 +1339,7 @@
 ════════════════════════════════════════ -->
 <script src="EtelGroup/js/main.js" defer></script>
 <script src="EtelGroup/js/eg-apps.js?v=2" defer></script>
-<script src="EtelGroup/js/companies-r4.js?v=2" defer></script>
+<script src="EtelGroup/js/companies-r4.js?v=3" defer></script>
 <script src="EtelGroup/js/site-content-r2.js" defer></script>
 <script>
   window.ETEL_GROUP_API = 'EtelGroup/api/boot.php';
