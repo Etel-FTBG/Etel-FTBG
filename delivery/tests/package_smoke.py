@@ -382,6 +382,47 @@ def main():
     s, r = call("customer_package_recent", {}, token=cust)
     check("only package orders are listed (no shop orders)", all(str(x.get("order_code", "")).startswith("ETP-") for x in (r.get("data") or {}).get("packages", [])))
 
+    print("12. Address book")
+    s, r = call("customer_package_contacts", {}, token=None)
+    check("the address book needs a sign-in", r.get("success") is False)
+    c1 = {"name": "Hana Bekele", "phone": "0911556677", "address": "Tabor, 2FQM+RHF, Hawassa, Ethiopia", "label": "Hana", "lat": 7.06, "lng": 38.49, "zone": "Tabor"}
+    s, r = call("customer_package_contact_save", c1, token=None)
+    check("saving needs a sign-in", r.get("success") is False)
+    s, r = call("customer_package_contact_save", c1, token=cust)
+    saved = (r.get("data") or {}).get("contact") or {}
+    check("a contact is saved", r.get("success") is True and saved.get("id") and saved.get("name") == "Hana Bekele" and saved.get("lat") == 7.06 and saved.get("label") == "Hana", r)
+    for name, bad in (("no name", dict(c1, name="")), ("a bad phone number", dict(c1, phone="12345")), ("no address", dict(c1, address="  ")), ("a name that is too long", dict(c1, name="x" * 121))):
+        s, r = call("customer_package_contact_save", bad, token=cust)
+        check("a contact with " + name + " is refused", r.get("success") is False and s == 400, r)
+    s, r = call("customer_package_contact_save", dict(c1, label="Sister", name="Hana B."), token=cust)
+    check("the same phone and address updates the contact instead of making a second one", r.get("success") is True and (r.get("data") or {}).get("contact", {}).get("id") == saved.get("id"), r)
+    s, r = call("customer_package_contact_save", dict(c1, address="Another place", lat=None, lng=None), token=cust)
+    second = (r.get("data") or {}).get("contact") or {}
+    check("the same person at a second address is a second contact; a missing map point is kept as none", r.get("success") is True and second.get("id") != saved.get("id") and second.get("lat") is None, r)
+    s, r = call("customer_package_contacts", {}, token=cust)
+    lst = (r.get("data") or {}).get("contacts") or []
+    check("the list has both, newest first, with the new name and label", len(lst) == 2 and lst[0].get("id") == second.get("id") and lst[1].get("label") == "Sister" and lst[1].get("name") == "Hana B.", lst)
+    s, r = call("customer_package_contacts", {}, token=other)
+    check("another customer's address book is empty (never sees these)", (r.get("data") or {}).get("contacts") == [], r)
+    s, r = call("customer_package_contact_delete", {"id": saved.get("id")}, token=other)
+    check("another customer cannot delete it (404)", r.get("success") is False and s == 404, (s, r))
+    s, r = call("customer_package_contact_delete", {"id": saved.get("id")}, token=None)
+    check("deleting needs a sign-in", r.get("success") is False)
+    s, r = call("customer_package_contact_delete", {"id": saved.get("id")}, token=cust)
+    s, r2 = call("customer_package_contacts", {}, token=cust)
+    check("the owner deletes it and it is gone from the list", r.get("success") is True and [x["id"] for x in (r2.get("data") or {}).get("contacts", [])] == [second.get("id")], r2)
+    okq, outq, _ = etel_test_db.query_text("SELECT id FROM users WHERE phone LIKE '%%%s' ORDER BY id DESC LIMIT 1" % ("914%06d" % n))
+    uid = outq.strip().split("\n")[-1] if okq and outq.strip() else ""
+    if uid:
+        for i in range(29):
+            etel_test_db.run_sql("INSERT INTO package_contacts (user_id, label, name, phone, address, created_at) VALUES (%s, '', 'Filler %d', '+2519110000%02d', 'Filler address %d', NOW())" % (uid, i, i, i))
+        s, r = call("customer_package_contact_save", dict(c1, phone="0911990000", address="The 31st"), token=cust)
+        check("the 31st contact is refused (30 at most)", r.get("success") is False and "full" in str(r.get("message")).lower(), r)
+        s, r = call("customer_package_contact_save", dict(second, phone="0911556677", address="Another place", name="Updated name"), token=cust)
+        check("an existing contact can still be updated when the book is full", r.get("success") is True, r)
+    else:
+        print("  SKIP could not find the test customer id")
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

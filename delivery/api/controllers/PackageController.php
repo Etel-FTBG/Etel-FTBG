@@ -44,6 +44,46 @@ case 'customer_package_quote': {
     break;
 }
 
+case 'customer_package_contacts': {
+    // The customer's own address book (api/lib/package_contacts.php).
+    require_once __DIR__ . '/../lib/package_contacts.php';
+    $pdo = db();
+    $u = require_auth($pdo);
+    try { $list = etel_contacts_list($pdo, $u['id']); }
+    catch (Exception $e) { error_log('[ETEL] contacts list: ' . $e->getMessage()); fail('Could not load your address book. Try again.', 500); }
+    ok(array('contacts' => $list));
+    break;
+}
+
+case 'customer_package_contact_save': {
+    // POST name, phone, address, label?, lat?, lng?, zone? -> saves (or updates the same phone + address) one contact.
+    require_once __DIR__ . '/../lib/package_contacts.php';
+    require_once __DIR__ . '/../validate.php';
+    $pdo = db();
+    $u = require_auth($pdo);
+    $clean = etel_contacts_clean($body, etel_validate_phone(isset($body['phone']) ? $body['phone'] : ''));
+    if (is_string($clean)) fail($clean, 400);
+    try { $r = etel_contacts_save($pdo, $u['id'], $clean); }
+    catch (Exception $e) { error_log('[ETEL] contact save: ' . $e->getMessage()); fail('Could not save. Try again.', 500); }
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'contact' => $r['contact']));
+    break;
+}
+
+case 'customer_package_contact_delete': {
+    // POST id -> removes one of the customer's own contacts.
+    require_once __DIR__ . '/../lib/package_contacts.php';
+    $pdo = db();
+    $u = require_auth($pdo);
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if (!$id) fail('id is required', 400);
+    try { $gone = etel_contacts_delete($pdo, $u['id'], $id); }
+    catch (Exception $e) { error_log('[ETEL] contact delete: ' . $e->getMessage()); fail('Could not delete. Try again.', 500); }
+    if (!$gone) fail('Contact not found.', 404);
+    ok(array('message' => 'Deleted.', 'id' => $id));
+    break;
+}
+
 case 'courier_package_proof': {
     // POST order_id, photo (a small data URL) -> the courier adds a photo to their own delivered package (api/lib/package_proof.php).
     require_once __DIR__ . '/../lib/package_proof.php';
