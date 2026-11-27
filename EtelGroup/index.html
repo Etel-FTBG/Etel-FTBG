@@ -146,6 +146,7 @@
 <link rel="stylesheet" href="EtelGroup/css/style.css">
 <link rel="stylesheet" href="EtelGroup/css/eg-groups-r2.css">
 <link rel="stylesheet" href="EtelGroup/css/eg-light-r2.css">
+<link rel="stylesheet" href="EtelGroup/css/eg-apps.css?v=3">
 <script src="EtelGroup/js/eg-master-theme.js"></script>
 </head>
 <body>
@@ -200,6 +201,13 @@
   <!-- Light / dark theme -->
   <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to light mode">☀️</button>
 
+  <!-- Android apps (APK downloads): the panel is drawn by EtelGroup/js/eg-apps.js -->
+  <button type="button" class="egap-btn" id="egap-nav-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="egap-panel" aria-label="ETEL apps for Android (APK download)" title="ETEL apps for Android">
+    <span class="egap-dot" aria-hidden="true"></span>
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8zm17 0A1.5 1.5 0 0 0 19 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8zM15.53 2.16l1.3-1.3a.5.5 0 0 0-.7-.71l-1.48 1.48A5.97 5.97 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 0 0-.7.7l1.31 1.32A5.99 5.99 0 0 0 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
+    <span class="egap-btn-t" data-en="Apps" data-am="መተግበሪያዎች">Apps</span>
+  </button>
+
   <!-- Nav CTA -->
   <a href="https://ethelmarket.com/EtelId/etel-id/apply/" class="nav-cta">
     <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -216,6 +224,8 @@
   </button>
 
 </nav>
+
+<div class="egap-panel" id="egap-panel" role="dialog" aria-modal="false" aria-labelledby="egap-title" aria-hidden="true"></div>
 
 <!-- ════════════════════════════════════════
      MOBILE DRAWER
@@ -234,6 +244,9 @@
 
   <p class="mob-section-label" style="margin-top:28px;">Live Projects</p>
   <div class="mob-companies" id="mobile-nav-list"></div>
+
+  <p class="mob-section-label" style="margin-top:28px;" data-en="Android apps (APK)" data-am="የAndroid መተግበሪያዎች (APK)">Android apps (APK)</p>
+  <div class="egap-mob" id="egap-mobile"></div>
 
   <div class="mob-cta-group">
     <a class="mob-cta-primary" href="https://ethelmarket.com/EtelId/etel-id/apply/" onclick="closeMob()">
@@ -333,6 +346,9 @@
         <span data-en="Explore Group" data-am="ቡድኑን ያስሱ">Explore Group</span>
       </a>
     </div>
+
+    <!-- Android apps strip (EtelGroup/js/eg-apps.js) -->
+    <div class="egap-hero" id="egap-hero"></div>
   </div>
 
   <div class="scroll-hint">
@@ -1204,6 +1220,13 @@
      FOOTER
 ════════════════════════════════════════ -->
 <footer>
+  <!-- Android apps band (EtelGroup/js/eg-apps.js); the plain links below work without JavaScript -->
+  <div class="egap-footer" id="egap-footer">
+    <noscript><p>
+      <a href="/delivery/apk/%E1%8A%A2E_Etel.apk">ETEL</a> · <a href="/delivery/apk/%E1%8A%A2E_Delivery.apk">ETEL Delivery</a> · <a href="/delivery/apk/%E1%8A%A2E_Ride.apk">ETEL Ride</a> ·
+      <a href="/delivery/apk/%E1%8A%A2E_Driver.apk">ETEL Driver</a> · <a href="/delivery/apk/%E1%8A%A2E_Courier.apk">ETEL Courier</a> · <a href="/delivery/apk/%E1%8A%A2E_Service.apk">ETEL Service</a>
+    </p></noscript>
+  </div>
   <div class="footer-top">
 
     <!-- Brand col -->
@@ -1305,6 +1328,7 @@
      SCRIPTS
 ════════════════════════════════════════ -->
 <script src="EtelGroup/js/main.js" defer></script>
+<script src="EtelGroup/js/eg-apps.js?v=1" defer></script>
 <script src="EtelGroup/js/companies-r4.js" defer></script>
 <script src="EtelGroup/js/site-content-r2.js" defer></script>
 <script>
