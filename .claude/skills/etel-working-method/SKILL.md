@@ -67,6 +67,10 @@ Written 2026-11-17 from the long working chats. It is the PROCESS. The project f
 - **Browser tests of the customer app:** mock `boot.php`; `customer_get_items` must return `{items: [], count: 0}` (an empty `{}` makes `renderSGScroll` throw); click the "Not Now" onboarding button first or it covers the screen; prove the test fails on the old file (`git show HEAD:path > path`, run, put the new file back).
 - **Where logic goes:** `delivery/api/lib/package_orders.php` is about 47 KB, already over the 30 KB rule: put new package logic in a NEW small lib file and call it from there.
 - **Light is the default theme in every system (PRs #947-#950);** see section 13 of `etel-delivery-ride-memory` for the keys and the `etel-design-v4.css` `!important` colour trap.
+- **Test clocks.** The app's PHP session uses Addis time (UTC+3); the mysql client in a test uses UTC. A test that sets a time column by SQL for a rule the PHP code measures (for example "within 2 hours after delivery") must write `DATE_ADD(UTC_TIMESTAMP(), INTERVAL 3 HOUR)`, not `NOW()`.
+- **A list of tests lives in `delivery/tests/ci/run_integration.sh`;** two open PRs that each add a `run python3 tests/...` line next to the same neighbour conflict when the first merges: keep BOTH lines.
+- **A new table needs a home in `tests/ci/check_reset_coverage.py` logic:** add it to the wipe list in `SystemResetController.php` (customer data) or to KEEP (settings), or the CI check fails (it caught `package_proofs` and `package_contacts`).
+- **Prove a server test fails on the old code** with `git stash push -- <file>`, run `run_integration.sh`, `git stash pop`; for a browser test swap the file with `git show HEAD:path`.
 
 ## 6. The ETEL app (`Etel-Driver-App`, Expo/React Native)
 - Signed out: only the sign-in card (premium look). Signed in: EtelID first, then only the apps the account's role may open; "My programmes" shows ETEL Investor / ETEL Equb / ETEL Agent only to members (checks `investor_portal_am_i_investor`, `equb_am_i_permitted`, `fa_agent_me`). Coming-soon apps are hidden.
