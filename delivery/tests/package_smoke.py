@@ -313,6 +313,30 @@ def main():
     s, r = call("public_track_package", {"code": pcode, "token": d_b.get("track_token", "")}, token=None)
     check("another package's token does not open this package", r.get("success") is False and s == 404, (s, r))
 
+    print("11. My packages and Send again")
+    s, r = call("customer_package_recent", {}, token=None)
+    check("the recent list needs a sign-in", r.get("success") is False)
+    mine = dict(book_m, description="Send again test", recipient_name="Hana", recipient_phone="0911556677")
+    s, r = call("customer_package_create", mine, token=cust)
+    h1 = r.get("data") or {}
+    s, r = call("customer_package_create", dict(mine, recipient_name="Hana 2", speed="express"), token=cust)
+    h2 = r.get("data") or {}
+    s, r = call("customer_package_recent", {}, token=cust)
+    lst = (r.get("data") or {}).get("packages")
+    check("the list has the newest package first", r.get("success") and isinstance(lst, list) and len(lst) >= 2 and lst[0].get("order_id") == h2.get("order_id") and lst[1].get("order_id") == h1.get("order_id"), [x.get("order_id") for x in (lst or [])][:4])
+    top = (lst or [{}])[0]
+    check("each row has what Send again needs (both addresses, recipient, size, weight, what is inside, vehicle, speed)", top.get("recipient_name") == "Hana 2" and top.get("recipient_phone") and top.get("size") == "small" and top.get("desc") == "Send again test" and top.get("vehicle_class") == "moto" and top.get("speed") == "express" and (top.get("pickup") or {}).get("address") and (top.get("drop") or {}).get("address"), top)
+    check("a new package is in the active group", top.get("group") == "active" and top.get("status") == "pending", top.get("group"))
+    call("customer_cancel_order", {"order_id": h1.get("order_id"), "reason": "other"}, token=cust)
+    s, r = call("customer_package_recent", {}, token=cust)
+    byid = dict((x["order_id"], x) for x in (r.get("data") or {}).get("packages", []))
+    check("a cancelled package is in the cancelled group", (byid.get(h1.get("order_id")) or {}).get("group") == "cancelled", byid.get(h1.get("order_id")))
+    s, r = call("customer_package_recent", {}, token=moto)
+    other_ids = [x["order_id"] for x in (r.get("data") or {}).get("packages", [])]
+    check("another customer's list never has these packages", h1.get("order_id") not in other_ids and h2.get("order_id") not in other_ids, other_ids)
+    s, r = call("customer_package_recent", {}, token=cust)
+    check("only package orders are listed (no shop orders)", all(str(x.get("order_code", "")).startswith("ETP-") for x in (r.get("data") or {}).get("packages", [])))
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

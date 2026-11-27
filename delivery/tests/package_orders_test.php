@@ -316,6 +316,14 @@ check('public view: delivered shows the time, defaults are parcel and standard',
 check('public view: never carries a phone, PIN, address, price or token', strpos(json_encode($pv), '0911') === false && strpos(json_encode($pv), '1234') === false && strpos(json_encode($pv), 'secret') === false && strpos(json_encode($pv), '99') === false && strpos(json_encode($pv), 'aaaaaaaaaaaa') === false);
 check('public view: an accepted or preparing order counts as the courier being on the way', etel_package_public_view(array('order_code' => 'x', 'status' => 'accepted'))['status'] === 'assigned');
 check('public lookup: a token that is not 12 hex digits is refused before any query', etel_package_public_lookup($pdo, 'ETP-1', 'nope') === null && etel_package_public_lookup($pdo, '', str_repeat('a', 12)) === null);
+// My packages (api/lib/package_history.php)
+require_once __DIR__ . '/../api/lib/package_history.php';
+check('status group: delivered, cancelled, everything else is active', etel_package_status_group('delivered') === 'delivered' && etel_package_status_group('cancelled') === 'cancelled' && etel_package_status_group('pending') === 'active' && etel_package_status_group('in_transit') === 'active' && etel_package_status_group('assigned') === 'active');
+$hr = etel_package_history_row(array('id' => '7', 'order_code' => 'ETP-1', 'status' => 'pending', 'pickup_address' => 'Piassa', 'pickup_lat' => '7.0500000', 'pickup_lng' => '38.4900000', 'from_zone' => 'A',
+    'recipient_address' => 'Tabor', 'delivery_lat' => null, 'delivery_lng' => '', 'to_zone' => 'B', 'recipient_name' => 'Hana', 'recipient_phone' => '0911', 'pkg_size' => 'small', 'pkg_weight_kg' => '2.50', 'pkg_desc' => 'Books', 'vehicle_class' => 'moto', 'pkg_speed' => 'express', 'fare_total' => '156.00'));
+check('history row: ids and numbers are real numbers, missing coordinates are null', $hr['order_id'] === 7 && $hr['pickup']['lat'] === 7.05 && $hr['drop']['lat'] === null && $hr['drop']['lng'] === null && $hr['weight_kg'] === 2.5 && $hr['fare_total'] === 156.0);
+check('history row: the fields Send again fills', $hr['recipient_name'] === 'Hana' && $hr['size'] === 'small' && $hr['desc'] === 'Books' && $hr['vehicle_class'] === 'moto' && $hr['speed'] === 'express' && $hr['group'] === 'active');
+check('history row: a row with almost nothing does not break', etel_package_history_row(array('id' => 1, 'order_code' => 'x', 'status' => 'delivered'))['group'] === 'delivered');
 $pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;
