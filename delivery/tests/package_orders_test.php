@@ -301,6 +301,21 @@ etel_package_save_settings($pdo, array('booking_on' => 1, 'express_on' => 1));
 $qb = etel_package_quote_speed($pdo, $qopts, 20);
 check('with express on a quote gets the express price and time', $qb['on'] === true && $qb['eta_min'] === 15 && $qopts[0]['express_price'] === 130 && $qopts[0]['express_extra'] === 30);
 check('express settings out of range are refused', etel_package_save_settings($pdo, array('express_on' => 2))['ok'] === false && etel_package_save_settings($pdo, array('express_pct' => 250))['ok'] === false);
+// Public tracking link (api/lib/package_public.php)
+require_once __DIR__ . '/../api/lib/package_public.php';
+$tk = etel_package_track_token();
+check('track token: 12 hex digits and not the same twice', preg_match('/^[0-9a-f]{12}$/', $tk) === 1 && $tk !== etel_package_track_token());
+check('first name: first word only, empty stays empty', etel_package_first_name('  Abebe Kebede Alemu ') === 'Abebe' && etel_package_first_name('') === '' && etel_package_first_name(null) === '');
+$pv = etel_package_public_view(array('order_code' => 'ETP-1', 'status' => 'in_transit', 'from_zone' => 'A', 'to_zone' => 'B', 'package_type' => 'document', 'pkg_speed' => 'express',
+    'vehicle_class' => 'moto', 'courier_name' => 'Abebe Kebede', 'placed_at' => '2026-11-27 09:00:00', 'delivered_at' => '2026-11-27 10:00:00',
+    'recipient_phone' => '0911', 'delivery_pin' => '1234', 'pickup_address' => 'secret street', 'fare_total' => 99, 'track_token' => 'aaaaaaaaaaaa'));
+check('public view: the fields the page needs', $pv['order_code'] === 'ETP-1' && $pv['status'] === 'in_transit' && $pv['package_type'] === 'document' && $pv['speed'] === 'express' && $pv['courier_first_name'] === 'Abebe');
+check('public view: delivered time only once delivered', $pv['delivered_at'] === '');
+$pv2 = etel_package_public_view(array('order_code' => 'ETP-2', 'status' => 'delivered', 'delivered_at' => '2026-11-27 10:00:00'));
+check('public view: delivered shows the time, defaults are parcel and standard', $pv2['delivered_at'] === '2026-11-27 10:00:00' && $pv2['package_type'] === 'parcel' && $pv2['speed'] === 'standard');
+check('public view: never carries a phone, PIN, address, price or token', strpos(json_encode($pv), '0911') === false && strpos(json_encode($pv), '1234') === false && strpos(json_encode($pv), 'secret') === false && strpos(json_encode($pv), '99') === false && strpos(json_encode($pv), 'aaaaaaaaaaaa') === false);
+check('public view: an accepted or preparing order counts as the courier being on the way', etel_package_public_view(array('order_code' => 'x', 'status' => 'accepted'))['status'] === 'assigned');
+check('public lookup: a token that is not 12 hex digits is refused before any query', etel_package_public_lookup($pdo, 'ETP-1', 'nope') === null && etel_package_public_lookup($pdo, '', str_repeat('a', 12)) === null);
 $pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;

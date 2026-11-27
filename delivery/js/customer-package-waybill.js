@@ -13,14 +13,20 @@
             pkgw_share: 'Share', pkgw_copy: 'Copy number', pkgw_receipt: 'Receipt / PDF', pkgw_copied: 'Tracking number copied',
             pkgw_msg: 'ETEL Delivery package {code}. From {from} to {to}. Track it in the ETEL app: ethelmarket.com/delivery', pkgw_eta: 'about {min} min', pkgw_kg: 'kg',
             pkgw_pay_cash: 'Cash', pkgw_pay_telebirr: 'Telebirr', pkgw_pay_wallet: 'Etel Pay wallet', pkgw_pay_chapa: 'Chapa (online)', pkgw_pay_abysinia: 'Abyssinia Bank', pkgw_pay_cbe: 'CBE',
-            pkgw_print_fail: 'Could not open the receipt. Allow pop-ups and try again.', pkgw_pins: 'Keep your pickup and delivery PINs private. Only give them to the courier.' },
+            pkgw_print_fail: 'Could not open the receipt. Allow pop-ups and try again.',
+            pkgw_link: 'Tracking link', pkgw_problem: 'Report a problem', pkgw_pr_title: 'Report a problem with this package', pkgw_pr_what: 'What happened?', pkgw_pr_details: 'Tell us more (optional)',
+            pkgw_pr_send: 'Send report', pkgw_pr_cancel: 'Cancel', pkgw_pr_ok: 'Thank you. We got your report and will look into it.', pkgw_pr_err: 'Could not send the report. Try again.',
+            pkgw_c_never_arrived: 'It never arrived', pkgw_c_late_delivery: 'It came late', pkgw_c_item_damaged: 'It is damaged', pkgw_c_item_missing: 'Something is missing', pkgw_c_courier_behavior: 'The courier was a problem', pkgw_c_other: 'Something else', pkgw_pins: 'Keep your pickup and delivery PINs private. Only give them to the courier.' },
         am: { pkgw_brand: 'ኢትኤል ዴሊቨሪ', pkgw_wb: 'የጥቅል ደረሰኝ', pkgw_track_no: 'የመከታተያ ቁጥር', pkgw_from: 'ከ', pkgw_to: 'ወደ', pkgw_to_who: 'ተቀባይ',
             pkgw_vehicle: 'ተሽከርካሪ', pkgw_pack: 'ጥቅል', pkgw_dist: 'ርቀት', pkgw_speed: 'ፍጥነት', pkgw_sp_standard: 'መደበኛ', pkgw_sp_express: 'ፈጣን (Express)', pkgw_pay: 'ክፍያ', pkgw_total: 'ጠቅላላ',
             pkgw_tl_t: 'የመላኪያ ሂደት', pkgw_tl1: 'ጥቅሉ ተይዟል', pkgw_tl2: 'መልእክተኛው ሊወስድ በመንገድ ላይ ነው', pkgw_tl3: 'ጥቅሉ ተወስዷል', pkgw_tl4: 'ወደ ተቀባዩ በመንገድ ላይ', pkgw_tl5: 'ደርሷል',
             pkgw_share: 'አጋራ', pkgw_copy: 'ቁጥር ቅዳ', pkgw_receipt: 'ደረሰኝ / PDF', pkgw_copied: 'የመከታተያ ቁጥሩ ተቀድቷል',
             pkgw_msg: 'የኢትኤል ዴሊቨሪ ጥቅል {code}። ከ {from} ወደ {to}። በኢትኤል መተግበሪያ ይከታተሉ: ethelmarket.com/delivery', pkgw_eta: 'ወደ {min} ደቂቃ', pkgw_kg: 'ኪ.ግ',
             pkgw_pay_cash: 'ጥሬ ገንዘብ', pkgw_pay_telebirr: 'ቴሌብር', pkgw_pay_wallet: 'የኢትኤል ፔይ ዋሌት', pkgw_pay_chapa: 'Chapa (ኦንላይን)', pkgw_pay_abysinia: 'አቢሲንያ ባንክ', pkgw_pay_cbe: 'ንግድ ባንክ',
-            pkgw_print_fail: 'ደረሰኙን መክፈት አልተቻለም። ብቅ-ባይ ፈቅደው እንደገና ይሞክሩ።', pkgw_pins: 'የመረከቢያና የማስረከቢያ ፒንዎን በሚስጥር ይያዙ። ለመልእክተኛው ብቻ ይስጡ።' }
+            pkgw_print_fail: 'ደረሰኙን መክፈት አልተቻለም። ብቅ-ባይ ፈቅደው እንደገና ይሞክሩ።',
+            pkgw_link: 'የመከታተያ ሊንክ', pkgw_problem: 'ችግር ሪፖርት ያድርጉ', pkgw_pr_title: 'ስለዚህ ጥቅል ችግር ሪፖርት ያድርጉ', pkgw_pr_what: 'ምን ሆነ?', pkgw_pr_details: 'ተጨማሪ ይንገሩን (አማራጭ)',
+            pkgw_pr_send: 'ሪፖርት ላክ', pkgw_pr_cancel: 'ተው', pkgw_pr_ok: 'አመሰግናለን። ሪፖርትዎን ተቀብለናል፣ እናየዋለን።', pkgw_pr_err: 'ሪፖርቱን መላክ አልተቻለም። እንደገና ይሞክሩ።',
+            pkgw_c_never_arrived: 'አልደረሰም', pkgw_c_late_delivery: 'ዘግይቶ ደረሰ', pkgw_c_item_damaged: 'ተበላሽቷል', pkgw_c_item_missing: 'የሆነ ነገር ጎድሏል', pkgw_c_courier_behavior: 'በመልእክተኛው ችግር ነበር', pkgw_c_other: 'ሌላ ነገር', pkgw_pins: 'የመረከቢያና የማስረከቢያ ፒንዎን በሚስጥር ይያዙ። ለመልእክተኛው ብቻ ይስጡ።' }
     });
     function T(k) { return ETEL_I18N.t(k); }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -51,16 +57,17 @@
             '<div class="pkgw-btns"><button type="button" class="pkgw-b"' + EtelActions.attrs('pkgShare') + '>' + esc(T('pkgw_share')) + '</button>' +
             '<button type="button" class="pkgw-b"' + EtelActions.attrs('pkgCopy') + '>' + esc(T('pkgw_copy')) + '</button>' +
             '<button type="button" class="pkgw-b"' + EtelActions.attrs('pkgReceipt') + '>' + esc(T('pkgw_receipt')) + '</button></div>' +
+            '<div class="pkgw-btns"><button type="button" class="pkgw-b pkgw-prob"' + EtelActions.attrs('pkgProblem') + '>⚠️ ' + esc(T('pkgw_problem')) + '</button></div>' +
             '<p class="pkgw-note">🔐 ' + esc(T('pkgw_pins')) + '</p></section>';
     }
     function qr(el, text, px) {
         if (!el || typeof QRCode === 'undefined') return false;
         try { el.innerHTML = ''; new QRCode(el, { text: String(text), width: px, height: px, colorDark: '#0B1530', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); return true; } catch (e) { return false; }
     }
-    function mount(root, code) { var el = (root || document).querySelector('#pkgw-qr'); if (el && !el.firstChild) qr(el, code, 84); }
+    function mount(root, code) { var el = (root || document).querySelector('#pkgw-qr'); if (el && !el.firstChild) qr(el, (LAST && LAST.wb && LAST.wb.link) || code, 84); }
     function text() {
         var w = LAST.wb;
-        return T('pkgw_msg').replace('{code}', LAST.code).replace('{from}', w.from).replace('{to}', w.to);
+        return T('pkgw_msg').replace('{code}', LAST.code).replace('{from}', w.from).replace('{to}', w.to) + (w.link ? '\n' + T('pkgw_link') + ': ' + w.link : '');
     }
     function toast(m, kind) { try { showToast(m, kind || 'ok'); } catch (e) {} }
     window.pkgCopy = function () {
@@ -80,7 +87,7 @@
         var w = LAST.wb, holder = document.createElement('div'), img = '';
         holder.style.cssText = 'position:fixed;left:-999px;top:0';
         document.body.appendChild(holder);
-        if (qr(holder, LAST.code, 120)) { var c = holder.querySelector('canvas'), i = holder.querySelector('img'); try { img = c ? c.toDataURL('image/png') : (i ? i.src : ''); } catch (e) {} }
+        if (qr(holder, w.link || LAST.code, 120)) { var c = holder.querySelector('canvas'), i = holder.querySelector('img'); try { img = c ? c.toDataURL('image/png') : (i ? i.src : ''); } catch (e) {} }
         document.body.removeChild(holder);
         var rows = [['pkgw_from', w.from], ['pkgw_to', w.to], ['pkgw_to_who', w.recipient], ['pkgw_vehicle', w.vehicle], ['pkgw_pack', w.size + ' - ' + w.weight + ' ' + T('pkgw_kg') + ' - ' + w.desc], ['pkgw_dist', w.km + ' km'], ['pkgw_speed', T(w.speed === 'express' ? 'pkgw_sp_express' : 'pkgw_sp_standard')], ['pkgw_pay', payName(w.pay)]];
         var d = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(LAST.code) + '</title><style>' +
@@ -94,12 +101,41 @@
             '<div class="id"><div><div class="k">' + esc(T('pkgw_track_no')) + '</div><div class="n">' + esc(LAST.code) + '</div></div>' + (img ? '<img src="' + img + '" width="96" height="96" alt="">' : '') + '</div>' +
             rows.map(function (r) { return '<div class="r"><span>' + esc(T(r[0])) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') +
             '<div class="tt"><span>' + esc(T('pkgw_total')) + '</span><span>ETB ' + esc(LAST.total) + '</span></div>' +
-            '<div class="f">' + esc(new Date().toLocaleString()) + ' - ethelmarket.com/delivery</div></div><button class="b" id="pr">' + esc(T('pkgw_receipt')) + '</button>' +
+            '<div class="f">' + esc(new Date().toLocaleString()) + ' - ethelmarket.com/delivery' + (w.link ? '<br>' + esc(T('pkgw_link')) + ': ' + esc(w.link) : '') + '</div></div><button class="b" id="pr">' + esc(T('pkgw_receipt')) + '</button>' +
             '<script>document.getElementById("pr").onclick=function(){window.print()};</script></body></html>';
         var win = null;
         try { win = window.open('', '_blank'); } catch (e3) {}
         if (!win) { toast(T('pkgw_print_fail'), 'err'); return; }
         win.document.open(); win.document.write(d); win.document.close();
+    };
+
+    // ---------- report a problem: a small sheet on top of the page (own element, so a redraw of the wizard never removes it) ----------
+    var CATS = ['never_arrived', 'late_delivery', 'item_damaged', 'item_missing', 'courier_behavior', 'other'];
+    function closeSheet() { var s = document.getElementById('pkgw-sheet'); if (s && s.parentNode) s.parentNode.removeChild(s); }
+    window.pkgProblem = function () {
+        if (!LAST || !LAST.wb || !LAST.wb.order_id) return;
+        closeSheet();
+        var d = document.createElement('div');
+        d.id = 'pkgw-sheet'; d.className = 'pkgw-sheet'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', T('pkgw_pr_title'));
+        d.innerHTML = '<div class="pkgw-sheet-in"><h3 class="pkgw-sheet-t">' + esc(T('pkgw_pr_title')) + '</h3>' +
+            '<label class="pkgw-sl" for="pkgw-cat">' + esc(T('pkgw_pr_what')) + '</label><select id="pkgw-cat" class="pkgw-sel">' +
+            CATS.map(function (c) { return '<option value="' + c + '">' + esc(T('pkgw_c_' + c)) + '</option>'; }).join('') + '</select>' +
+            '<label class="pkgw-sl" for="pkgw-det">' + esc(T('pkgw_pr_details')) + '</label><textarea id="pkgw-det" class="pkgw-ta" rows="3" maxlength="500"></textarea>' +
+            '<div id="pkgw-msg" class="pkgw-msg" role="status"></div>' +
+            '<div class="pkgw-sheet-b"><button type="button" class="pkgw-b" id="pkgw-cancel">' + esc(T('pkgw_pr_cancel')) + '</button><button type="button" class="pkgw-b pkgw-go" id="pkgw-send">' + esc(T('pkgw_pr_send')) + '</button></div></div>';
+        document.body.appendChild(d);
+        d.addEventListener('click', function (e) { if (e.target === d) closeSheet(); });
+        document.getElementById('pkgw-cancel').addEventListener('click', closeSheet);
+        document.getElementById('pkgw-send').addEventListener('click', function () {
+            var btn = this, msg = document.getElementById('pkgw-msg'), ord = LAST.wb.order_id;
+            btn.disabled = true; msg.textContent = '';
+            var det = 'Package ' + LAST.code + '. ' + document.getElementById('pkgw-det').value.trim();
+            api('submit_order_issue', { order_id: ord, category: document.getElementById('pkgw-cat').value, details: det.slice(0, 1900) }).then(function (r) {
+                if (r && r.success) { toast(T('pkgw_pr_ok')); closeSheet(); }
+                else { btn.disabled = false; msg.textContent = (r && r.message) || T('pkgw_pr_err'); }
+            }).catch(function () { btn.disabled = false; msg.textContent = T('pkgw_pr_err'); });
+        });
+        var f = document.getElementById('pkgw-cat'); if (f && f.focus) f.focus();
     };
     window.PkgWaybill = { html: html, mount: mount };
 })();

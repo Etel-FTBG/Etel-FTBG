@@ -1859,3 +1859,16 @@ body:not(.dark-theme) .pkg-veh.off .pkg-veh-sub { color: #92400E; }
 .pkg-speed { margin-top: 12px; }
 .pkg-bd { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; color: var(--text-muted); }
 .pkg-bd span:last-child { font-weight: 700; color: var(--text); }
+
+/* Send a package: report a problem sheet */
+.pkgw-prob { flex: 1; color: #B91C1C; border-color: #B91C1C; }
+.pkgw-sheet { position: fixed; inset: 0; z-index: 100000; background: rgba(11,21,48,.55); display: flex; align-items: flex-end; justify-content: center; }
+.pkgw-sheet-in { width: 100%; max-width: 480px; box-sizing: border-box; background: #fff; color: #0B1530; border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); }
+.pkgw-sheet-t { margin: 0 0 12px; font-size: 17px; color: #0B1530; }
+.pkgw-sl { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 700; color: #0B1530; }
+.pkgw-sel, .pkgw-ta { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1.5px solid #C5C9D6; background: #fff; color: #0B1530; font-size: 15px; font-family: inherit; }
+.pkgw-msg { min-height: 18px; margin-top: 6px; font-size: 13px; color: #B91C1C; }
+.pkgw-sheet-b { display: flex; gap: 8px; margin-top: 8px; }
+.pkgw-go { background: #0B1530; color: #D4AF37; }
+.pkgw-sheet .pkgw-b { color: #0B1530; }
+.pkgw-sheet .pkgw-go { color: #D4AF37; }

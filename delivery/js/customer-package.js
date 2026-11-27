@@ -343,6 +343,7 @@
             if (!res || !res.success) { S.busy = false; S.err = (res && res.message) || T('pkg_load_fail'); render(); return; }
             S.done = res.data;
             S.done.wb = { from: S.pickup.address.trim(), to: S.drop.address.trim(), vehicle: c.label, vclass: c.vehicle_class, icon: c.icon, size: T('pkg_size_' + S.size), weight: S.weight, desc: S.desc.trim(),
+                order_id: res.data.order_id, link: (res.data.track_token ? new URL('track.html?c=' + encodeURIComponent(res.data.order_code) + '&t=' + res.data.track_token, location.href).href : ''),
                 km: S.quote ? S.quote.distance_km : '', eta: S.quote ? (isExp(c) ? S.quote.express.eta_min : S.quote.eta_min) : '', speed: isExp(c) ? 'express' : 'standard', pay: S.payment, recipient: S.recipient_name.trim() };
             var pm = S.payment, oid = res.data.order_id, tot = res.data.total;
             if (pm === 'telebirr') {

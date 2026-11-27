@@ -122,7 +122,7 @@ function etel_package_ensure_schema($pdo) {
             'pickup_pin' => 'VARCHAR(6) NULL DEFAULT NULL', 'delivery_pin' => 'VARCHAR(6) NULL DEFAULT NULL',
             'sender_name' => "VARCHAR(120) NULL DEFAULT ''", 'sender_phone' => "VARCHAR(25) NULL DEFAULT ''",
             'pickup_lat' => 'DECIMAL(10,7) NULL DEFAULT NULL', 'pickup_lng' => 'DECIMAL(10,7) NULL DEFAULT NULL',
-            'recipient_address' => "VARCHAR(255) NULL DEFAULT ''", 'pkg_speed' => "VARCHAR(10) NOT NULL DEFAULT 'standard'",
+            'recipient_address' => "VARCHAR(255) NULL DEFAULT ''", 'pkg_speed' => "VARCHAR(10) NOT NULL DEFAULT 'standard'", 'track_token' => 'VARCHAR(16) NULL DEFAULT NULL',
         );
         $add = array();
         foreach ($want as $name => $def) { if (empty($have[$name])) $add[] = 'ADD COLUMN `' . $name . '` ' . $def; }
@@ -360,7 +360,9 @@ function etel_package_create($pdo, $user, $in) {
                     $class, $q['pickup']['address'], $q['details']['size'], $q['details']['weight'], $desc, $value, $q['distance_km'], etel_package_pin(), etel_package_pin(),
                     $sname, $sphone, $q['pickup']['lat'], $q['pickup']['lng']));
             $order_id = intval($pdo->lastInsertId());
-            $pdo->prepare('UPDATE orders SET pkg_speed = ? WHERE id = ?')->execute(array($speed, $order_id));
+            require_once __DIR__ . '/package_public.php';
+            $token = etel_package_track_token();
+            $pdo->prepare('UPDATE orders SET pkg_speed = ?, track_token = ? WHERE id = ?')->execute(array($speed, $token, $order_id));
             $pdo->commit();
         } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 
@@ -369,7 +371,7 @@ function etel_package_create($pdo, $user, $in) {
             etel_dispatch_order($pdo, $order_id);
         }
         return array('ok' => true, 'order_id' => $order_id, 'order_code' => $code, 'status' => 'pending', 'total' => $price, 'delivery_fee' => $price,
-            'vehicle_class' => $class, 'distance_km' => $q['distance_km'], 'eta_min' => $q['eta_min'], 'speed' => $speed, 'payment_method' => $method, 'message' => 'Package booked.');
+            'vehicle_class' => $class, 'distance_km' => $q['distance_km'], 'eta_min' => $q['eta_min'], 'speed' => $speed, 'track_token' => $token, 'payment_method' => $method, 'message' => 'Package booked.');
     } catch (Exception $e) {
         error_log('[ETEL] package create: ' . $e->getMessage());
         return array('ok' => false, 'message' => 'Could not book the package. Please try again.');

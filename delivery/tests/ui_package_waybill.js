@@ -18,7 +18,7 @@ const BANKS = [{ bank_key: 'abysinia', display_name: 'Bank of Abyssinia', accoun
   for (const theme of ['light', 'dark']) {
     const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     await ctx.addInitScript(th => { localStorage.setItem('theme', th); localStorage.setItem('etel_token', 'T'); localStorage.setItem('etel_user', JSON.stringify({ id: 5, name: 'Cust', phone: '0911000001', role: 'customer' })); }, theme);
-    const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + (e.stack || '').split('\n')[1]));
+    const issues = []; const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + (e.stack || '').split('\n')[1]));
     await p.route(/maps\.googleapis|gstatic|fonts\./, r => r.abort());
     await p.route(/boot\.php/, r => {
       const u = r.request().url(); let body = {}; try { body = JSON.parse(r.request().postData() || '{}'); } catch (e) {}
@@ -26,7 +26,8 @@ const BANKS = [{ bank_key: 'abysinia', display_name: 'Bank of Abyssinia', accoun
       if (act === 'customer_get_items' || act === 'get_items') data = { items: [], count: 0 };
       else if (act === 'customer_package_options') data = { sizes: [{ size: 'document' }, { size: 'small' }, { size: 'medium' }], vehicles: [], zones: [] };
       else if (act === 'customer_package_quote') data = { distance_km: 4.2, eta_min: 18, options: [{ vehicle_class: 'moto', label: 'Motorbike', icon: '\u{1F3CD}', price: '120.00', max_weight_kg: 20, rank: 1 }], unavailable: [], pickup_zone: 'A', drop_zone: 'B' };
-      else if (act === 'customer_package_create') data = { order_id: 77, order_code: 'PKG-20261126-0077', total: '120.00' };
+      else if (act === 'customer_package_create') data = { order_id: 77, order_code: 'PKG-20261126-0077', total: '120.00', track_token: 'abc123abc123' };
+      else if (act === 'submit_order_issue') { issues.push(body); data = { issue_id: 5 }; }
       r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
     });
     await p.goto(PAGE); await p.waitForTimeout(2000);
@@ -50,11 +51,22 @@ const BANKS = [{ bank_key: 'abysinia', display_name: 'Bank of Abyssinia', accoun
     t(n + 'the old buttons (Track package, Done) are still there', await p.evaluate(() => /Track package/.test(document.querySelector('.pkg-foot').innerText)));
     // actions
     const shared = await p.evaluate(async () => { let got = null; navigator.share = function (o) { got = o; return Promise.resolve(); }; [].slice.call(document.querySelectorAll('.pkgw-b'))[0].click(); return got; });
-    t(n + 'Share gives the phone share sheet a text with the code, from and to', shared && /PKG-20261126-0077/.test(shared.text) && /Tabor home/.test(shared.text), JSON.stringify(shared));
+    t(n + 'Share gives the phone share sheet a text with the code, from, to and the tracking link', shared && /PKG-20261126-0077/.test(shared.text) && /Tabor home/.test(shared.text) && /track\.html\?c=PKG-20261126-0077&t=abc123abc123/.test(shared.text), JSON.stringify(shared));
     const copied = await p.evaluate(async () => { let got = ''; Object.defineProperty(navigator, 'clipboard', { value: { writeText: v => { got = v; return Promise.resolve(); } }, configurable: true }); [].slice.call(document.querySelectorAll('.pkgw-b'))[1].click(); return got; });
     t(n + 'Copy puts the tracking number on the clipboard', copied === 'PKG-20261126-0077', copied);
     const rec = await p.evaluate(() => { let html = ''; window.open = function () { return { document: { open() {}, write(h) { html = h; }, close() {} } }; }; [].slice.call(document.querySelectorAll('.pkgw-b'))[2].click(); return html; });
     t(n + 'Receipt writes a printable page with the code, total and a QR image', /PKG-20261126-0077/.test(rec) && /ETB 120\.00/.test(rec) && /<img src="data:image\/png/.test(rec) && /window\.print/.test(rec), rec.slice(0, 120));
+    t(n + 'the receipt shows the tracking link', /track\.html\?c=PKG-20261126-0077&amp;t=abc123abc123|track\.html\?c=PKG-20261126-0077&t=abc123abc123/.test(rec));
+    // report a problem
+    await p.evaluate(() => { [].slice.call(document.querySelectorAll('.pkgw-prob'))[0].click(); });
+    t(n + 'Report a problem opens a sheet', await p.evaluate(() => !!document.getElementById('pkgw-sheet') && document.querySelectorAll('#pkgw-cat option').length === 6));
+    await p.screenshot({ path: (process.env.ETEL_SHOTS || '/tmp') + '/pkg_problem_' + theme + '.png' });
+    await p.evaluate(() => { document.getElementById('pkgw-cancel').click(); });
+    t(n + 'Cancel closes the sheet and sends nothing', await p.evaluate(() => !document.getElementById('pkgw-sheet')) && issues.length === 0);
+    await p.evaluate(() => { [].slice.call(document.querySelectorAll('.pkgw-prob'))[0].click(); document.getElementById('pkgw-cat').value = 'item_damaged'; document.getElementById('pkgw-det').value = 'Box is crushed'; document.getElementById('pkgw-send').click(); });
+    await p.waitForTimeout(500);
+    t(n + 'Send files the report for this order with the chosen reason', issues.length === 1 && issues[0].order_id === 77 && issues[0].category === 'item_damaged' && /Box is crushed/.test(issues[0].details) && /PKG-20261126-0077/.test(issues[0].details), JSON.stringify(issues));
+    t(n + 'the sheet closes after sending', await p.evaluate(() => !document.getElementById('pkgw-sheet')));
     // readable: every text in the card has contrast >= 4.5 on its own background
     const bad = await p.evaluate(() => {
       const parse = s => { const m = s.match(/[\d.]+/g) || []; return { r: +m[0], g: +m[1], b: +m[2], a: m.length > 3 ? +m[3] : 1 }; };

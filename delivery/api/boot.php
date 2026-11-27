@@ -756,7 +756,7 @@ if (in_array($action, $ETEL_DELIVERY_CUSTOMER_ACTIONS, true)) {
 $ETEL_THROTTLED_ACTIONS = array(
     // action => array(max calls, window seconds)
     'customer_create_order' => array(20, 600), 'agent_place_order' => array(20, 600),
-    'customer_package_create' => array(20, 600), 'customer_package_quote' => array(60, 600),
+    'customer_package_create' => array(20, 600), 'customer_package_quote' => array(60, 600), 'public_track_package' => array(40, 600),
     'customer_validate_promo' => array(30, 600), 'submit_order_issue' => array(10, 600),
     'order_chat_send' => array(60, 300), 'customer_reorder_items' => array(20, 600),
     'schedule_order' => array(20, 600), 'initiate_telebirr_payment' => array(15, 600),
@@ -1828,7 +1828,7 @@ switch ($action) {
     case 'driver_courier_status': case 'driver_courier_apply':
         require __DIR__ . '/controllers/DriverCourierController.php';
         break;
-    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add': case 'admin_package_setting_save': case 'courier_package_pickup': case 'courier_package_deliver':
+    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'public_track_package': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add': case 'admin_package_setting_save': case 'courier_package_pickup': case 'courier_package_deliver':
         require __DIR__ . '/controllers/PackageController.php';
         break;
 

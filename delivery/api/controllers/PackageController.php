@@ -44,6 +44,19 @@ case 'customer_package_quote': {
     break;
 }
 
+case 'public_track_package': {
+    // No sign-in: the link the sender shares. Needs the order code and its random token; shows steps and times only (api/lib/package_public.php).
+    require_once __DIR__ . '/../lib/package_public.php';
+    $pdo = db();
+    $code = isset($_GET['code']) ? $_GET['code'] : (isset($body['code']) ? $body['code'] : '');
+    $token = isset($_GET['token']) ? $_GET['token'] : (isset($body['token']) ? $body['token'] : '');
+    try { $v = etel_package_public_lookup($pdo, $code, $token); }
+    catch (Exception $e) { error_log('[ETEL] public track: ' . $e->getMessage()); $v = null; }
+    if (!$v) fail('We could not find this package. Check the link.', 404);
+    ok($v);
+    break;
+}
+
 case 'customer_package_create': {
     $pdo = db();
     $u = require_auth($pdo);

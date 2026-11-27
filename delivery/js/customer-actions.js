@@ -88,6 +88,7 @@ EtelActions.expose([
     "pkgShare",
     "pkgCopy",
     "pkgReceipt",
+    "pkgProblem",
     "pkgSubmit",
     "pkgTheme",
     "pkgTrack",
