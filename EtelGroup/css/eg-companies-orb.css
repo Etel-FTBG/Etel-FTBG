@@ -1,0 +1,51 @@
+/* ETEL Group master page - "Our Companies": the ETEL Group logo in a slowly turning gold ring with six dots, and every company card shows its picture
+   (the transparent ETEL badge, else its own logo or icon) inside the same ring on a navy plate. Cards are drawn by EtelGroup/js/companies-r4.js, the logo
+   block is plain HTML in index.html (.co-hub). Transparent pictures: EtelGroup/icons/brand/. Light theme = html[data-theme="light"]. */
+
+/* ---- the ring (one shape, three sizes) ---- */
+.co-hub-ring, .co-orb-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px dashed rgba(212,175,55,.42); animation: co-orb-spin 60s linear infinite; pointer-events: none; }
+.co-hub-ring i, .co-orb-ring i { position: absolute; inset: 0; transform: rotate(var(--a, 0deg)); }
+.co-hub-ring i::after, .co-orb-ring i::after { content: ''; position: absolute; left: 50%; top: 0; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFF3B8, #D4AF37 60%, #8A6A12); box-shadow: 0 0 10px rgba(212,175,55,.7); }
+.co-hub-ring i::after { width: 14px; height: 14px; margin: -7px 0 0 -7px; box-shadow: 0 0 14px rgba(212,175,55,.75); }
+@keyframes co-orb-spin { to { transform: rotate(360deg); } }
+
+/* ---- the ETEL Group logo above the companies ---- */
+.co-hub { display: flex; flex-direction: column; align-items: center; max-width: 1300px; margin: 0 auto 38px; position: relative; z-index: 2; }
+.co-hub-stage { position: relative; width: min(430px, 92vw); aspect-ratio: 1; display: grid; place-items: center; }
+.co-hub-img { position: relative; z-index: 1; width: 72%; height: auto; aspect-ratio: 1; filter: drop-shadow(0 22px 34px rgba(0,0,0,.5)) drop-shadow(0 0 34px rgba(212,175,55,.22)); }
+.co-hub-cap { margin: 6px 0 0; font-family: var(--font-mono, monospace); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-light, #F5E6A3); text-align: center; }
+
+/* ---- a company card: navy plate, picture in the ring, text underneath ---- */
+.co-card.co-orb-card { clip-path: none; border-radius: 26px; padding: 18px 14px 22px; display: flex; flex-direction: column; align-items: center; text-align: center; color: #F5E6A3;
+  border: 1px solid rgba(212,175,55,.32); background-color: #0C1430; background-image: radial-gradient(120% 90% at 50% 0%, rgba(40,58,108,.85), rgba(10,16,38,.96)); box-shadow: 0 14px 40px rgba(0,0,0,.32); }
+.co-orb-card::before, .co-orb-card::after, .co-orb-card .co-card-corner, .co-orb-card .co-number { display: none; }
+.co-card.co-orb-card:hover, .co-card.co-orb-card:focus-visible { border-color: rgba(212,175,55,.8); box-shadow: 0 26px 60px rgba(0,0,0,.5), 0 0 40px rgba(212,175,55,.2); outline: none; }
+.co-orb { position: relative; width: min(100%, 230px); aspect-ratio: 1; margin: 0 auto 8px; display: grid; place-items: center; }
+.co-orb-ring { animation-duration: 45s; }
+.co-orb-img { position: relative; z-index: 1; width: 74%; height: auto; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
+.co-orb-round { border-radius: 50%; object-fit: cover; border: 2px solid rgba(212,175,55,.6); }
+html .co-card .co-orb-icon { position: relative; z-index: 1; width: 56%; height: auto; aspect-ratio: 1; margin: 0; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(212,175,55,.2), rgba(212,175,55,.04)); border: 1px solid rgba(212,175,55,.45); }
+html .co-card .co-orb-icon svg { width: 52%; height: 52%; }
+html .co-card:hover .co-orb-icon { transform: none; }
+html .co-orb-card .co-name, html[data-theme="light"] .co-orb-card .co-name, html .co-orb-card:hover .co-name { color: #F5E6A3; font-size: 17px; margin: 2px 0 2px; }
+html .co-orb-card .co-category { margin-bottom: 8px; filter: none; }
+html .co-orb-card .co-desc, html[data-theme="light"] .co-orb-card .co-desc, html .co-orb-card:hover .co-desc { color: #F3E7B8; font-size: 13.5px; margin-bottom: 14px; }
+.co-orb-card .co-meta { justify-content: center; }
+.co-orb-card .co-notify-btn { margin-left: 0; }
+.co-orb-card .co-arrow { top: 14px; right: 16px; }
+html[data-theme="light"] .co-orb-card .co-online-text.online { color: #4ade80; } html[data-theme="light"] .co-orb-card .co-online-text.offline { color: #f87171; }
+html[data-theme="light"] .co-orb-card .co-launch { color: #F5E6A3; }
+
+@media (max-width: 760px) { .co-hub { margin-bottom: 26px; } .co-orb-card .co-desc { font-size: 12.5px; margin-bottom: 10px; } html .co-orb-card .co-name { font-size: 15px; } .co-card.co-orb-card { padding: 14px 10px 16px; border-radius: 22px; } }
+@media (prefers-reduced-motion: reduce) { .co-hub-ring, .co-orb-ring { animation: none; } }
+
+/* light theme: the text outside the dark plates turns dark; the big ring gets a darker gold */
+html[data-theme="light"] .co-hub-cap { color: #5A4200; }
+html[data-theme="light"] .co-hub-ring { border-color: rgba(138,98,0,.5); }
+html[data-theme="light"] .co-hub-img { filter: drop-shadow(0 20px 30px rgba(40,28,0,.35)) drop-shadow(0 0 24px rgba(138,98,0,.25)); }
+html[data-theme="light"] .co-card.co-orb-card { background-color: #0C1430; background-image: radial-gradient(120% 90% at 50% 0%, rgba(40,58,108,.85), rgba(10,16,38,.96)); border-color: rgba(212,175,55,.45); box-shadow: 0 16px 40px rgba(40,28,0,.28); }
+html[data-theme="light"] .co-card.co-orb-card:hover { box-shadow: 0 26px 60px rgba(40,28,0,.4), 0 0 40px rgba(212,175,55,.2); }
+
+/* Platform launcher cards that show an ETEL badge (companies-r4.js, renderLauncherGrid): lighter text on the navy side */
+html .co-card-badge .lc-desc, html[data-theme="light"] .co-card-badge .lc-desc { color: #F3E7B8; }

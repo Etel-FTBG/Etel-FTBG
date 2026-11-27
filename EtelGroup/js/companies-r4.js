@@ -110,13 +110,25 @@
     }).join('');
   }
 
+  // A slowly turning gold ring with six dots around a company's picture (the same ring as the ETEL Group logo at the top of this section).
+  function ringHtml() {
+    var h = '<span class="co-orb-ring" aria-hidden="true">';
+    for (var k = 0; k < 6; k++) h += '<i style="--a:' + (k * 60) + 'deg"></i>';
+    return h + '</span>';
+  }
+
   function coCardHtml(c, i) {
-    var num = String(i + 1).padStart(2, '0');
     var isLive = c.status === 'live';
     var href = isLive ? esc(c.url) : '#';
     var badgeClass = isLive ? 'co-badge-live' : 'co-badge-plan';
     var badgeText = isLive ? 'Live' : 'Coming Soon';
+    var badge = badgeFor(c);
     var hasLogo = !!logoPath(c);
+    // The picture inside the ring: the ETEL badge if the company has one, else its own logo (round), else its icon.
+    var pic;
+    if (badge) pic = '<img class="co-orb-img" src="' + esc(badge) + '" width="640" height="640" alt="' + esc(c.name) + ' logo" loading="lazy" decoding="async">';
+    else if (c.logo_path) pic = '<img class="co-orb-img co-orb-round" src="' + esc(c.logo_path) + '" alt="' + esc(c.name) + ' logo" loading="lazy" decoding="async">';
+    else pic = '<div class="co-icon co-orb-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>';
     // Live: a real online/offline dot (same check the Platform launcher uses). Coming soon: launch text + "Notify me".
     var extra = '';
     if (isLive) {
@@ -127,10 +139,8 @@
     }
     var tag = isLive ? 'a' : 'div';
     return (
-      '<' + tag + (isLive ? ' href="' + href + '" target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (badgeFor(c) ? ' co-card-badge' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
-      '<div class="co-card-corner"></div>' +
-      '<span class="co-number">' + num + '</span>' +
-      (hasLogo ? '' : '<div class="co-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>') +
+      '<' + tag + (isLive ? ' href="' + href + '" target="_blank" rel="noopener"' : '') + ' class="co-card co-orb-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (badge ? ' co-card-badge' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + '" data-delay="' + Math.min(i, 9) + '">' +
+      '<div class="co-orb">' + ringHtml() + pic + '</div>' +
       '<p class="co-name">' + esc(c.name) + '</p>' +
       '<p class="co-category">' + esc(c.tagline) + '</p>' +
       '<p class="co-desc">' + esc(c.description_short) + '</p>' +
