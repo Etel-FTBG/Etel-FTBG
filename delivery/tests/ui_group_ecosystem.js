@@ -1,4 +1,4 @@
-// The Etel Group master page: the Ecosystem section (master logo with the orbit, the Pay and Gebeya badges with their marble backgrounds, chips for the other companies),
+// The Etel Group master page: the Ecosystem section (the master logo and six company badges: Pay, Gebeya, Ride, Delivery, Madeya, ID; all transparent pictures),
 // English / Amharic, light and dark, phone and desktop.   Real page and files, fake API answers.   node delivery/tests/ui_group_ecosystem.js
 const { chromium } = require('playwright'); const http = require('http'); const fs = require('fs'); const path = require('path');
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
@@ -30,27 +30,26 @@ const probe = (sel) => {
     const n = mode.n + ': ';
     t(n + 'the page has an Ecosystem section between the companies and About', await p.evaluate(() => { const ids = [].slice.call(document.querySelectorAll('section')).map(s => s.id); return ids.indexOf('ecosystem') === ids.indexOf('services') + 1 && ids.indexOf('about') === ids.indexOf('ecosystem') + 1; }));
     await p.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; document.getElementById('ecosystem').scrollIntoView(); }); await p.waitForTimeout(1500);
-    // the three logos: real pictures, loaded, the marble background kept (square pictures, not cut out)
-    const imgs = await p.evaluate(() => Promise.all([].slice.call(document.querySelectorAll('#ecosystem img')).map(i => new Promise(res => { const f = () => res({ src: i.getAttribute('src').split('?')[0], w: i.naturalWidth, h: i.naturalHeight, shown: i.getBoundingClientRect().width }); if (i.complete) f(); else { i.onload = f; i.onerror = f; } }))));
-    t(n + 'three logos: master, Pay, Gebeya', JSON.stringify(imgs.map(i => i.src)) === JSON.stringify(['EtelGroup/icons/brand/etel-group-master.jpg', 'EtelGroup/icons/brand/etel-pay.jpg', 'EtelGroup/icons/brand/etel-gebeya.jpg']), JSON.stringify(imgs));
-    t(n + 'every logo loaded and is a full square picture with its background', imgs.length === 3 && imgs.every(i => i.w > 0 && i.w === i.h), JSON.stringify(imgs));
-    t(n + 'the logos are big enough to see (200 px or more)', imgs.every(i => i.shown >= 200), JSON.stringify(imgs.map(i => i.shown)));
-    t(n + 'the logos have alt text', await p.evaluate(() => [].slice.call(document.querySelectorAll('#ecosystem img')).every(i => (i.alt || '').length > 15)));
+    // the seven logos: real transparent pictures (corners and the gap between ring and orbit have alpha 0)
+    const KEYS = ['group-master', 'pay', 'gebeya', 'ride', 'delivery', 'madeya', 'id'];
+    const imgs = await p.evaluate(() => Promise.all([].slice.call(document.querySelectorAll('#ecosystem img')).map(i => new Promise(res => { const f = () => { const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight; const x = c.getContext('2d'); x.drawImage(i, 0, 0); const px = (a, b) => x.getImageData(a, b, 1, 1).data[3]; const w = c.width, h = c.height;
+      res({ src: i.getAttribute('src').split('?')[0], w: i.naturalWidth, h: i.naturalHeight, shown: i.getBoundingClientRect().width, corners: [px(0, 0), px(w - 1, 0), px(0, h - 1), px(w - 1, h - 1)], centre: px(w >> 1, (h >> 1) + 5), alt: i.alt }); }; if (i.complete) f(); else { i.onload = f; i.onerror = f; } }))));
+    t(n + 'seven logos: the master and the six company badges', JSON.stringify(imgs.map(i => i.src)) === JSON.stringify(KEYS.map(k => 'EtelGroup/icons/brand/etel-' + k + '.webp')), JSON.stringify(imgs.map(i => i.src)));
+    t(n + 'every logo loaded and is square', imgs.length === 7 && imgs.every(i => i.w > 0 && i.w === i.h), JSON.stringify(imgs.map(i => [i.w, i.h])));
+    t(n + 'the backgrounds are removed: all four corners of every picture are fully transparent', imgs.every(i => i.corners.every(a => a === 0)), JSON.stringify(imgs.map(i => i.corners)));
+    t(n + 'the badge itself is solid (not transparent in the middle)', imgs.every(i => i.centre > 250), JSON.stringify(imgs.map(i => i.centre)));
+    t(n + 'the logos are big enough to see (110 px or more)', imgs.every(i => i.shown >= 110), JSON.stringify(imgs.map(i => i.shown)));
+    t(n + 'the logos have alt text', imgs.every(i => (i.alt || '').length > 15));
     // cards link to the real companies
-    const links = await p.evaluate(() => [].slice.call(document.querySelectorAll('#ecosystem a')).map(a => ({ h: a.getAttribute('href'), x: a.innerText.replace(/\s+/g, ' ').trim(), blank: a.target === '_blank' && /noopener/.test(a.rel) })));
-    t(n + 'Pay and Gebeya cards open the real company pages', links.some(l => l.h === 'https://ethelmarket.com/Etel.Pay/' && /ETEL Pay/.test(l.x) && l.blank) && links.some(l => l.h === 'https://ethelmarket.com/EtelGebeya/' && /ETEL Gebeya/.test(l.x) && l.blank), JSON.stringify(links));
-    t(n + 'four chips for the other companies', ['delivery/', 'EtelTaxi/', 'etel.madeya/', 'EtelId/'].every(k => links.some(l => (l.h || '').indexOf(k) > -1)) && links.length === 6, JSON.stringify(links.map(l => l.h)));
-    // the orbit: six dots, all inside the section, centered on the master logo
-    const orb = await p.evaluate(() => { const dots = [].slice.call(document.querySelectorAll('#ecosystem .eco-orbit i')); const m = document.querySelector('#ecosystem .eco-master').getBoundingClientRect(); const s = document.getElementById('ecosystem').getBoundingClientRect();
-      const o = document.querySelector('#ecosystem .eco-orbit').getBoundingClientRect(); const rs = dots.map(d => { const r = d.getBoundingClientRect(); return Math.hypot(r.left + r.width / 2 - (o.left + o.width / 2), r.top + r.height / 2 - (o.top + o.height / 2)); });
-      return { n: dots.length, rmin: Math.min.apply(null, rs), rmax: Math.max.apply(null, rs), half: document.querySelector('#ecosystem .eco-orbit').offsetWidth / 2, cx: Math.abs((o.left + o.width / 2) - (m.left + m.width / 2)), left: (o.left + o.width / 2) - document.querySelector('#ecosystem .eco-orbit').offsetWidth / 2, right: (o.left + o.width / 2) + document.querySelector('#ecosystem .eco-orbit').offsetWidth / 2, vw: window.innerWidth }; });
-    t(n + 'the orbit has six dots, all on the ring', orb.n === 6 && Math.abs(orb.rmin - orb.half) < 6 && Math.abs(orb.rmax - orb.half) < 6, JSON.stringify(orb));
-    t(n + 'the orbit is centered on the master logo and fits the screen', orb.cx < 3 && orb.left >= -2 && orb.right <= orb.vw + 2, JSON.stringify(orb));
+    const links = await p.evaluate(() => [].slice.call(document.querySelectorAll('#ecosystem a.eco-card')).map(a => ({ h: a.getAttribute('href'), x: a.innerText.replace(/\s+/g, ' ').trim(), blank: a.target === '_blank' && /noopener/.test(a.rel) })));
+    const WANT = { 'Etel.Pay/': 'ETEL Pay', 'EtelGebeya/': 'ETEL Gebeya', 'EtelTaxi/': 'ETEL Ride', 'delivery/': 'ETEL Delivery', 'etel.madeya/': 'ETEL Madeya', 'EtelId/etel-id/apply/': 'ETEL ID' };
+    t(n + 'six cards, each opens its real company page in a new tab', links.length === 6 && Object.keys(WANT).every(k => links.some(l => (l.h || '').indexOf(k) > -1 && l.x.indexOf(WANT[k]) === 0 && l.blank)), JSON.stringify(links));
     // text and contrast
-    const c1 = await p.evaluate(probe, '#ecosystem .eco-title'), c2 = await p.evaluate(probe, '#ecosystem .eco-sub'), c3 = await p.evaluate(probe, '#ecosystem .eco-card-t b'), c4 = await p.evaluate(probe, '#ecosystem .eco-card-t em'), c5 = await p.evaluate(probe, '#ecosystem .eco-chips a');
-    t(n + 'title, sub line, card names, card lines and chips are readable (contrast 4.5+)', [c1, c2, c3, c4, c5].every(c => c.ratio >= 4.5), JSON.stringify([c1, c2, c3, c4, c5]));
+    const c1 = await p.evaluate(probe, '#ecosystem .eco-title'), c2 = await p.evaluate(probe, '#ecosystem .eco-sub'), c3 = await p.evaluate(probe, '#ecosystem .eco-card-t b'), c4 = await p.evaluate(probe, '#ecosystem .eco-card-t em'), c5 = await p.evaluate(probe, '#ecosystem .eco-hub-cap');
+    t(n + 'title, sub line, card names, card lines and the logo caption are readable (contrast 4.5+)', [c1, c2, c3, c4, c5].every(c => c.ratio >= 4.5), JSON.stringify([c1, c2, c3, c4, c5]));
     t(n + 'no sideways scroll', await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
-    t(n + 'cards: two side by side on desktop, one under the other on a small phone', await p.evaluate(() => { const a = document.querySelector('#eco-pay').getBoundingClientRect(), b = document.querySelector('#eco-gebeya').getBoundingClientRect(); const side = Math.abs(a.top - b.top) < 4; return window.innerWidth > 520 ? side || window.innerWidth <= 900 : !side; }));
+    t(n + 'cards: three per row on desktop, two on a phone', await p.evaluate(() => { const tops = [].slice.call(document.querySelectorAll('#ecosystem a.eco-card')).map(c => Math.round(c.getBoundingClientRect().top)); const per = tops.filter(x => x === tops[0]).length; return window.innerWidth > 1000 ? per === 3 : window.innerWidth > 760 ? per === 3 : per === 2; }));
+    t(n + 'the master logo is not squeezed by the cards (same width on screen as set)', await p.evaluate(() => { const m = document.querySelector('#ecosystem .eco-master').getBoundingClientRect(); return m.width >= 250 && Math.abs(m.width - m.height) < 2; }));
     await p.screenshot({ path: (process.env.ETEL_SHOTS || '/tmp') + '/group_eco_' + mode.n.replace(/ /g, '_') + '.png' });
     // Amharic and back
     await p.evaluate(() => window.setLang('am')); await p.waitForTimeout(300);
