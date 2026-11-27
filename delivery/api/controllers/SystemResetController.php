@@ -67,7 +67,7 @@ function equity_reset_table_plan() {
         // Order-related children
         'order_items', 'order_confirmations', 'order_assignments', 'scheduled_orders',
         'order_admin_actions', 'order_courier_offers', 'order_issues', 'order_message_reads', 'order_messages',
-        'order_pay_log', 'order_payment_log', 'order_push_log', 'order_refunds', 'package_pin_tries',
+        'order_pay_log', 'order_payment_log', 'order_push_log', 'order_refunds', 'package_pin_tries', 'package_proofs',
         'promo_redemptions', 'loyalty_points', 'offline_requests',
         // Driver/service-giver related
         'driver_announcement_reads', 'driver_vehicle_change_requests',

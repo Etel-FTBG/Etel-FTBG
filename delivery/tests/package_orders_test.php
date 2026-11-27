@@ -324,6 +324,19 @@ $hr = etel_package_history_row(array('id' => '7', 'order_code' => 'ETP-1', 'stat
 check('history row: ids and numbers are real numbers, missing coordinates are null', $hr['order_id'] === 7 && $hr['pickup']['lat'] === 7.05 && $hr['drop']['lat'] === null && $hr['drop']['lng'] === null && $hr['weight_kg'] === 2.5 && $hr['fare_total'] === 156.0);
 check('history row: the fields Send again fills', $hr['recipient_name'] === 'Hana' && $hr['size'] === 'small' && $hr['desc'] === 'Books' && $hr['vehicle_class'] === 'moto' && $hr['speed'] === 'express' && $hr['group'] === 'active');
 check('history row: a row with almost nothing does not break', etel_package_history_row(array('id' => 1, 'order_code' => 'x', 'status' => 'delivered'))['group'] === 'delivered');
+// Photo proof (api/lib/package_proof.php)
+require_once __DIR__ . '/../api/lib/package_proof.php';
+check('proof photo: empty and non-text are refused', etel_package_proof_check_photo('')['ok'] === false && etel_package_proof_check_photo(null)['ok'] === false && etel_package_proof_check_photo(array('x'))['ok'] === false);
+check('proof photo: plain text and a wrong type are refused', etel_package_proof_check_photo('hello')['ok'] === false && etel_package_proof_check_photo('data:image/gif;base64,R0lGODlhAQABAAAAACw=')['ok'] === false && etel_package_proof_check_photo('data:text/html;base64,PGI+')['ok'] === false);
+check('proof photo: bytes that are not a picture are refused', etel_package_proof_check_photo('data:image/png;base64,' . base64_encode('this is not an image'))['ok'] === false);
+check('proof photo: a picture too big for the limit is refused', etel_package_proof_check_photo('data:image/png;base64,' . str_repeat('A', ETEL_PROOF_MAX_CHARS))['ok'] === false);
+if (function_exists('imagecreatetruecolor') && function_exists('imagepng')) {
+    $im = imagecreatetruecolor(40, 40); ob_start(); imagepng($im); $png = ob_get_clean(); imagedestroy($im);
+    check('proof photo: a real 40x40 PNG is accepted', etel_package_proof_check_photo('data:image/png;base64,' . base64_encode($png))['ok'] === true);
+    check('proof photo: the same bytes sent as a JPEG are refused (type must match)', etel_package_proof_check_photo('data:image/jpeg;base64,' . base64_encode($png))['ok'] === false);
+    $sm = imagecreatetruecolor(8, 8); ob_start(); imagepng($sm); $tiny = ob_get_clean(); imagedestroy($sm);
+    check('proof photo: a picture under 16 pixels is refused', etel_package_proof_check_photo('data:image/png;base64,' . base64_encode($tiny))['ok'] === false);
+}
 $pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;

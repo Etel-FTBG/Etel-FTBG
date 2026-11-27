@@ -201,6 +201,51 @@ def main():
     s, r = call("courier_package_deliver", {"order_id": pid, "pin": dp}, token=van)
     check("it cannot be delivered twice", r.get("success") is False, r)
 
+    print("4b. Photo proof of delivery")
+    import base64, struct, zlib
+    def png_url(w, h, color=(200, 160, 40)):
+        raw = b"".join(b"\x00" + bytes(color) * w for _ in range(h))
+        def chunk(t, d):
+            c = struct.pack(">I", len(d)) + t + d
+            return c + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+        png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+        return "data:image/png;base64," + base64.b64encode(png).decode()
+    good = png_url(40, 40)
+    s, r = call("courier_package_proof", {"order_id": pid, "photo": good}, token=None)
+    check("adding a photo needs a courier sign-in", r.get("success") is False)
+    s, r = call("courier_package_proof", {"order_id": pid, "photo": good}, token=cust)
+    check("a customer cannot add a photo", r.get("success") is False)
+    s, r = call("courier_package_proof", {"order_id": pid, "photo": good}, token=moto)
+    check("another courier cannot add a photo to this package", r.get("success") is False and "not your" in str(r.get("message")).lower(), r)
+    for name, bad in (("a text that is not a picture", "hello"), ("a picture with the wrong type", good.replace("png", "gif", 1)),
+                      ("bytes that are not a picture", "data:image/png;base64," + base64.b64encode(b"not an image at all").decode()),
+                      ("a picture that is too small", png_url(4, 4)), ("a picture that is too big", "data:image/png;base64," + "A" * 720000)):
+        s, r = call("courier_package_proof", {"order_id": pid, "photo": bad}, token=van)
+        check("the courier cannot save " + name, r.get("success") is False, r)
+    s, r = call("customer_package_proof", {"order_id": pid}, token=cust)
+    check("before any photo the customer gets photo: null", r.get("success") and (r.get("data") or {}).get("photo") is None, r)
+    s, t4 = call("track_order", {"order_id": pid}, token=cust)
+    check("tracking says there is no photo yet", ((t4.get("data") or {}).get("order") or {}).get("has_proof") is False, ((t4.get("data") or {}).get("order") or {}).get("has_proof"))
+    s, r = call("courier_package_proof", {"order_id": pid, "photo": good}, token=van)
+    check("the delivering courier saves the photo", r.get("success") is True, r)
+    s, r = call("customer_package_proof", {"order_id": pid}, token=cust)
+    check("the sender reads the same photo back", (r.get("data") or {}).get("photo") == good and (r.get("data") or {}).get("taken_at"), str(r)[:120])
+    s, r = call("customer_package_proof", {"order_id": pid}, token=other)
+    check("another customer cannot read it", (r.get("data") or {}).get("photo") is None, str(r)[:120])
+    s, t5 = call("track_order", {"order_id": pid}, token=cust)
+    check("tracking now says there is a photo", ((t5.get("data") or {}).get("order") or {}).get("has_proof") is True)
+    check("the photo itself is not inside the tracking answer", "data:image" not in json.dumps(t5))
+    s, r = call("public_track_package", {"code": ((t5.get("data") or {}).get("order") or {}).get("order_code", ""), "token": "0" * 12})
+    check("the public link never carries a photo", "data:image" not in json.dumps(r))
+    s, r = call("courier_package_proof", {"order_id": pid, "photo": png_url(30, 30, (10, 120, 200))}, token=van)
+    s, r2 = call("customer_package_proof", {"order_id": pid}, token=cust)
+    check("a second photo replaces the first", r.get("success") is True and (r2.get("data") or {}).get("photo") != good, str(r2)[:100])
+    etel_test_db.run_sql("UPDATE orders SET delivered_at = DATE_SUB(NOW(), INTERVAL 3 HOUR) WHERE id = %d" % int(pid))
+    s, r = call("courier_package_proof", {"order_id": pid, "photo": good}, token=van)
+    check("after 2 hours the courier can no longer add or change the photo", r.get("success") is False and "late" in str(r.get("message")).lower(), r)
+    s, r = call("courier_package_proof", {"order_id": oid, "photo": good}, token=van)
+    check("a package that is not delivered cannot get a photo", r.get("success") is False, r)
+
     print("5. Cancel")
     s, r = call("customer_cancel_order", {"order_id": oid, "reason": "other"}, token=other)
     check("another customer cannot cancel it", r.get("success") is False)
