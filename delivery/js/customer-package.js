@@ -799,7 +799,7 @@
         var box = document.getElementById('track-package-card');
         if (!box) return;
         var tl = document.getElementById('track-timeline');
-        if (!o || o.order_kind !== 'package') { box.innerHTML = ''; if (tl) tl.style.display = ''; return; }
+        if (!o || o.order_kind !== 'package') { box.innerHTML = ''; if (tl) tl.style.display = ''; if (o && window.PkgProof) { try { window.PkgProof.attach(box, o); } catch (e) {} } return; }   // a shop order may have the courier's photo too
         var journey = journeyHtml(o);
         if (tl) tl.style.display = journey ? 'none' : '';   // the journey card replaces the generic list of steps
         var size = o.pkg_size ? T('pkg_size_' + o.pkg_size) : '';
