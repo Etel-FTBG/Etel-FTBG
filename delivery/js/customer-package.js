@@ -376,6 +376,19 @@
         S.ack = false; S.vehicle = ''; S.quote = null; S.err = '';
         S.step = 2; S.top = true; render();
     };
+    // the address book (js/customer-package-contacts.js) reads and fills one side of the route
+    window.pkgContactCollect = function (which) {
+        if (!S) return null;
+        var sd = S[which], nk = which === 'pickup' ? 'sender_name' : 'recipient_name', pk = which === 'pickup' ? 'sender_phone' : 'recipient_phone';
+        return { name: String(S[nk] || '').trim(), phone: String(S[pk] || '').trim(), address: String(sd.address || '').trim(), lat: sd.lat, lng: sd.lng, zone: sd.zone || '', label: '' };
+    };
+    window.pkgContactFill = function (which, c) {
+        if (!S || !c) return;
+        var has = c.lat !== null && c.lat !== undefined && c.lng !== null && c.lng !== undefined;
+        S[which] = { address: c.address || '', lat: has ? c.lat : null, lng: has ? c.lng : null, zone: has ? '' : (c.zone || ''), placeText: has ? (c.address || '') : '' };
+        if (which === 'pickup') { S.sender_name = c.name || ''; S.sender_phone = c.phone || ''; } else { S.recipient_name = c.name || ''; S.recipient_phone = c.phone || ''; }
+        S.err = ''; S.vehicle = ''; S.quote = null; render();
+    };
     window.pkgTheme = function () { try { customerToggleTheme(); } catch (e) {} };
     window.pkgTrack = function (id) { window.pkgClose(); try { openTrackOrder(id); } catch (e) {} };
     window.pkgDone = function () { window.pkgClose(); try { switchCategory('orders'); } catch (e) {} };
@@ -415,6 +428,7 @@
             '<select class="pkg-input" id="pkg-' + which + '-zone" data-f="' + which + '.zone" aria-label="' + esc(T('pkg_area')) + '">' + zones + '</select></details>' +
             '<div class="pkg-who"><span class="pkg-who-k">' + esc(who) + '</span></div>' +
             '<div class="pkg-grid2">' + fld(nameLbl, nameKey, S[nameKey], phoneAuto === 'tel' ? { auto: 'name' } : {}) + fld(phoneLbl, phoneKey, S[phoneKey], { type: 'tel', mode: 'tel', auto: phoneAuto }) + '</div>' +
+            (window.PkgContacts ? window.PkgContacts.buttons(which) : '') +
             '</div></div>';
     }
     function stepWhere() {

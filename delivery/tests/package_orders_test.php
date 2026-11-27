@@ -337,6 +337,15 @@ if (function_exists('imagecreatetruecolor') && function_exists('imagepng')) {
     $sm = imagecreatetruecolor(8, 8); ob_start(); imagepng($sm); $tiny = ob_get_clean(); imagedestroy($sm);
     check('proof photo: a picture under 16 pixels is refused', etel_package_proof_check_photo('data:image/png;base64,' . base64_encode($tiny))['ok'] === false);
 }
+// Address book (api/lib/package_contacts.php)
+require_once __DIR__ . '/../api/lib/package_contacts.php';
+$cc = etel_contacts_clean(array('name' => '  Hana  ', 'address' => ' Tabor ', 'label' => str_repeat('L', 60), 'lat' => '7.06', 'lng' => '38.49', 'zone' => 'Tabor'), '+251911556677');
+check('contact clean: trims, cuts the label to 40, keeps a good map point', is_array($cc) && $cc['name'] === 'Hana' && $cc['address'] === 'Tabor' && strlen($cc['label']) === 40 && $cc['lat'] === 7.06 && $cc['lng'] === 38.49 && $cc['phone'] === '+251911556677');
+check('contact clean: no name, no phone or no address is refused with a message', is_string(etel_contacts_clean(array('name' => '', 'address' => 'x'), '+251911556677')) && is_string(etel_contacts_clean(array('name' => 'a', 'address' => 'x'), false)) && is_string(etel_contacts_clean(array('name' => 'a', 'address' => ''), '+251911556677')));
+$c2 = etel_contacts_clean(array('name' => 'a', 'address' => 'x', 'lat' => '999', 'lng' => '38'), '+251911556677');
+check('contact clean: an impossible or 0,0 map point becomes none', $c2['lat'] === null && $c2['lng'] === null && etel_contacts_clean(array('name' => 'a', 'address' => 'x', 'lat' => 0, 'lng' => 0), '+251911556677')['lat'] === null);
+$cr = etel_contacts_row(array('id' => '5', 'label' => 'Mom', 'name' => 'Hana', 'phone' => '+2519', 'address' => 'Tabor', 'lat' => '7.0600000', 'lng' => null, 'zone' => 'Tabor'));
+check('contact row: id is a number, a missing coordinate is null', $cr['id'] === 5 && $cr['lat'] === 7.06 && $cr['lng'] === null);
 $pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;
