@@ -42,7 +42,8 @@
   var BADGE_BASE = '/EtelGroup/icons/brand/';
   var BADGES = [
     [/madeya/, 'etel-madeya.webp'], [/gebeya|market/, 'etel-gebeya.webp'], [/delivery/, 'etel-transport.webp'],
-    [/(^|[^a-z])ride($|[^a-z])/, 'etel-transport.webp'], [/(^|[^a-z])pay($|[^a-z])/, 'etel-pay.webp'], [/(^|[^a-z])id($|[^a-z])/, 'etel-id.webp']
+    [/(^|[^a-z])ride($|[^a-z])/, 'etel-transport.webp'], [/(^|[^a-z])pay($|[^a-z])/, 'etel-pay.webp'], [/(^|[^a-z])id($|[^a-z])/, 'etel-id.webp'],
+    [/media|entertainment/, 'etel-entertainment.webp']
   ];
   function badgeFor(c) {
     var key = ((c.slug || '') + ' ' + (c.name || '')).toLowerCase();
