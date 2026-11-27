@@ -40,6 +40,13 @@ def save_splash(name, out, size=320):
     Image.open(BRAND % name).convert('RGBA').resize((size, size), Image.LANCZOS).save(out, 'WEBP', quality=90, method=6, exact=True)
     print('splash', name, '->', out)
 
+def save_logo(name, base, size=512):
+    """the logo shown at the top of a login page: a transparent picture, PNG + WebP (the Admin > Branding screen can overwrite these same files)"""
+    im = Image.open(BRAND % name).convert('RGBA').resize((size, size), Image.LANCZOS)
+    im.save(base + '.png', optimize=True)
+    im.save(base + '.webp', 'WEBP', quality=90, method=6, exact=True)
+    print('login logo', name, '->', base)
+
 GROUPS = {
     # the Delivery family (icons keep the <role>-icon-N.png names the manifests use)
     'delivery': lambda: [
@@ -47,6 +54,12 @@ GROUPS = {
         save_set('admin', 'delivery/icons', 'admin-'), save_set('agent', 'delivery/icons', 'agent-'),
         save_set('equb', 'delivery/icons', 'equb-', sizes=(96,), maskable=False), save_set('investor', 'delivery/icons', 'investor-', sizes=(96,), maskable=False),
         [save_splash(n, 'delivery/assets/images/splash-%s.webp' % o) for n, o in (('transport', 'transport'), ('courier', 'courier'), ('service', 'service'), ('admin', 'admin'))],
+    ],
+    # the logo at the top of delivery/login.html, admin-login.html and install.html (assets/images/logo*.png/.webp)
+    'login': lambda: [
+        save_logo('transport', 'delivery/assets/images/logo'), save_logo('transport', 'delivery/assets/images/logo-ride'),
+        save_logo('transport', 'delivery/assets/images/logo-driver'), save_logo('courier', 'delivery/assets/images/logo-courier'),
+        save_logo('service', 'delivery/assets/images/logo-service'), save_logo('admin', 'delivery/assets/images/logo-admin'),
     ],
     # the master page (ETEL Group)
     'group': lambda: save_set('group-master', 'EtelGroup/icons', ''),

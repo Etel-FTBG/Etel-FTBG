@@ -37,6 +37,11 @@ const dist = (a, b) => a.reduce((s, v, k) => s + Math.abs(v - b[k]), 0) / a.leng
   for (const k of ['transport', 'courier', 'service', 'admin']) { const m = await p.evaluate(measure, HOST + '/delivery/assets/images/splash-' + k + '.webp'); t('splash-' + k + '.webp: a 320 px transparent badge (corners transparent, middle solid)', m && m.w === 320 && m.h === 320 && m.cornerA.every(a => a === 0) && m.centreA === 255, JSON.stringify(m && [m.w, m.cornerA, m.centreA])); }
   const ss = []; for (const k of ['transport', 'courier', 'service', 'admin']) ss.push((await p.evaluate(measure, HOST + '/delivery/assets/images/splash-' + k + '.webp')).sig);
   t('the four opening-splash pictures differ from each other', ss.every((s, i) => ss.every((u, j) => i === j || dist(s, u) >= 1.5)));
+  // login-page logos: transparent 512 px pictures, one per system, and the login page picks them by role
+  const LG = { customer: 'logo', ride: 'logo-ride', driver: 'logo-driver', courier: 'logo-courier', service: 'logo-service', admin: 'logo-admin' }; const lgs = {};
+  for (const [k, f] of Object.entries(LG)) { const m = await p.evaluate(measure, HOST + '/delivery/assets/images/' + f + '.png'); t('login logo ' + f + '.png: 512 x 512, transparent corners, solid middle', m && m.w === 512 && m.h === 512 && m.cornerA.every(a => a === 0) && m.centreA === 255, JSON.stringify(m && [m.w, m.cornerA, m.centreA])); if (m) lgs[k] = m.sig; const w = await p.evaluate(measure, HOST + '/delivery/assets/images/' + f + '.webp'); t('login logo ' + f + '.webp loads and is transparent', w && w.w === 512 && w.cornerA.every(a => a === 0), JSON.stringify(w && [w.w, w.cornerA])); }
+  t('login logos: Customer, Ride and Driver are the same transport logo', dist(lgs.customer, lgs.ride) < 0.01 && dist(lgs.customer, lgs.driver) < 0.01);
+  t('login logos: Courier, Service and Admin each differ from the transport logo and from each other', ['courier', 'service', 'admin'].every((k, i, a) => dist(lgs[k], lgs.customer) >= 0.5 && a.every((u, j) => i === j || dist(lgs[k], lgs[u]) >= 0.5)));
   // 3. the Group pages really use the Group icon as their tab icon
   for (const page of ['/EtelGroup/index.html', '/portfolio.html', '/privacy.html', '/terms.html', '/cookie-policy.html']) {
     // read the page source (the real page redirects and loads many scripts; the tab icon is in its head)
@@ -52,6 +57,12 @@ const dist = (a, b) => a.reduce((s, v, k) => s + Math.abs(v - b[k]), 0) / a.leng
     const tx = await p.evaluate(async (u) => (await (await fetch(u)).text()), HOST + page);
     t(page + ': links its own tab icon (' + ic + ')', tx.indexOf(ic + '.png') > -1);
     if (sp) t(page + ': the opening splash shows its own logo (' + sp + '), not the group master logo', tx.indexOf(sp) > -1 && tx.indexOf('master-logo-splash.png') < 0);
+  }
+  // the real login page picks the logo by role
+  for (const [role, q, f, nm] of [['Customer', '', 'logo', 'ETEL DELIVERY'], ['Ride', '?redirect=ride/', 'logo-ride', 'ETEL RIDE'], ['Driver', '?role=driver', 'logo-driver', 'ETEL DRIVER'], ['Courier', '?role=courier', 'logo-courier', 'ETEL COURIER'], ['Service', '?role=service_giver', 'logo-service', 'ETEL SERVICE']]) {
+    await p.goto(HOST + '/delivery/login.html' + q, { waitUntil: 'load' }); await p.waitForTimeout(1200);
+    const r = await p.evaluate(() => { const i = document.getElementById('auth-logo-card'); return { cur: i ? (i.currentSrc || i.src).split('/').pop() : '', w: i ? i.naturalWidth : 0, name: (document.getElementById('auth-name') || {}).textContent, fav: (document.querySelector('link[rel="icon"]') || {}).getAttribute ? document.querySelector('link[rel="icon"]').getAttribute('href') : '' }; });
+    t('login page, ' + role + ': shows its own logo (' + f + ') and the name ' + nm, r.cur.indexOf(f + '.') === 0 && r.w === 512 && r.name === nm, JSON.stringify(r));
   }
   t('no page errors', errs.length === 0, errs.slice(0, 3).join(' | '));
   await b.close(); srv.close();
