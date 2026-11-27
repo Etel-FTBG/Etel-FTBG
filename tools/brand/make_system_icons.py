@@ -47,6 +47,11 @@ def save_logo(name, base, size=512):
     im.save(base + '.webp', 'WEBP', quality=90, method=6, exact=True)
     print('login logo', name, '->', base)
 
+def save_tab(name, out, size=96):
+    """a small transparent logo for the role buttons on the login page (and the 'One ID. All Services.' list)"""
+    Image.open(BRAND % name).convert('RGBA').resize((size, size), Image.LANCZOS).save(out, optimize=True)
+    print('tab logo', name, '->', out)
+
 GROUPS = {
     # the Delivery family (icons keep the <role>-icon-N.png names the manifests use)
     'delivery': lambda: [
@@ -60,6 +65,8 @@ GROUPS = {
         save_logo('transport', 'delivery/assets/images/logo'), save_logo('transport', 'delivery/assets/images/logo-ride'),
         save_logo('transport', 'delivery/assets/images/logo-driver'), save_logo('courier', 'delivery/assets/images/logo-courier'),
         save_logo('service', 'delivery/assets/images/logo-service'), save_logo('admin', 'delivery/assets/images/logo-admin'),
+        [save_tab(n, 'delivery/assets/images/tab-%s.png' % o) for n, o in (('transport', 'customer'), ('transport', 'ride'), ('courier', 'courier'), ('transport', 'driver'),
+                                                                          ('service', 'service'), ('pay', 'pay'), ('id', 'id'))],
     ],
     # the master page (ETEL Group)
     'group': lambda: save_set('group-master', 'EtelGroup/icons', ''),

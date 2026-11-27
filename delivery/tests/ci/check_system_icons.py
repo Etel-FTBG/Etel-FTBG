@@ -8,7 +8,8 @@
     EtelGroup/site.webmanifest lists Group icons that exist;
  6. the logo at the top of the login pages (delivery/assets/images/logo*.png and .webp: customer, ride, driver, courier, service, admin) is each system's own transparent
     logo: 512 x 512, Ride = Driver = Customer (the transport logo), Courier, Service and Admin different from it and from each other;
- 7. the Delivery service worker cache name moved on (v300 or later).
+ 7. the role buttons (Customer, Ride, Courier, Driver, Service) and the services list on the login page show the real logos, no emoji;
+ 8. the Delivery service worker cache name moved on (v300 or later).
 No Pillow needed: PNG sizes come from the file header, sets are compared byte for byte."""
 import hashlib
 import json
@@ -120,7 +121,18 @@ if logos and not (logos.get('-customer') == logos.get('-ride') == logos.get('-dr
     bad.append('the Customer, Ride and Driver login logos must be the same transport logo')
 if logos and len({logos.get('-customer'), logos.get('-courier'), logos.get('-service'), logos.get('-admin')}) != 4:
     bad.append('the transport, Courier, Service and Admin login logos must all be different')
-# 7. cache
+# 7. the role buttons and the services list on the login page use the real logos (no emoji icons)
+for k in ('customer', 'ride', 'courier', 'driver', 'service', 'pay', 'id'):
+    p = os.path.join(D, 'assets/images/tab-%s.png' % k)
+    if not os.path.exists(p) or size(p) != (96, 96):
+        bad.append('assets/images/tab-%s.png is missing or not 96 x 96' % k)
+lt = read('delivery/login.html')
+for k in ('customer', 'ride', 'courier', 'driver', 'service'):
+    if 'tab-%s.png' % k not in lt:
+        bad.append('delivery/login.html: the %s role button must show assets/images/tab-%s.png' % (k, k))
+if re.search(r'del-rtab-icon">\s*[^<\s]', lt):
+    bad.append('delivery/login.html: a role button still has an emoji icon')
+# 8. cache
 m = re.search(r"CACHE_NAME\s*=\s*'etel-v(\d+)'", read('delivery/sw.js'))
 if not m or int(m.group(1)) < 300:
     bad.append('delivery/sw.js CACHE_NAME must be etel-v300 or later')
