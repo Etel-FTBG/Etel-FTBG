@@ -124,6 +124,7 @@ jobs:
           python3 delivery/tests/ci/check_money_ledger.py
           python3 delivery/tests/ci/check_manual_dispatch.py
           python3 delivery/tests/ci/check_transport_brand.py
+          python3 delivery/tests/ci/check_launcher_icons.py
           python3 delivery/tests/ci/check_package_prices_admin.py
           python3 delivery/tests/ci/check_delivery_fees_admin.py
           python3 delivery/tests/ci/check_courier_local_libs.py
