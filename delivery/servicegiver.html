@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#D4AF37">
     <title>ETEL Service Giver Pro — Enterprise Dashboard v12.1</title>
-    <link rel="icon" type="image/png" href="assets/images/etel-delivery-coin.png">
-    <link rel="apple-touch-icon" href="assets/images/etel-delivery-coin.png">
+    <link rel="icon" type="image/png" href="icons/service-icon-96.png?v=2">
+    <link rel="apple-touch-icon" href="icons/service-apple-touch-icon.png?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="js/jsQR.js?v=1.4.0"></script>
     <script defer src="js/qrcode.min.js?v=1"></script>
@@ -354,7 +354,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 <script src="js/etel-idle-logout.js?v=3" defer></script>
 </head>
 <body>
-<!-- Custom splash overlay - shows the group master logo briefly on
+<!-- Custom splash overlay - shows this app's OWN logo briefly on
      open. Deliberately separate from the manifest icons/ files (which
      stay each app's own distinct branding for the home-screen icon) -
      this only affects what's shown in-page while the app loads,
@@ -362,8 +362,8 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
      Home Screen"/APK builds. Removes itself automatically; if this
      script fails to run for any reason the page underneath is
      completely unaffected, it just won't have a splash. -->
-<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:#0a0703;transition:opacity .35s ease;">
-  <img src="/delivery/assets/images/master-logo-splash.png" alt="ETEL" style="width:120px;height:120px;object-fit:contain;border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:etelSplashPulse 1.4s ease-in-out infinite;">
+<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 42%,#1c2a52 0%,#0A1230 72%);transition:opacity .35s ease;">
+  <img src="/delivery/assets/images/splash-service.webp?v=1" alt="ETEL" style="width:min(260px,62vw);height:auto;object-fit:contain;filter:drop-shadow(0 8px 32px rgba(0,0,0,.5));animation:etelSplashPulse 1.4s ease-in-out infinite;">
 </div>
 <style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
 
