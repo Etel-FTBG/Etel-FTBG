@@ -1,8 +1,9 @@
 <?php
 // ============================================================
-// ETEL - Send a package: the courier's photo proof of delivery (optional, after the PIN hand-over).
+// ETEL - the courier's photo proof of delivery (optional), for a package (after the PIN hand-over) and for a shop order (at the door or after).
 // The photo is sent as a small JPEG / PNG / WebP data URL (the app shrinks it first), kept in table package_proofs (not in a public folder),
-// and only the sender who booked the package can read it back. The courier can add it only for their own delivered package, within 2 hours.
+// and only the customer who ordered can read it back. A package: only after it is delivered. A shop order: while it is on the way (picked up / in
+// transit, at the customer's door) or after it is delivered. Always only for the courier's own order, and for 2 hours after delivery.
 // ============================================================
 
 define('ETEL_PROOF_MAX_CHARS', 700000);   // the data URL text
@@ -38,18 +39,22 @@ function etel_package_proof_save($pdo, $courier_id, $order_id, $photo) {
     $s = $pdo->prepare("SELECT id, courier_id, status, order_kind, delivered_at, TIMESTAMPDIFF(MINUTE, delivered_at, NOW()) AS mins FROM orders WHERE id = ?");
     $s->execute(array(intval($order_id)));
     $o = $s->fetch();
-    if (!$o || $o['order_kind'] !== 'package' || intval($o['courier_id']) !== intval($courier_id)) return array('ok' => false, 'message' => 'This is not your package.');
-    if ($o['status'] !== 'delivered' || empty($o['delivered_at'])) return array('ok' => false, 'message' => 'Add the photo after the package is delivered.');
-    if ($o['mins'] === null || intval($o['mins']) > ETEL_PROOF_WINDOW_MIN) return array('ok' => false, 'message' => 'It is too late to add a photo to this delivery.');
+    if (!$o || intval($o['courier_id']) !== intval($courier_id) || intval($courier_id) <= 0) return array('ok' => false, 'message' => 'This is not your package.');
+    $isPkg = ($o['order_kind'] === 'package');
+    if ($o['status'] === 'delivered') {
+        if (empty($o['delivered_at']) || $o['mins'] === null || intval($o['mins']) > ETEL_PROOF_WINDOW_MIN) return array('ok' => false, 'message' => 'It is too late to add a photo to this delivery.');
+    } elseif ($isPkg || !in_array($o['status'], array('picked_up', 'in_transit'), true)) {
+        return array('ok' => false, 'message' => $isPkg ? 'Add the photo after the package is delivered.' : 'Add the photo when you are at the door or after the delivery.');
+    }
     etel_package_proof_ensure($pdo);
     $pdo->prepare('REPLACE INTO package_proofs (order_id, courier_id, photo, created_at) VALUES (?,?,?,NOW())')->execute(array(intval($order_id), intval($courier_id), $photo));
     return array('ok' => true, 'message' => 'Photo saved.');
 }
 
-// The sender reads the photo of their own package: array('photo' => data URL or null, 'taken_at' => string).
+// The customer reads the photo of their own order (package or shop order): array('photo' => data URL or null, 'taken_at' => string).
 function etel_package_proof_get($pdo, $customer_id, $order_id) {
     etel_package_proof_ensure($pdo);
-    $s = $pdo->prepare('SELECT p.photo, p.created_at FROM package_proofs p JOIN orders o ON o.id = p.order_id WHERE p.order_id = ? AND o.customer_id = ? AND o.order_kind = \'package\'');
+    $s = $pdo->prepare('SELECT p.photo, p.created_at FROM package_proofs p JOIN orders o ON o.id = p.order_id WHERE p.order_id = ? AND o.customer_id = ?');
     $s->execute(array(intval($order_id), intval($customer_id)));
     $r = $s->fetch();
     return $r ? array('photo' => $r['photo'], 'taken_at' => (string) $r['created_at']) : array('photo' => null, 'taken_at' => '');
