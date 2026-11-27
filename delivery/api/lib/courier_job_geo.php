@@ -19,12 +19,26 @@ function etel_jobgeo_road_km($p, $q, $factor) {
     return round(etel_cpay_km($p['lat'], $p['lng'], $q['lat'], $q['lng']) * $factor, 1);
 }
 
-/** One entry per order id: pickup, drop, pickup_km (courier -> pickup), drop_km (pickup -> dropoff). */
+/** Which of these order ids are Express packages (orders.pkg_speed). The column is added the first time a package is quoted, so a database without it answers "none". */
+function etel_jobgeo_express_ids($pdo, $ids) {
+    $found = array();
+    if (!$ids) return $found;
+    try {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $q = $pdo->prepare("SELECT id FROM orders WHERE id IN ($ph) AND pkg_speed = 'express'");
+        $q->execute(array_values($ids));
+        foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $i) $found[intval($i)] = true;
+    } catch (Exception $e) { /* no pkg_speed column yet: no Express orders */ }
+    return $found;
+}
+
+/** One entry per order id: pickup, drop, pickup_km (courier -> pickup), drop_km (pickup -> dropoff), express (true for an Express package). */
 function etel_jobgeo_for_orders($pdo, $ids, $me) {
     $out = array();
     if (!$ids) return $out;
     $factor = 1.3;
     try { $s = etel_cpay_settings($pdo); if (!empty($s['road_factor'])) $factor = floatval($s['road_factor']); } catch (Exception $e) {}
+    $express = etel_jobgeo_express_ids($pdo, $ids);
     $ph = implode(',', array_fill(0, count($ids), '?'));
     $q = $pdo->prepare("SELECT o.id, o.delivery_lat, o.delivery_lng, o.pickup_lat, o.pickup_lng, o.pickup_address, o.to_zone, o.from_zone,
                                (SELECT sg.lat FROM order_assignments oa JOIN service_givers sg ON sg.id = oa.service_giver_id WHERE oa.order_id = o.id ORDER BY oa.id DESC LIMIT 1) AS sg_lat,
@@ -44,6 +58,7 @@ function etel_jobgeo_for_orders($pdo, $ids, $me) {
             'drop_label' => (string) $r['to_zone'],
             'pickup_km' => etel_jobgeo_road_km($me, $pick, $factor),
             'drop_km' => etel_jobgeo_road_km($pick, $drop, $factor),
+            'express' => !empty($express[intval($r['id'])]),
         );
     }
     return $out;

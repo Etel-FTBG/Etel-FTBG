@@ -100,6 +100,12 @@ def main():
     check("a customer cannot use it", r3.get("success") is False, r3)
     s, r4 = call("courier_job_geo", {"order_ids": [oid]})
     check("no login, no answer", r4.get("success") is False, r4)
+    check("a normal order is not flagged Express", j.get("express") is False, j)
+    call("customer_package_quote", {"pickup": {"address": "A", "lat": 7.05, "lng": 38.48}, "drop": {"address": "B", "lat": 7.06, "lng": 38.49}, "size": "small", "weight_kg": 1}, cust)   # makes sure orders.pkg_speed exists
+    etel_test_db.run_sql("UPDATE orders SET pkg_speed = 'express' WHERE id = %d" % int(oid))
+    s, rx = call("courier_job_geo", {"order_ids": [oid]}, ctok)
+    jx = ((rx.get("data") or {}).get("jobs") or {}).get(str(oid)) or {}
+    check("an Express order is flagged express for the courier's job card", jx.get("express") is True, jx)
     etel_test_db.run_sql("UPDATE orders SET status = 'delivered' WHERE id = %d" % int(oid))
     s, r5 = call("courier_job_geo", {"order_ids": [oid]}, ctok)
     check("a finished job is not shown", not ((r5.get("data") or {}).get("jobs") or {}).get(str(oid)), r5)

@@ -10,7 +10,7 @@
   'use strict';
   if (window.__etelJobNav) return;
   window.__etelJobNav = true;
-  var AM = { 'Pickup': 'መውሰጃ', 'Dropoff': 'ማድረሻ', 'Navigate': 'መንገድ አሳይ', 'km from you': 'ኪሜ ከእርስዎ', 'km from pickup': 'ኪሜ ከመውሰጃ', 'Whole trip': 'ጠቅላላ ጉዞ', 'km': 'ኪሜ', 'Pin not set': 'ካርታ አልተቀመጠም' };
+  var AM = { 'EXPRESS - go straight to the recipient': 'ፈጣን (Express) - በቀጥታ ወደ ተቀባዩ ይሂዱ', 'Pickup': 'መውሰጃ', 'Dropoff': 'ማድረሻ', 'Navigate': 'መንገድ አሳይ', 'km from you': 'ኪሜ ከእርስዎ', 'km from pickup': 'ኪሜ ከመውሰጃ', 'Whole trip': 'ጠቅላላ ጉዞ', 'km': 'ኪሜ', 'Pin not set': 'ካርታ አልተቀመጠም' };
   var CACHE = {}, MINE = null, BUSY = false, LASTASK = 0;
 
   function lang() { try { return localStorage.getItem('etel_lang') === 'am' ? 'am' : 'en'; } catch (e) { return 'en'; } }
@@ -25,6 +25,7 @@
     if (document.getElementById('cjn-css')) return;
     var s = document.createElement('style'); s.id = 'cjn-css';
     s.textContent =
+      '.cjn-x{padding:8px 12px;background:#D4AF37;color:#0B1530;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}' +
       '.cjn-box{margin:10px 0;border:1px solid rgba(212,175,55,.4);border-radius:14px;overflow:hidden;font-variant-numeric:lining-nums tabular-nums}' +
       '.cjn-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px}.cjn-row+.cjn-row{border-top:1px solid rgba(128,128,128,.25)}' +
       '.cjn-l{min-width:0;flex:1}.cjn-t{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.65}' +
@@ -85,7 +86,8 @@
     if (gone) { b = (MINE && g.drop) ? km(hav(MINE, g.drop) * 1.3) + ' ' + T('km from you') : b; }
     var sum = (!gone && g.pickup_km != null && g.drop_km != null) ? '<div class="cjn-sum">' + esc(T('Whole trip')) + ': ' + km(g.pickup_km + g.drop_km) + ' ' + esc(T('km')) + '</div>' : '';
     var sub = (g.pickup_address && g.pickup_address !== g.pickup_label) ? g.pickup_address : '';
-    return '<div class="cjn-box">' + row('Pickup', g.pickup_label, a, g.pickup, !active, sub) + row('Dropoff', g.drop_label, b, g.drop, !active, '') + sum + '</div>';
+    var xp = g.express ? '<div class="cjn-x" role="note">&#9889; ' + esc(T('EXPRESS - go straight to the recipient')) + '</div>' : '';
+    return '<div class="cjn-box">' + xp + row('Pickup', g.pickup_label, a, g.pickup, !active, sub) + row('Dropoff', g.drop_label, b, g.drop, !active, '') + sum + '</div>';
   }
 
   function cards() {
