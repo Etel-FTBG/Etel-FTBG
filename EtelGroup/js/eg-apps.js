@@ -1,6 +1,6 @@
 /* ETEL Group master page - the Android apps (APK downloads).
    One list of apps (below) draws four places: the panel under the header button (#egap-panel), the strip under the hero buttons (#egap-hero),
-   the band at the top of the footer (#egap-footer) and the list in the mobile menu (#egap-mobile). Each app has its own medallion logo.
+   the band at the top of the footer (#egap-footer) and the list in the mobile menu (#egap-mobile). Each app has its own transparent logo (Delivery, Ride and Driver share the transport logo).
    The APK files are the ones the Delivery install page already uses: /delivery/apk/ + the file name (the name starts with the Ethiopic letter).
    A quick HEAD request checks each file: a file that is not uploaded yet shows "Coming soon" (not a dead link) and a real file shows its size.
    English / Amharic follow the page's language buttons (setLang). Nothing here is sent anywhere else. */
@@ -10,17 +10,17 @@
     window.__egApps = true;
     var APK_BASE = '/delivery/apk/';
     var APPS = [
-        { key: 'etel',     file: '\u12A2E_Etel.apk',     name: 'ETEL',          logo: '/EtelGroup/icons/etelgroup-logo.png', main: true,
+        { key: 'etel',     file: '\u12A2E_Etel.apk',     name: 'ETEL',          logo: '/EtelGroup/icons/brand/etel-group-master.webp?v=1', main: true,
           en: 'The all-in-one app: shop, ride, pay and more', am: 'ሁሉንም አገልግሎት በአንድ መተግበሪያ' },
-        { key: 'delivery', file: '\u12A2E_Delivery.apk', name: 'ETEL Delivery', logo: '/delivery/icons/icon-192.png',
+        { key: 'delivery', file: '\u12A2E_Delivery.apk', name: 'ETEL Delivery', logo: '/EtelGroup/icons/brand/etel-transport.webp?v=1',
           en: 'Food, shops and packages to your door', am: 'ምግብ፣ ሱቆችና ጥቅሎች እስከ በርዎ' },
-        { key: 'ride',     file: '\u12A2E_Ride.apk',     name: 'ETEL Ride',     logo: '/delivery/icons/ride-icon-192.png',
+        { key: 'ride',     file: '\u12A2E_Ride.apk',     name: 'ETEL Ride',     logo: '/EtelGroup/icons/brand/etel-transport.webp?v=1',
           en: 'Safe rides across Hawassa', am: 'በሃዋሳ ደህንነቱ የተጠበቀ ጉዞ' },
-        { key: 'driver',   file: '\u12A2E_Driver.apk',   name: 'ETEL Driver',   logo: '/delivery/icons/driver-icon-192.png',
+        { key: 'driver',   file: '\u12A2E_Driver.apk',   name: 'ETEL Driver',   logo: '/EtelGroup/icons/brand/etel-transport.webp?v=1',
           en: 'Drive, accept rides and earn', am: 'ያሽከርክሩ፣ ጉዞ ይቀበሉ፣ ይሥሩ' },
-        { key: 'courier',  file: '\u12A2E_Courier.apk',  name: 'ETEL Courier',  logo: '/delivery/icons/courier-icon-192.png',
+        { key: 'courier',  file: '\u12A2E_Courier.apk',  name: 'ETEL Courier',  logo: '/EtelGroup/icons/brand/etel-courier.webp?v=1',
           en: 'Pick up, deliver and earn', am: 'ይውሰዱ፣ ያድርሱ፣ ይሥሩ' },
-        { key: 'service',  file: '\u12A2E_Service.apk',  name: 'ETEL Service',  logo: '/delivery/icons/service-icon-192.png',
+        { key: 'service',  file: '\u12A2E_Service.apk',  name: 'ETEL Service',  logo: '/EtelGroup/icons/brand/etel-service.webp?v=1',
           en: 'For shops and service providers', am: 'ለሱቆችና አገልግሎት ሰጪዎች' }
     ];
     var T = {

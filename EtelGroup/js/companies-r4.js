@@ -44,7 +44,27 @@
   // description text sitting on top of it stays readable regardless of
   // how bright or busy the logo image itself is. Falls back to nothing
   // extra (just the existing solid card background) when no logo is set.
+  // The ETEL family badges (transparent pictures in EtelGroup/icons/brand/) are used for the companies that have one, matched by the company's
+  // slug and name, so they win over an old logo_path. Delivery and Ride share the transport logo. Other companies keep their logo_path.
+  var BADGE_BASE = '/EtelGroup/icons/brand/';
+  var BADGES = [
+    [/madeya/, 'etel-madeya.webp'], [/gebeya|market/, 'etel-gebeya.webp'], [/delivery/, 'etel-transport.webp'],
+    [/(^|[^a-z])ride($|[^a-z])/, 'etel-transport.webp'], [/(^|[^a-z])pay($|[^a-z])/, 'etel-pay.webp'], [/(^|[^a-z])id($|[^a-z])/, 'etel-id.webp']
+  ];
+  function badgeFor(c) {
+    var key = ((c.slug || '') + ' ' + (c.name || '')).toLowerCase();
+    for (var i = 0; i < BADGES.length; i++) if (BADGES[i][0].test(key)) return BADGE_BASE + BADGES[i][1] + '?v=1';
+    return '';
+  }
+  function logoPath(c) { return badgeFor(c) || c.logo_path || ''; }
+
   function logoBgDecl(c) {
+    var badge = badgeFor(c);
+    if (badge) {
+      // a transparent badge on a navy card: the badge sits on the right, the dark gradient on the left keeps the text readable
+      return ';background-color:#0A1230;background-image:linear-gradient(90deg, rgba(6,9,24,.97) 0%, rgba(6,9,24,.86) 52%, rgba(6,9,24,.30) 100%), url(\'' + badge + '\');' +
+        'background-size:cover,auto 94%;background-position:center,right 8px center;background-repeat:no-repeat,no-repeat';
+    }
     if (!c.logo_path) return '';
     var url = esc(c.logo_path).replace(/'/g, "\\'");
     return ';background-image:linear-gradient(180deg, rgba(10,8,4,.28) 0%, rgba(10,8,4,.58) 55%, rgba(8,6,3,.92) 100%), url(\'' + url + '\');' +
@@ -96,7 +116,7 @@
     var href = isLive ? esc(c.url) : '#';
     var badgeClass = isLive ? 'co-badge-live' : 'co-badge-plan';
     var badgeText = isLive ? 'Live' : 'Coming Soon';
-    var hasLogo = !!c.logo_path;
+    var hasLogo = !!logoPath(c);
     // Live: a real online/offline dot (same check the Platform launcher uses). Coming soon: launch text + "Notify me".
     var extra = '';
     if (isLive) {
@@ -107,7 +127,7 @@
     }
     var tag = isLive ? 'a' : 'div';
     return (
-      '<' + tag + (isLive ? ' href="' + href + '" target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
+      '<' + tag + (isLive ? ' href="' + href + '" target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (badgeFor(c) ? ' co-card-badge' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
       '<div class="co-card-corner"></div>' +
       '<span class="co-number">' + num + '</span>' +
       (hasLogo ? '' : '<div class="co-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>') +
@@ -186,9 +206,9 @@
     el.innerHTML = live.map(function (c, i) {
       var num = String(i + 1).padStart(2, '0');
       var tags = (c.tags || '').split(',').filter(Boolean).map(function (t) { return '<span>' + esc(t.trim()) + '</span>'; }).join('');
-      var hasLogo = !!c.logo_path;
+      var hasLogo = !!logoPath(c);
       return (
-        '<div class="launcher-card js-lcard' + (hasLogo ? ' co-card-has-logo' : '') + '" style="' + logoBgDecl(c).replace(/^;/, '') + '" data-url="' + esc(c.url) + '" data-delay="' + Math.min(i, 9) + '">' +
+        '<div class="launcher-card js-lcard' + (hasLogo ? ' co-card-has-logo' : '') + (badgeFor(c) ? ' co-card-badge' : '') + '" style="' + logoBgDecl(c).replace(/^;/, '') + '" data-url="' + esc(c.url) + '" data-delay="' + Math.min(i, 9) + '">' +
         '<div class="lc-status-bar">' +
         '<span class="lc-dot" id="ls-' + esc(c.slug) + '"></span>' +
         '<span class="lc-label" id="ll-' + esc(c.slug) + '">checking...</span>' +

@@ -39,3 +39,6 @@ html[data-theme="light"] .eco-sub { color: #4A3A1A; }
 html[data-theme="light"] .eco-hub-cap { color: #5A4200; }
 html[data-theme="light"] .eco-master { filter: drop-shadow(0 20px 30px rgba(40,28,0,.35)) drop-shadow(0 0 24px rgba(138,98,0,.25)); }
 html[data-theme="light"] .eco-card { box-shadow: 0 16px 40px rgba(40,28,0,.28); }
+
+/* "Our Companies" and Platform launcher cards that show an ETEL badge (EtelGroup/js/companies-r4.js): lighter text on the navy side so it stays readable */
+html .co-card-badge .co-desc, html[data-theme="light"] .co-card-badge .co-desc, html .co-card-badge .lc-desc, html[data-theme="light"] .co-card-badge .lc-desc { color: #F3E7B8; }
