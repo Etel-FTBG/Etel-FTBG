@@ -1,6 +1,6 @@
 """Guards the pictures on the ETEL app launcher (Etel-Driver-App/assets/apps, made by tools/brand/make_launcher_icons.py, 27 Nov 2026):
-Ride, Driver and Delivery (customer.png) show the SAME new logo; Pay, Gebeya, Madeya and ID show the family badges; each is a 256 x 256 transparent
-PNG (RGBA) so it sits cleanly on the cream tile. Courier and Service keep their coins. Every picture the app code asks for must exist.
+Ride, Driver and Delivery (customer.png) show the SAME new logo; Pay, Gebeya, Madeya, ID, Courier and Service show the family badges; each is a 256 x 256 transparent
+PNG (RGBA) so it sits cleanly on the cream tile. Every picture the app code asks for must exist.
 No Pillow needed: sizes and colour type come from the PNG header, the three logos are compared byte for byte."""
 import hashlib
 import os
@@ -19,7 +19,7 @@ def head(p):
     w, hgt = struct.unpack('>II', h[16:24])
     return w, hgt, h[25]          # colour type 6 = RGBA
 
-for k in ('ride', 'driver', 'customer', 'pay', 'gebeya', 'madeya', 'id'):
+for k in ('ride', 'driver', 'customer', 'pay', 'gebeya', 'madeya', 'id', 'courier', 'service'):
     p = os.path.join(apps, k + '.png')
     if not os.path.exists(p):
         bad.append('missing assets/apps/%s.png' % k)
@@ -49,7 +49,7 @@ for name in sorted(set(re.findall(r"assets/apps/([a-z]+\.png)", code))):
 # pixel check when Pillow is there (it is on the build machines; CI may not have it)
 try:
     from PIL import Image
-    for k in ('ride', 'driver', 'customer', 'pay', 'gebeya', 'madeya', 'id'):
+    for k in ('ride', 'driver', 'customer', 'pay', 'gebeya', 'madeya', 'id', 'courier', 'service'):
         p = os.path.join(apps, k + '.png')
         if os.path.exists(p):
             im = Image.open(p).convert('RGBA')
@@ -64,4 +64,4 @@ if bad:
     for x in bad:
         print(' - ' + x)
     raise SystemExit(1)
-print('ok: launcher pictures are 256 px transparent; Ride, Driver and Delivery share one logo; the family badges are in for Pay, Gebeya, Madeya and ID')
+print('ok: launcher pictures are 256 px transparent; Ride, Driver and Delivery share one logo; the family badges are in for Pay, Gebeya, Madeya, ID, Courier and Service')
