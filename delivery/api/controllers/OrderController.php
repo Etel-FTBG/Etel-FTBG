@@ -940,7 +940,7 @@ case 'track_order': {
                 o.placed_at, o.delivered_at, o.notes,
                 o.recipient_name, o.recipient_phone, o.recipient_address, o.delivery_photo_url,
                 o.delivery_lat, o.delivery_lng,
-                o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.pickup_pin, o.delivery_pin, o.pkg_speed,
+                o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.pickup_pin, o.delivery_pin, o.pkg_speed, o.track_token,
                 oa.status as assignment_status, oa.accepted_at, oa.pickup_qr_scanned,
                 sg.business_name as service_giver_name, sg.zone as sg_zone, sg.lat AS shop_lat, sg.lng AS shop_lng, o.pickup_lat, o.pickup_lng,
                 u_sg.phone as sg_phone,
@@ -1034,6 +1034,18 @@ case 'track_order': {
     if ((int) $order['_cid'] !== (int) $u['id'] || !$is_package) { unset($order['pickup_pin'], $order['delivery_pin']); }
     if ($is_package) { try { $order['pkg_times'] = etel_package_times($pdo, $order['id']); } catch (Exception $te2) {} catch (Throwable $te2) {} }
     if ((int) $order['_cid'] === (int) $u['id']) { require_once __DIR__ . '/../lib/package_proof.php'; $order['has_proof'] = etel_package_has_proof($pdo, $order['id']); }   // a photo from the courier (read it with customer_package_proof)   // stage times for the app's timers
+    // The sender's public tracking link token (api/lib/package_public.php). A package booked before the links existed gets its token the first time its sender
+    // opens it. Nobody else (a recipient who looks it up, another account) is ever sent the token.
+    if ($is_package && (int) $order['_cid'] === (int) $u['id']) {
+        if (empty($order['track_token'])) {
+            try {
+                require_once __DIR__ . '/../lib/package_public.php';
+                $tk = etel_package_track_token();
+                $pdo->prepare('UPDATE orders SET track_token = ? WHERE id = ? AND (track_token IS NULL OR track_token = \'\')')->execute(array($tk, $order['id']));
+                $re = $pdo->prepare('SELECT track_token FROM orders WHERE id = ?'); $re->execute(array($order['id'])); $order['track_token'] = (string) $re->fetchColumn();
+            } catch (Exception $tke) { $order['track_token'] = ''; }
+        }
+    } else { unset($order['track_token']); }
     unset($order['_cid']);   // internal: used above to decide can_cancel, not sent to the app
     ok(array('order' => $order, 'timeline' => $timeline));
     break;

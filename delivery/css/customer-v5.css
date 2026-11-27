@@ -1930,3 +1930,8 @@ body:not(.dark-theme) .pkg-veh.off .pkg-veh-sub { color: #92400E; }
 .pkgc-go { background: #0B1530; color: #D4AF37; }
 .pkgc-del.armed { background: #B91C1C; border-color: #B91C1C; color: #fff; }
 .pkgc-empty { text-align: center; padding: 30px 10px; color: #5B6478; font-size: 14px; }
+
+/* Send a package: share the public tracking link from the tracking screen */
+.pkgw-trk { margin-top: 12px; }
+.pkgw-trk-s { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+.pkgw-trk-b { width: 100%; min-height: 44px; border-radius: 12px; border: 1.5px solid var(--gold, #D4AF37); background: transparent; color: var(--text); font-weight: 700; font-size: 14px; cursor: pointer; }

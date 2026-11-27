@@ -14,7 +14,7 @@
             pkgw_msg: 'ETEL Delivery package {code}. From {from} to {to}. Track it in the ETEL app: ethelmarket.com/delivery', pkgw_eta: 'about {min} min', pkgw_kg: 'kg',
             pkgw_pay_cash: 'Cash', pkgw_pay_telebirr: 'Telebirr', pkgw_pay_wallet: 'Etel Pay wallet', pkgw_pay_chapa: 'Chapa (online)', pkgw_pay_abysinia: 'Abyssinia Bank', pkgw_pay_cbe: 'CBE',
             pkgw_print_fail: 'Could not open the receipt. Allow pop-ups and try again.',
-            pkgw_link: 'Tracking link', pkgw_problem: 'Report a problem', pkgw_pr_title: 'Report a problem with this package', pkgw_pr_what: 'What happened?', pkgw_pr_details: 'Tell us more (optional)',
+            pkgw_link: 'Tracking link', pkgw_trk_t: 'Share tracking', pkgw_trk_s: 'Anyone with this link can follow the package. It shows no phone number, address or PIN.', pkgw_trk_btn: 'Share tracking link', pkgw_trk_copied: 'Tracking link copied', pkgw_problem: 'Report a problem', pkgw_pr_title: 'Report a problem with this package', pkgw_pr_what: 'What happened?', pkgw_pr_details: 'Tell us more (optional)',
             pkgw_pr_send: 'Send report', pkgw_pr_cancel: 'Cancel', pkgw_pr_ok: 'Thank you. We got your report and will look into it.', pkgw_pr_err: 'Could not send the report. Try again.',
             pkgw_c_never_arrived: 'It never arrived', pkgw_c_late_delivery: 'It came late', pkgw_c_item_damaged: 'It is damaged', pkgw_c_item_missing: 'Something is missing', pkgw_c_courier_behavior: 'The courier was a problem', pkgw_c_other: 'Something else', pkgw_pins: 'Keep your pickup and delivery PINs private. Only give them to the courier.' },
         am: { pkgw_brand: 'ኢትኤል ዴሊቨሪ', pkgw_wb: 'የጥቅል ደረሰኝ', pkgw_track_no: 'የመከታተያ ቁጥር', pkgw_from: 'ከ', pkgw_to: 'ወደ', pkgw_to_who: 'ተቀባይ',
@@ -24,7 +24,7 @@
             pkgw_msg: 'የኢትኤል ዴሊቨሪ ጥቅል {code}። ከ {from} ወደ {to}። በኢትኤል መተግበሪያ ይከታተሉ: ethelmarket.com/delivery', pkgw_eta: 'ወደ {min} ደቂቃ', pkgw_kg: 'ኪ.ግ',
             pkgw_pay_cash: 'ጥሬ ገንዘብ', pkgw_pay_telebirr: 'ቴሌብር', pkgw_pay_wallet: 'የኢትኤል ፔይ ዋሌት', pkgw_pay_chapa: 'Chapa (ኦንላይን)', pkgw_pay_abysinia: 'አቢሲንያ ባንክ', pkgw_pay_cbe: 'ንግድ ባንክ',
             pkgw_print_fail: 'ደረሰኙን መክፈት አልተቻለም። ብቅ-ባይ ፈቅደው እንደገና ይሞክሩ።',
-            pkgw_link: 'የመከታተያ ሊንክ', pkgw_problem: 'ችግር ሪፖርት ያድርጉ', pkgw_pr_title: 'ስለዚህ ጥቅል ችግር ሪፖርት ያድርጉ', pkgw_pr_what: 'ምን ሆነ?', pkgw_pr_details: 'ተጨማሪ ይንገሩን (አማራጭ)',
+            pkgw_link: 'የመከታተያ ሊንክ', pkgw_trk_t: 'መከታተያ አጋራ', pkgw_trk_s: 'ይህ ሊንክ ያለው ሁሉ ጥቅሉን መከተል ይችላል። ስልክ ቁጥር፣ አድራሻ ወይም ፒን አያሳይም።', pkgw_trk_btn: 'የመከታተያ ሊንክ አጋራ', pkgw_trk_copied: 'የመከታተያ ሊንክ ተቀድቷል', pkgw_problem: 'ችግር ሪፖርት ያድርጉ', pkgw_pr_title: 'ስለዚህ ጥቅል ችግር ሪፖርት ያድርጉ', pkgw_pr_what: 'ምን ሆነ?', pkgw_pr_details: 'ተጨማሪ ይንገሩን (አማራጭ)',
             pkgw_pr_send: 'ሪፖርት ላክ', pkgw_pr_cancel: 'ተው', pkgw_pr_ok: 'አመሰግናለን። ሪፖርትዎን ተቀብለናል፣ እናየዋለን።', pkgw_pr_err: 'ሪፖርቱን መላክ አልተቻለም። እንደገና ይሞክሩ።',
             pkgw_c_never_arrived: 'አልደረሰም', pkgw_c_late_delivery: 'ዘግይቶ ደረሰ', pkgw_c_item_damaged: 'ተበላሽቷል', pkgw_c_item_missing: 'የሆነ ነገር ጎድሏል', pkgw_c_courier_behavior: 'በመልእክተኛው ችግር ነበር', pkgw_c_other: 'ሌላ ነገር', pkgw_pins: 'የመረከቢያና የማስረከቢያ ፒንዎን በሚስጥር ይያዙ። ለመልእክተኛው ብቻ ይስጡ።' }
     });
@@ -137,5 +137,24 @@
         });
         var f = document.getElementById('pkgw-cat'); if (f && f.focus) f.focus();
     };
-    window.PkgWaybill = { html: html, mount: mount };
+    // The tracking screen of ANY package of the sender (also one booked before the waybill existed): a card with "Share tracking link".
+    // o = the order from track_order; it carries track_token only for the sender (the server makes it the first time it is asked for).
+    var TRK = null;
+    function linkHtml(o) {
+        if (!o || !o.order_code || !o.track_token) return '';
+        var link = ''; try { link = new URL('track.html?c=' + encodeURIComponent(o.order_code) + '&t=' + o.track_token, location.href).href; } catch (e) { return ''; }
+        TRK = { code: o.order_code, link: link, from: o.pickup_address || o.from_zone || '', to: o.recipient_address || o.to_zone || '' };
+        return '<section class="pkg-card pkgw-trk"><h3 class="pkg-h">&#128279; ' + esc(T('pkgw_trk_t')) + '</h3><p class="pkgw-trk-s">' + esc(T('pkgw_trk_s')) + '</p>' +
+            '<button type="button" class="pkgw-trk-b"' + EtelActions.attrs('pkgShareLink') + '>' + esc(T('pkgw_trk_btn')) + '</button></section>';
+    }
+    window.pkgShareLink = function () {
+        if (!TRK) return;
+        var txt = T('pkgw_msg').replace('{code}', TRK.code).replace('{from}', TRK.from).replace('{to}', TRK.to) + '\n' + T('pkgw_link') + ': ' + TRK.link;
+        try { if (navigator.share) { navigator.share({ title: 'ETEL Delivery', text: txt }).catch(function () {}); return; } } catch (e) {}
+        var done = function () { toast(T('pkgw_trk_copied')); };
+        try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(TRK.link).then(done, done); return; } } catch (e2) {}
+        try { var t = document.createElement('textarea'); t.value = TRK.link; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); } catch (e3) {}
+        done();
+    };
+    window.PkgWaybill = { html: html, mount: mount, linkHtml: linkHtml };
 })();
