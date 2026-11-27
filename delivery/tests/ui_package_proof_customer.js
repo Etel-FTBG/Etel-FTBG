@@ -1,4 +1,4 @@
-// Send a package: the sender's tracking screen shows "Photo from the courier" for a delivered package that has one (not before, not for other orders),
+// Send a package and shop orders: the customer's tracking screen shows "Photo from the courier" for an order that has one (server says has_proof; not otherwise),
 // the photo is fetched only on "View photo", and it stays after the screen is redrawn. Real page and files, a fake API.   node delivery/tests/ui_package_proof_customer.js
 const { chromium } = require('playwright'); const path = require('path'); const http = require('http'); const fs = require('fs');
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
@@ -29,9 +29,11 @@ const ORDER = { id: 77, order_code: 'ETP-77', order_kind: 'package', status: 'de
     const txt1 = await draw(ORDER);
     t(n + 'a delivered package with a photo shows the photo card and a View photo button', await p.evaluate(() => !!document.querySelector('.pkgp .pkgp-b')) && (mode.lang === 'am' ? /ከመልእክተኛው የተላከ ፎቶ/ : /Photo from the courier/).test(txt1), txt1.slice(-160));
     t(n + 'the photo is not loaded before it is asked for', asked.length === 0 && !(await p.evaluate(() => !!document.querySelector('.pkgp-img'))));
-    for (const [label, o] of [['no photo', Object.assign({}, ORDER, { has_proof: false })], ['not delivered yet', Object.assign({}, ORDER, { status: 'in_transit' })], ['a shop order', Object.assign({}, ORDER, { order_kind: 'shop' })]]) {
+    for (const [label, o] of [['no photo', Object.assign({}, ORDER, { has_proof: false })], ['a shop order without a photo', Object.assign({}, ORDER, { order_kind: 'shop', has_proof: false })]]) {
       await draw(o); t(n + 'no photo card for ' + label, await p.evaluate(() => !document.querySelector('.pkgp')));
     }
+    await draw(Object.assign({}, ORDER, { order_kind: 'shop' }));
+    t(n + 'a shop order with a photo shows the photo card too', await p.evaluate(() => !!document.querySelector('.pkgp .pkgp-b')));
     await draw(ORDER);
     await p.screenshot({ path: (process.env.ETEL_SHOTS || '/tmp') + '/pkg_proof_customer_' + mode.n.replace(/ /g, '_') + '_a.png' });
     await p.evaluate(() => { document.querySelector('.pkgp-b').click(); }); await p.waitForTimeout(500);

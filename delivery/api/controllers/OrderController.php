@@ -1031,7 +1031,7 @@ case 'track_order': {
     // The pins are for the sender only (the courier asks the sender for the pickup pin; the recipient gives the delivery pin).
     if ((int) $order['_cid'] !== (int) $u['id'] || !$is_package) { unset($order['pickup_pin'], $order['delivery_pin']); }
     if ($is_package) { try { $order['pkg_times'] = etel_package_times($pdo, $order['id']); } catch (Exception $te2) {} catch (Throwable $te2) {} }
-    if ($is_package && $order['status'] === 'delivered' && (int) $order['_cid'] === (int) $u['id']) { require_once __DIR__ . '/../lib/package_proof.php'; $order['has_proof'] = etel_package_has_proof($pdo, $order['id']); }   // a photo from the courier (read it with customer_package_proof)   // stage times for the app's timers
+    if ((int) $order['_cid'] === (int) $u['id']) { require_once __DIR__ . '/../lib/package_proof.php'; $order['has_proof'] = etel_package_has_proof($pdo, $order['id']); }   // a photo from the courier (read it with customer_package_proof)   // stage times for the app's timers
     unset($order['_cid']);   // internal: used above to decide can_cancel, not sent to the app
     ok(array('order' => $order, 'timeline' => $timeline));
     break;
