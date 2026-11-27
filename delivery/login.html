@@ -488,7 +488,10 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
    that looked disabled. Real tap targets and readable sizes; no layout or logic changes. */
 .del-auth-org, .del-auth-sub { font-size:11px; }
 .del-rtab { font-size:11px; min-height:58px; padding:9px 2px; gap:3px; }
-.del-rtab-icon { font-size:19px; }
+.del-rtab-icon { font-size:19px; display:flex; align-items:center; justify-content:center; }
+.del-rtab-logo { display:block; width:34px; height:34px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(60,40,0,.35)); }
+.del-svc-logo { width:24px; height:24px; object-fit:contain; vertical-align:middle; }
+.del-rtab { min-height:68px; }
 .del-af-label { font-size:11px; letter-spacing:1px; }
 .del-forgot-link { min-height:40px; display:inline-flex; align-items:center; }
 .del-auth-ghost { background:rgba(244,213,106,.12); border:1.5px solid #D4AF37; color:#FFE9A8; font-size:14px; padding:13px; min-height:46px; }
@@ -579,19 +582,19 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
            to it. -->
       <div class="del-role-tabs">
         <button class="del-rtab on" id="tab-c" onclick="setRole('customer')">
-          <span class="del-rtab-icon">📦</span>Customer
+          <span class="del-rtab-icon"><img class="del-rtab-logo" src="assets/images/tab-customer.png?v=1" alt="" width="34" height="34" decoding="async"></span>Customer
         </button>
         <button class="del-rtab" id="tab-ride" onclick="setRole('ride')">
-          <span class="del-rtab-icon">🚕</span>Ride
+          <span class="del-rtab-icon"><img class="del-rtab-logo" src="assets/images/tab-ride.png?v=1" alt="" width="34" height="34" decoding="async"></span>Ride
         </button>
         <button class="del-rtab" id="tab-d" onclick="setRole('courier')">
-          <span class="del-rtab-icon">🛵</span>Courier
+          <span class="del-rtab-icon"><img class="del-rtab-logo" src="assets/images/tab-courier.png?v=1" alt="" width="34" height="34" decoding="async"></span>Courier
         </button>
         <button class="del-rtab" id="tab-r" onclick="setRole('driver')">
-          <span class="del-rtab-icon">🚗</span>Driver
+          <span class="del-rtab-icon"><img class="del-rtab-logo" src="assets/images/tab-driver.png?v=1" alt="" width="34" height="34" decoding="async"></span>Driver
         </button>
         <button class="del-rtab" id="tab-s" onclick="setRole('service_giver')">
-          <span class="del-rtab-icon">🏪</span>Service
+          <span class="del-rtab-icon"><img class="del-rtab-logo" src="assets/images/tab-service.png?v=1" alt="" width="34" height="34" decoding="async"></span>Service
         </button>
       </div>
 
@@ -668,10 +671,10 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
             <div style="background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.25);border-radius:16px;padding:16px;text-align:left;margin-bottom:18px">
               <div style="font-size:12px;font-weight:700;color:var(--g5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px" data-i18n="one_id_all_services">One ID. All Services.</div>
               <div style="font-size:13px;color:var(--ink2);line-height:2">
-                🛵 &nbsp;<strong>ETEL Delivery</strong> — <span data-i18n="svc_delivery_desc">Order food &amp; packages</span><br>
-                🚗 &nbsp;<strong>ETEL Ride</strong> — <span data-i18n="svc_ride_desc">Book rides across Hawassa</span><br>
-                💳 &nbsp;<strong>ኢE Pay</strong> — <span data-i18n="svc_pay_desc">Digital wallet &amp; payments</span><br>
-                🪪 &nbsp;<strong>One login</strong> — <span data-i18n="svc_login_desc">Use your EtelID everywhere</span>
+                <img class="del-svc-logo" src="assets/images/tab-customer.png?v=1" alt="" width="24" height="24"> &nbsp;<strong>ETEL Delivery</strong> — <span data-i18n="svc_delivery_desc">Order food &amp; packages</span><br>
+                <img class="del-svc-logo" src="assets/images/tab-ride.png?v=1" alt="" width="24" height="24"> &nbsp;<strong>ETEL Ride</strong> — <span data-i18n="svc_ride_desc">Book rides across Hawassa</span><br>
+                <img class="del-svc-logo" src="assets/images/tab-pay.png?v=1" alt="" width="24" height="24"> &nbsp;<strong>ኢE Pay</strong> — <span data-i18n="svc_pay_desc">Digital wallet &amp; payments</span><br>
+                <img class="del-svc-logo" src="assets/images/tab-id.png?v=1" alt="" width="24" height="24"> &nbsp;<strong>One login</strong> — <span data-i18n="svc_login_desc">Use your EtelID everywhere</span>
               </div>
             </div>
             <a href="https://ethelmarket.com/EtelId/" target="_blank" style="display:block;text-decoration:none;margin-bottom:10px">
