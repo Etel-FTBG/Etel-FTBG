@@ -6,7 +6,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp' };
 const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURIComponent(q.url.split('?')[0]).replace(/\.\./g, '')); fs.readFile(f, (e, d) => { if (e) { r.statusCode = 404; r.end(); } else { r.setHeader('Content-Type', MIME[path.extname(f)] || 'application/octet-stream'); r.end(d); } }); });
 const job = (id, code) => ({ id: id, order_code: code, status: 'pending', assignment_status: 'accepted', from_zone: 'Mehal Ketema', to_zone: 'University', recipient_name: 'Emu', recipient_phone: '09****', fare_total: 100, delivery_fee: 105, package_type: 'food', placed_at: '2026-11-24 10:00:00', payment_method: 'cash' });
-const GEO = { 7: { pickup: { lat: 7.05, lng: 38.48 }, drop: { lat: 7.06, lng: 38.49 }, pickup_label: 'Geo Kitchen', pickup_address: 'Piassa', drop_label: 'University', pickup_km: 2.3, drop_km: 3.1 }, 8: { pickup: { lat: 7.05, lng: 38.48 }, drop: null, pickup_label: 'Far Shop', pickup_address: '', drop_label: 'Tabor', pickup_km: null, drop_km: null } };
+const GEO = { 7: { pickup: { lat: 7.05, lng: 38.48 }, drop: { lat: 7.06, lng: 38.49 }, pickup_label: 'Geo Kitchen', pickup_address: 'Piassa', drop_label: 'University', pickup_km: 2.3, drop_km: 3.1 }, 8: { pickup: { lat: 7.05, lng: 38.48 }, drop: null, pickup_label: 'Far Shop', pickup_address: '', drop_label: 'Tabor', pickup_km: null, drop_km: null, express: true } };
 (async () => {
   await new Promise(res => srv.listen(0, '127.0.0.1', res)); const HOST = 'http://127.0.0.1:' + srv.address().port; const b = await chromium.launch();
   for (const mode of [{ n: 'phone', w: 390, h: 844, lang: 'en' }, { n: 'phone-am', w: 390, h: 844, lang: 'am' }]) {
@@ -48,11 +48,14 @@ const GEO = { 7: { pickup: { lat: 7.05, lng: 38.48 }, drop: { lat: 7.06, lng: 38
     t(n + ': the button says ' + (am ? 'Amharic' : 'Navigate'), (am ? /መንገድ አሳይ/ : /Navigate/).test(await links.nth(0).innerText()));
     const c2 = p.locator('#jobs-content .job-card').nth(1); const t2 = await c2.innerText();
     t(n + ': a job with no dropoff pin has one button and says the pin is not set', (await c2.locator('a.cjn-go').count()) === 1 && (am ? /ካርታ አልተቀመጠም/ : /Pin not set/).test(t2), t2);
+    t(n + ': a normal job has no Express strip', (await c1.locator('.cjn-x').count()) === 0);
+    t(n + ': the Express job has a gold strip that says go straight to the recipient', (await c2.locator('.cjn-x').count()) === 1 && (am ? /ፈጣን \(express\)/i : /EXPRESS - go straight to the recipient/i).test(await c2.locator('.cjn-x').innerText()), await c2.locator('.cjn-x').allInnerTexts());
     t(n + ': Accept Job and Skip are still there', (await c1.locator('.job-actions button').count()) === 2);
     t(n + ': the courier position was sent', geoCalls.length > 0 && geoCalls.some(d => Math.abs(d.lat - 7.04) < 1e-6), JSON.stringify(geoCalls[0]));
     t(n + ': no customer name or phone asked or shown in the box', !/Emu/.test(await c1.locator('.cjn-box').innerText()));
     const over = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1); t(n + ': no sideways scroll on the phone', !over);
     await c1.screenshot({ path: (process.env.ETEL_SHOTS || '/tmp') + '/courier_job_nav_' + n + '.png' });
+    await c2.screenshot({ path: (process.env.ETEL_SHOTS || '/tmp') + '/courier_job_express_' + n + '.png' });
     t(n + ': no page errors', errs.length === 0, errs.join('|')); await ctx.close();
   }
   await b.close(); srv.close();
