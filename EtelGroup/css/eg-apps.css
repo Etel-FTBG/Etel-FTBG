@@ -1,0 +1,96 @@
+/* ETEL Group master page - the Android apps (APK downloads): a button in the header that opens a panel, a strip under the hero buttons,
+   a band at the top of the footer and a list in the mobile menu. Built by EtelGroup/js/eg-apps.js. Gold/carbon branding; light theme = html[data-theme="light"]. */
+.egap-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; margin-right: 10px; border-radius: 999px; border: 1px solid rgba(212,175,55,.5);
+  background: linear-gradient(135deg, rgba(212,175,55,.22), rgba(212,175,55,.07)); color: var(--gold-light, #F5E6A3); cursor: pointer; white-space: nowrap;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  transition: box-shadow .25s, transform .25s, background .25s; }
+.egap-btn:hover, .egap-btn[aria-expanded="true"] { box-shadow: 0 0 0 3px rgba(212,175,55,.16), 0 8px 24px rgba(212,175,55,.25); transform: translateY(-1px); }
+.egap-btn svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.egap-btn .egap-dot { width: 7px; height: 7px; border-radius: 50%; background: #3DDC84; box-shadow: 0 0 0 3px rgba(61,220,132,.18); }
+/* the header is crowded between phone and wide desktop: a round icon button there, the label only when there is room */
+@media (max-width: 1500px) { .egap-btn { position: relative; width: 40px; padding: 0; justify-content: center; } .egap-btn .egap-btn-t { display: none; }
+  .egap-btn .egap-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; } }
+@media (max-width: 900px) { .egap-btn { width: auto; margin-left: auto; margin-right: 10px; padding: 0 14px; } .egap-btn .egap-btn-t { display: inline; } .egap-btn .egap-dot { position: static; width: 7px; height: 7px; } }
+@media (max-width: 380px) { .egap-btn .egap-btn-t { display: none; } .egap-btn { width: 40px; padding: 0; justify-content: center; } .egap-btn .egap-dot { position: absolute; top: 4px; right: 4px; } }
+
+/* the panel under the header */
+.egap-panel { position: fixed; left: 50%; top: calc(var(--nav-h, 72px) + 10px); transform: translate(-50%, -8px); z-index: 1100; width: min(1000px, calc(100vw - 24px));
+  max-height: calc(100vh - var(--nav-h, 72px) - 28px); overflow: auto; padding: 22px 22px 18px; border-radius: 24px; border: 1px solid rgba(212,175,55,.3);
+  background: linear-gradient(160deg, rgba(38,22,2,.97), rgba(14,7,0,.98)); box-shadow: 0 34px 90px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%); opacity: 0; visibility: hidden; transition: opacity .25s, transform .25s, visibility .25s; }
+.egap-panel.open { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+.egap-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.egap-title { margin: 0; font-family: var(--font-head, 'Syne', sans-serif); font-size: 22px; font-weight: 800; letter-spacing: .01em; color: var(--gold-light, #F5E6A3); }
+.egap-sub { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: rgba(245,230,163,.72); }
+.egap-x { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(212,175,55,.4); background: transparent; color: var(--gold-light, #F5E6A3); font-size: 16px; cursor: pointer; }
+.egap-x:hover { background: rgba(212,175,55,.15); }
+.egap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.egap-card { position: relative; display: grid; grid-template-columns: 62px 1fr; grid-template-areas: "logo text" "btn btn"; gap: 12px 14px; align-items: center; padding: 15px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,.2); background: linear-gradient(150deg, rgba(255,255,255,.055), rgba(255,255,255,.015)); transition: transform .25s, border-color .25s, box-shadow .25s; }
+.egap-card:hover { transform: translateY(-3px); border-color: rgba(212,175,55,.6); box-shadow: 0 16px 40px rgba(0,0,0,.4), 0 0 0 1px rgba(212,175,55,.12); }
+.egap-card.is-main { border-color: rgba(212,175,55,.55); background: linear-gradient(150deg, rgba(212,175,55,.16), rgba(212,175,55,.03)); }
+.egap-badge { position: absolute; top: -9px; left: 16px; padding: 3px 10px; border-radius: 999px; background: linear-gradient(135deg, #F5E6A3, #D4AF37); color: #1A0E00;
+  font-family: var(--font-mono, monospace); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.egap-logo { grid-area: logo; width: 62px; height: 62px; border-radius: 50%; object-fit: contain; filter: drop-shadow(0 5px 14px rgba(212,175,55,.4)); }
+.egap-text { grid-area: text; min-width: 0; }
+.egap-name { margin: 0; font-family: var(--font-head, 'Syne', sans-serif); font-size: 16px; font-weight: 800; color: var(--gold-light, #F5E6A3); }
+.egap-tag { margin: 2px 0 0; font-size: 12.5px; line-height: 1.4; color: rgba(245,230,163,.7); }
+.egap-ver { display: inline-block; margin-top: 4px; font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: .08em; color: #3DDC84; }
+.egap-dl { grid-area: btn; display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 0 16px; border-radius: 999px; text-decoration: none; cursor: pointer;
+  background-color: #D4AF37; background-image: linear-gradient(135deg, #F5E6A3 0%, #D4AF37 55%, #C8922A 100%); color: #1A0E00; font-family: var(--font-head, 'Syne', sans-serif); font-size: 13px; font-weight: 800;
+  box-shadow: 0 8px 22px rgba(212,175,55,.28), inset 0 1px 0 rgba(255,255,255,.5); transition: transform .2s, box-shadow .2s, filter .2s; }
+.egap-dl:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(212,175,55,.42), inset 0 1px 0 rgba(255,255,255,.5); filter: brightness(1.04); }
+.egap-dl svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.egap-dl small { font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700; opacity: .72; letter-spacing: .04em; }
+.egap-dl[aria-disabled="true"] { background-color: rgba(255,255,255,.08); background-image: none; color: rgba(245,230,163,.6); box-shadow: none; cursor: default; filter: none; transform: none; border: 1px dashed rgba(212,175,55,.35); }
+.egap-note { margin: 16px 2px 2px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; font-size: 12px; color: rgba(245,230,163,.66); }
+.egap-note a { color: var(--gold, #D4AF37); font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(212,175,55,.45); }
+.egap-trust { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.egap-trust span::before { content: "\2713"; margin-right: 6px; color: #3DDC84; font-weight: 800; }
+
+/* hero strip */
+.egap-hero { margin: 30px auto 132px; max-width: 1000px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.egap-hero-label { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gold, #D4AF37); }
+.egap-hero-label svg { width: 17px; height: 17px; }
+.egap-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.egap-chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 13px 5px 5px; border-radius: 999px; border: 1px solid rgba(212,175,55,.3); background: rgba(255,255,255,.05);
+  text-decoration: none; color: var(--gold-light, #F5E6A3); font-size: 12px; font-weight: 700; transition: transform .2s, border-color .2s, background .2s; backdrop-filter: blur(8px); }
+.egap-chip img { width: 32px; height: 32px; border-radius: 50%; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(212,175,55,.4)); }
+.egap-chip:hover { transform: translateY(-2px); border-color: rgba(212,175,55,.75); background: rgba(212,175,55,.12); }
+.egap-chip[aria-disabled="true"] { opacity: .6; cursor: default; transform: none; }
+@media (max-width: 560px) { .egap-chip { padding-right: 10px; font-size: 11.5px; } .egap-chip img { width: 30px; height: 30px; } }
+
+/* footer band */
+.egap-footer { max-width: 1280px; margin: 0 auto; padding: 56px 60px 0; }
+.egap-footer .egap-grid { grid-template-columns: repeat(3, 1fr); }
+.egap-footer-in { padding: 28px; border-radius: 28px; border: 1px solid rgba(212,175,55,.25); background: linear-gradient(150deg, rgba(212,175,55,.1), rgba(255,255,255,.02) 60%); }
+.egap-steps { margin: 16px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; counter-reset: s; }
+.egap-steps li { counter-increment: s; display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: rgba(245,230,163,.78); }
+.egap-steps li::before { content: counter(s); flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(212,175,55,.2); color: var(--gold-light, #F5E6A3); font-size: 11px; font-weight: 800; }
+
+/* mobile menu */
+.egap-mob { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.egap-mob .egap-card { grid-template-columns: 52px 1fr auto; grid-template-areas: "logo text btn"; padding: 11px 12px; border-radius: 16px; }
+.egap-mob .egap-logo { width: 52px; height: 52px; }
+.egap-mob .egap-dl { min-height: 40px; padding: 0 13px; font-size: 12px; }
+.egap-mob .egap-dl small { display: none; }
+
+@media (max-width: 960px) { .egap-grid, .egap-footer .egap-grid { grid-template-columns: repeat(2, 1fr); } .egap-steps { grid-template-columns: 1fr; } .egap-footer { padding: 44px 24px 0; } }
+@media (max-width: 620px) { .egap-grid, .egap-footer .egap-grid { grid-template-columns: 1fr; } .egap-panel { padding: 16px 14px; border-radius: 20px; } .egap-title { font-size: 19px; } .egap-footer-in { padding: 20px 16px; } }
+
+/* light theme */
+html[data-theme="light"] .egap-btn { color: #5a3a06; background: linear-gradient(135deg, rgba(212,175,55,.3), rgba(255,255,255,.5)); border-color: rgba(176,126,20,.55); }
+html[data-theme="light"] .egap-panel { background: linear-gradient(160deg, rgba(255,252,244,.98), rgba(255,246,224,.98)); border-color: rgba(176,126,20,.35); box-shadow: 0 30px 80px rgba(90,58,6,.25); }
+html[data-theme="light"] .egap-title, html[data-theme="light"] .egap-name { color: #3a2608; }
+html[data-theme="light"] .egap-sub, html[data-theme="light"] .egap-tag, html[data-theme="light"] .egap-note, html[data-theme="light"] .egap-steps li { color: #6b4a14; }
+html[data-theme="light"] .egap-x { color: #3a2608; border-color: rgba(176,126,20,.5); }
+html[data-theme="light"] .egap-card { background: #fff; border-color: rgba(176,126,20,.28); }
+html[data-theme="light"] .egap-card.is-main { background: linear-gradient(150deg, rgba(212,175,55,.2), #fff 70%); border-color: rgba(176,126,20,.6); }
+html[data-theme="light"] .egap-ver { color: #0b7a3b; }
+html[data-theme="light"] .egap-note a { color: #8a5a00; border-color: rgba(138,90,0,.5); }
+html[data-theme="light"] .egap-dl[aria-disabled="true"] { background: #f1ead6; color: #7a5a1a; border-color: rgba(138,90,0,.4); }
+html[data-theme="light"] .egap-hero-label { color: #8a5a00; }
+html[data-theme="light"] .egap-chip { background: rgba(255,255,255,.75); color: #3a2608; border-color: rgba(176,126,20,.4); }
+html[data-theme="light"] .egap-footer-in { background: linear-gradient(150deg, rgba(212,175,55,.14), #fff 65%); border-color: rgba(176,126,20,.35); }
+html[data-theme="light"] .egap-trust span::before { color: #0b7a3b; }
+@media (prefers-reduced-motion: reduce) { .egap-panel, .egap-card, .egap-chip, .egap-dl, .egap-btn { transition: none; } }
