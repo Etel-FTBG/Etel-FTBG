@@ -62,6 +62,11 @@ Written 2026-11-17 from the long working chats. It is the PROCESS. The project f
 - **Cron on this host:** use `wget -q -O /dev/null --header="X-Cron-Key: KEY" "https://.../file.php"`; the `php` CLI form did not run. Never repeat the key; if a screenshot shows it, advise rotation.
 - **Silent failures:** scripts with `error_reporting(0)` and output to `/dev/null` hide crashes. Make them record the reason (see `ride_monitor_error`) and read live heartbeats with `delivery_query` before guessing.
 - **A red message beats a guess.** When a save "does nothing", make the screen say why (server message, read-back) and ask Dagi for that screenshot.
+- **A button built in JavaScript only works if its action name is in the page's actions list** (`delivery/js/customer-actions.js` for the customer app; `check_inline_handlers.py` only checks markup in the main files). A test that calls the function directly passes while the button does nothing (PR #953 fixed exactly that): tests must CLICK the real button.
+- **A new container has no database running.** `service mariadb start`, wait a few seconds, then `FRESH_DB=1 MYSQL_ADMIN_ARGS="-uroot" ./tests/ci/run_integration.sh` (and `check_reserved_columns.py` needs it too).
+- **Browser tests of the customer app:** mock `boot.php`; `customer_get_items` must return `{items: [], count: 0}` (an empty `{}` makes `renderSGScroll` throw); click the "Not Now" onboarding button first or it covers the screen; prove the test fails on the old file (`git show HEAD:path > path`, run, put the new file back).
+- **Where logic goes:** `delivery/api/lib/package_orders.php` is about 47 KB, already over the 30 KB rule: put new package logic in a NEW small lib file and call it from there.
+- **Light is the default theme in every system (PRs #947-#950);** see section 13 of `etel-delivery-ride-memory` for the keys and the `etel-design-v4.css` `!important` colour trap.
 
 ## 6. The ETEL app (`Etel-Driver-App`, Expo/React Native)
 - Signed out: only the sign-in card (premium look). Signed in: EtelID first, then only the apps the account's role may open; "My programmes" shows ETEL Investor / ETEL Equb / ETEL Agent only to members (checks `investor_portal_am_i_investor`, `equb_am_i_permitted`, `fa_agent_me`). Coming-soon apps are hidden.
