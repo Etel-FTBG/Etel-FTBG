@@ -1339,6 +1339,8 @@ case 'customer_pending_confirmations': {
     // though nothing actually logged them out. require_auth() above
     // still requires a valid, real session either way.
 
+    // close requests whose order is already delivered or cancelled (older admin moves left them open), then list only orders still on the way
+    try { require_once __DIR__ . '/../lib/order_confirmations.php'; etel_confirmations_sweep($pdo); } catch (Exception $swe) {}
     $s = $pdo->prepare("
         SELECT oc.id, oc.order_id, oc.requested_at,
                o.order_code, o.fare_total, o.payment_method,
@@ -1348,7 +1350,7 @@ case 'customer_pending_confirmations': {
         JOIN   orders o   ON o.id = oc.order_id AND o.customer_id = ?
         LEFT JOIN couriers c ON c.id = o.courier_id
         LEFT JOIN users u_c  ON u_c.id = c.user_id
-        WHERE  oc.type = 'delivery' AND oc.status = 'pending'
+        WHERE  oc.type = 'delivery' AND oc.status = 'pending' AND o.status IN ('picked_up','in_transit')
         ORDER  BY oc.requested_at DESC
     ");
     $s->execute(array($auth_user['id']));
