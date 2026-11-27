@@ -6,7 +6,9 @@
  4. the opening splash of the Customer, Driver, Courier, Service and Admin pages shows that system's own logo (splash-<name>.webp), never the group master logo;
  5. the master page and the root pages (portfolio, privacy, terms, cookie policy, EtelGroup admin) use the ETEL Group icons, not the EtelAi ones, and
     EtelGroup/site.webmanifest lists Group icons that exist;
- 6. the Delivery service worker cache name moved on (v300 or later).
+ 6. the logo at the top of the login pages (delivery/assets/images/logo*.png and .webp: customer, ride, driver, courier, service, admin) is each system's own transparent
+    logo: 512 x 512, Ride = Driver = Customer (the transport logo), Courier, Service and Admin different from it and from each other;
+ 7. the Delivery service worker cache name moved on (v300 or later).
 No Pillow needed: PNG sizes come from the file header, sets are compared byte for byte."""
 import hashlib
 import json
@@ -103,7 +105,22 @@ for i in wm.get('icons', []):
 for n in ('icon-96.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'):
     if not os.path.exists(os.path.join(root, 'EtelGroup/icons', n)):
         bad.append('missing EtelGroup/icons/' + n)
-# 6. cache
+# 6. login logos
+logos = {}
+for k in ('', '-ride', '-driver', '-courier', '-service', '-admin'):
+    p = os.path.join(D, 'assets/images/logo%s.png' % k)
+    w = os.path.join(D, 'assets/images/logo%s.webp' % k)
+    if not os.path.exists(p) or size(p) != (512, 512):
+        bad.append('assets/images/logo%s.png is missing or not 512 x 512' % k)
+    else:
+        logos[k or '-customer'] = sha(p)
+    if not os.path.exists(w) or open(w, 'rb').read(4) != b'RIFF':
+        bad.append('assets/images/logo%s.webp is missing or bad' % k)
+if logos and not (logos.get('-customer') == logos.get('-ride') == logos.get('-driver')):
+    bad.append('the Customer, Ride and Driver login logos must be the same transport logo')
+if logos and len({logos.get('-customer'), logos.get('-courier'), logos.get('-service'), logos.get('-admin')}) != 4:
+    bad.append('the transport, Courier, Service and Admin login logos must all be different')
+# 7. cache
 m = re.search(r"CACHE_NAME\s*=\s*'etel-v(\d+)'", read('delivery/sw.js'))
 if not m or int(m.group(1)) < 300:
     bad.append('delivery/sw.js CACHE_NAME must be etel-v300 or later')
@@ -113,4 +130,4 @@ if bad:
     for x in bad:
         print(' - ' + x)
     raise SystemExit(1)
-print('ok: Courier, Service, Admin, Agent, Equb, Investor and the ETEL Group pages each use their own icons and opening splash')
+print('ok: Courier, Service, Admin, Agent, Equb, Investor and the ETEL Group pages each use their own icons, opening splash and login logos')
