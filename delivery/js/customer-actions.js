@@ -95,6 +95,7 @@ EtelActions.expose([
     "pkgMineClose",
     "pkgMineAgain",
     "pkgMineTrack",
+    "pkgProofShow",
     "pkgSubmit",
     "pkgTheme",
     "pkgTrack",

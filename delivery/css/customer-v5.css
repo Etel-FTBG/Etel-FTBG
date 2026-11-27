@@ -1904,3 +1904,10 @@ body:not(.dark-theme) .pkg-veh.off .pkg-veh-sub { color: #92400E; }
 .pkgh-b { flex: 1; min-height: 42px; border-radius: 12px; border: 1.5px solid #0B1530; background: #fff; color: #0B1530; font-weight: 700; font-size: 13px; cursor: pointer; }
 .pkgh-go { background: #0B1530; color: #D4AF37; }
 .pkgh-empty { text-align: center; padding: 30px 10px; color: #5B6478; font-size: 14px; }
+
+/* Send a package: the courier's photo on the tracking screen */
+.pkgp { margin-top: 12px; }
+.pkgp-s { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
+.pkgp-b { width: 100%; min-height: 44px; border-radius: 12px; border: 1.5px solid var(--gold, #D4AF37); background: transparent; color: var(--text); font-weight: 700; font-size: 14px; cursor: pointer; }
+.pkgp-img { display: block; width: 100%; max-height: 420px; object-fit: contain; border-radius: 12px; background: #0B1530; }
+.pkgp-msg { min-height: 16px; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }

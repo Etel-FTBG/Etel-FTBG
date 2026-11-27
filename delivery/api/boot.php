@@ -741,7 +741,7 @@ if (in_array($action, $ETEL_DELIVERY_ONLY_ACTIONS, true)) {
 // Delivery order actions a Ride-scoped account (limited admin or audit test user) must not use.
 $ETEL_DELIVERY_CUSTOMER_ACTIONS = array(
     'customer_create_order','agent_place_order','agent_order_quote','agent_order_status','schedule_order',
-    'customer_package_options','customer_package_quote','customer_package_create','customer_package_recent',
+    'customer_package_options','customer_package_quote','customer_package_create','customer_package_recent','customer_package_proof',
     'cancel_scheduled_order','get_scheduled_orders','customer_reorder_items','customer_get_orders',
     'customer_get_order_issues','submit_order_issue','track_order','rate_order','get_order_ratings',
     'order_chat_get','order_chat_inbox','order_chat_send'
@@ -756,7 +756,7 @@ if (in_array($action, $ETEL_DELIVERY_CUSTOMER_ACTIONS, true)) {
 $ETEL_THROTTLED_ACTIONS = array(
     // action => array(max calls, window seconds)
     'customer_create_order' => array(20, 600), 'agent_place_order' => array(20, 600),
-    'customer_package_create' => array(20, 600), 'customer_package_quote' => array(60, 600), 'public_track_package' => array(40, 600), 'customer_package_recent' => array(60, 600),
+    'customer_package_create' => array(20, 600), 'customer_package_quote' => array(60, 600), 'public_track_package' => array(40, 600), 'customer_package_recent' => array(60, 600), 'customer_package_proof' => array(60, 600), 'courier_package_proof' => array(20, 600),
     'customer_validate_promo' => array(30, 600), 'submit_order_issue' => array(10, 600),
     'order_chat_send' => array(60, 300), 'customer_reorder_items' => array(20, 600),
     'schedule_order' => array(20, 600), 'initiate_telebirr_payment' => array(15, 600),
@@ -1828,7 +1828,7 @@ switch ($action) {
     case 'driver_courier_status': case 'driver_courier_apply':
         require __DIR__ . '/controllers/DriverCourierController.php';
         break;
-    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'customer_package_recent': case 'public_track_package': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add': case 'admin_package_setting_save': case 'courier_package_pickup': case 'courier_package_deliver':
+    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'customer_package_recent': case 'customer_package_proof': case 'courier_package_proof': case 'public_track_package': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add': case 'admin_package_setting_save': case 'courier_package_pickup': case 'courier_package_deliver':
         require __DIR__ . '/controllers/PackageController.php';
         break;
 

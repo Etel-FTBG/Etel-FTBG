@@ -44,6 +44,35 @@ case 'customer_package_quote': {
     break;
 }
 
+case 'courier_package_proof': {
+    // POST order_id, photo (a small data URL) -> the courier adds a photo to their own delivered package (api/lib/package_proof.php).
+    require_once __DIR__ . '/../lib/package_proof.php';
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
+    if (!$order_id) fail('order_id is required', 400);
+    try { $r = etel_package_proof_save($pdo, $courier['id'], $order_id, isset($body['photo']) ? $body['photo'] : ''); }
+    catch (Exception $e) { error_log('[ETEL] package proof: ' . $e->getMessage()); fail('Could not save the photo. Try again.', 500); }
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'order_id' => $order_id));
+    break;
+}
+
+case 'customer_package_proof': {
+    // POST order_id -> the photo the courier took when delivering the sender's own package (or photo: null).
+    require_once __DIR__ . '/../lib/package_proof.php';
+    $pdo = db();
+    $u = require_auth($pdo);
+    $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
+    if (!$order_id) fail('order_id is required', 400);
+    try { $r = etel_package_proof_get($pdo, $u['id'], $order_id); }
+    catch (Exception $e) { error_log('[ETEL] package proof get: ' . $e->getMessage()); fail('Could not load the photo. Try again.', 500); }
+    ok($r);
+    break;
+}
+
 case 'customer_package_recent': {
     // The signed-in customer's own last packages (api/lib/package_history.php): the My packages list and Send again.
     require_once __DIR__ . '/../lib/package_history.php';
