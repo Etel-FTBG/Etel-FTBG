@@ -717,16 +717,6 @@ html{color-scheme:light}
                                 <button type="button" class="upd-qbtn" onclick="updSetPath('js/core.js')">js/core.js</button>
                             </div>
                         </div>
-                        <div style="margin-bottom:18px;">
-                            <div style="font-size:11px;font-weight:700;color:#B8B0A0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">One-Time Admin Tools</div>
-                            <button type="button" class="btn-secondary" onclick="(function(){
-                                var t = localStorage.getItem('etel_token');
-                                if (!t) { alert('No admin token found in this browser. Make sure you are logged in here.'); return; }
-                                window.open('api/backfill_open_trip_fares.php?token=' + encodeURIComponent(t), '_blank');
-                            })()" style="padding:10px 16px;border-radius:8px;font-size:13px;cursor:pointer;">
-                                &#x1F527; Open Fare Backfill Tool
-                            </button>
-                        </div>
                         <!-- Drop zone -->
                         <div id="upd-dropzone" onclick="document.getElementById('upd-file').click()"
                              style="border:2.5px dashed rgba(212,175,55,.3);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:rgba(255,255,255,.03);user-select:none">
