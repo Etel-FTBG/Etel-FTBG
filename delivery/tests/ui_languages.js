@@ -129,7 +129,7 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
   }
   // ---------- sample texts of the deeper Admin panels, EtelId, the Group page and Pay (all four languages have them) ----------
   const SAMPLES = ['Pickup confirm waiting', 'Take back from courier', 'Register a courier step by step', 'Peak-hour surge', 'Save delivery fees', 'Phone Number or Etel Code', 'Sign in with Face / Fingerprint',
-    'Send Reset Code', 'Quick Register', 'Radical Transparency', 'Send a message', 'Top up wallet', 'Step 2 of 4', 'Orders that need a courier right now. Assign by hand.', 'Track and view all orders', 'Choose how Etel Pay checks you', 'Good afternoon, Emebet', 'Pickup too long', 'Collect from the sender', 'Two-step sign-in is ON.', 'Dhiyeessii'.slice(0, 0) + 'A code from your phone when you sign in'];
+    'Send Reset Code', 'Quick Register', 'Radical Transparency', 'Send a message', 'Top up wallet', 'Step 2 of 4', 'Orders that need a courier right now. Assign by hand.', 'Track and view all orders', 'Choose how Etel Pay checks you', 'Good afternoon, Emebet', 'Pickup too long', '📦 Collect from the sender', 'Two-step sign-in is ON.', 'Dhiyeessii'.slice(0, 0) + 'A code from your phone when you sign in'];
   for (const code of ['om', 'ti', 'so']) {
     const q = await stub(code, '<p id="h0">Booking</p>' + SAMPLES.map((x, i) => '<p id="s' + i + '">' + x + '</p>').join('')); await q.waitForFunction(() => document.getElementById('s0').textContent !== 'Pickup confirm waiting', null, { timeout: 5000 }); await q.waitForTimeout(150);
     const got = await q.evaluate(n => [...Array(n).keys()].map(i => document.getElementById('s' + i).textContent), SAMPLES.length);
