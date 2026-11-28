@@ -96,8 +96,8 @@ function mig_get_bearer(): ?string {
 // token put the version field where $sig was expected, so hash_equals()
 // always failed). Found via a live "Admin auth required for apply" error
 // when actually trying to use this from the admin panel. Now matches the
-// same format + revocation check as boot.php/updater-api.php/upload.php/
-// backfill_open_trip_fares.php, which all authenticate the same tokens.
+// same format + revocation check as boot.php/updater-api.php/upload.php,
+// which all authenticate the same tokens.
 function mig_verify_admin(string $token): bool {
     $secret = getenv('TOKEN_SECRET') ?: (defined('CFG_TOKEN_SECRET') ? CFG_TOKEN_SECRET : '');
     if (!$secret || !$token) return false;
