@@ -25,7 +25,8 @@
     "android": {
       "package": "com.etelgroup.driver",
       "adaptiveIcon": {
-        "backgroundColor": "#0a0703",
+        "backgroundColor": "#0c1430",
+        "backgroundImage": "./assets/android-icon-background.png",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
