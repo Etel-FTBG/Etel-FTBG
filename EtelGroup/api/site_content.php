@@ -190,6 +190,22 @@ function eg_nget(PDO $pdo, string $k): string {
     $v = $s->fetchColumn();
     return $v === false ? '' : (string)$v;
 }
+// Coming-soon companies are shown as a surprise: the public list hides their real name, text, link and picture.
+// The sign-up button needs a company key, so it gets a private one (a keyed hash of the slug) instead of the real slug.
+function eg_soon_key(PDO $pdo, string $slug): string {
+    $salt = eg_nget($pdo, 'soon_salt');
+    if ($salt === '') { $salt = bin2hex(random_bytes(16)); eg_nset($pdo, 'soon_salt', $salt); }
+    return 'z' . substr(hash_hmac('sha256', $slug, $salt), 0, 14);
+}
+/** the real slug for a public key (or the slug itself if it is one), '' if none */
+function eg_soon_slug(PDO $pdo, string $key): string {
+    $key = strtolower(trim($key));
+    if ($key === '') return '';
+    foreach ($pdo->query("SELECT slug FROM companies WHERE status = 'coming_soon'")->fetchAll() as $r) {
+        if (hash_equals(eg_soon_key($pdo, $r['slug']), $key) || $r['slug'] === $key) return $r['slug'];
+    }
+    return '';
+}
 function eg_tg_call(string $token, string $method, array $payload): ?array {
     if ($token === '' || !function_exists('curl_init')) return null;
     $ch = curl_init('https://api.telegram.org/bot' . $token . '/' . $method);

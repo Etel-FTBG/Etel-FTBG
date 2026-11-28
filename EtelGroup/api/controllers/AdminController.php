@@ -205,11 +205,17 @@ case 'list_companies': {
                 url, logo_path, icon_key, dot_color, tags, status, sort_order
          FROM companies ORDER BY sort_order ASC, name ASC'
     )->fetchAll();
+    eg_ensure_launch_tables($pdo);
     $lm = eg_launch_map($pdo);
     foreach ($rows as &$r) {
         $l = $lm[$r['slug']] ?? null;
         $r['launch_text'] = $l ? $l['launch_text'] : '';
         $r['notify_enabled'] = $l ? $l['notify_enabled'] : 0;
+        if ($r['status'] !== 'live') {   // a surprise: nothing here says what is coming
+            $r['slug'] = eg_soon_key($pdo, $r['slug']);
+            $r['mystery'] = 1;
+            foreach (array('name', 'tagline', 'tagline_am', 'description_short', 'description_long', 'url', 'logo_path', 'icon_key', 'tags') as $f) $r[$f] = '';
+        }
     }
     unset($r);
     $bot = '';
@@ -265,6 +271,7 @@ case 'notify_launch': {
     $contact = eg_clean_contact((string)($body['contact'] ?? ''));
     if (!empty($body['website'])) ok(array('saved' => true));            // honeypot field: bots fill it, people never see it
     if ($contact === '') fail('Enter a valid email or phone number', 400);
+    $slug = eg_soon_slug($pdo, $slug);
     $c = $pdo->prepare("SELECT c.slug FROM companies c JOIN company_launch l ON l.slug = c.slug WHERE c.slug = ? AND c.status = 'coming_soon' AND l.notify_enabled = 1");
     $c->execute(array($slug));
     if (!$c->fetch()) fail('Sign-ups are not open for this company', 400);
