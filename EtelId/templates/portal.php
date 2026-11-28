@@ -63,8 +63,8 @@ $fayda_nonce      = $is_admin ? wp_create_nonce( 'etelid_auth' ) : '';
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=2' ); ?>">
-<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=2' ); ?>">
+<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=3' ); ?>">
+<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=3' ); ?>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>My Etel-ID · <?php echo esc_html($member->full_name); ?></title>
@@ -916,15 +916,15 @@ if ( $etelid_pv && ! $etelid_pv['verified'] && ( $etelid_pv['channels'] || $etel
       <span class="p-action-lbl"><?php echo empty($member->tg_chat_id) ? 'Link Telegram' : 'Telegram Linked ✓'; ?></span>
     </div>
     <a href="<?php echo esc_url($driver_app_url); ?>" target="_blank" class="p-action">
-      <div class="p-action-icon logo-icon"><img src="<?php echo esc_url(ETELID_URL.'public/images/logo-driver.webp'); ?>" alt="Etel Driver"></div>
+      <div class="p-action-icon logo-icon"><img src="<?php echo esc_url(ETELID_URL.'public/images/logo-driver.webp?v=3'); ?>" alt="Etel Driver"></div>
       <span class="p-action-lbl">Driver App</span>
     </a>
     <a href="<?php echo esc_url($rider_app_url); ?>" target="_blank" class="p-action">
-      <div class="p-action-icon logo-icon"><img src="<?php echo esc_url(ETELID_URL.'public/images/logo-ride.webp'); ?>" alt="Etel Ride"></div>
+      <div class="p-action-icon logo-icon"><img src="<?php echo esc_url(ETELID_URL.'public/images/logo-ride.webp?v=3'); ?>" alt="Etel Ride"></div>
       <span class="p-action-lbl">Rider App</span>
     </a>
     <a href="<?php echo esc_url($customer_app_url); ?>" target="_blank" class="p-action">
-      <div class="p-action-icon logo-icon"><img src="<?php echo esc_url(ETELID_URL.'public/images/etel-delivery-coin.webp'); ?>" alt="Etel Delivery"></div>
+      <div class="p-action-icon logo-icon"><img src="<?php echo esc_url(ETELID_URL.'public/images/etel-delivery-coin.webp?v=3'); ?>" alt="Etel Delivery"></div>
       <span class="p-action-lbl">Customer App</span>
     </a>
 

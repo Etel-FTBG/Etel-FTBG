@@ -25,7 +25,7 @@
       var brand = nav.querySelector('.eid-nav-brand');
       if (brand && base && !brand.querySelector('.eid-brand-logos')) {
         var wrap = document.createElement('span'); wrap.className = 'eid-brand-logos';
-        ['etel-master-coin-128.webp', 'etel-delivery-coin.webp'].forEach(function (f) {
+        ['etel-master-coin-128.webp', 'etel-id-coin.webp'].forEach(function (f) {
           var im = document.createElement('img'); im.className = 'eid-brand-coin'; im.alt = 'ETEL';
           im.src = base + 'public/images/' + f; wrap.appendChild(im);
         });

@@ -37,8 +37,8 @@ $asset = function ( $rel ) { return esc_url( ETELID_URL . $rel . '?v=' . (int) @
 ?><!DOCTYPE html>
 <html lang="en" data-eid-theme="light">
 <head>
-<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=2' ); ?>">
-<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=2' ); ?>">
+<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=3' ); ?>">
+<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=3' ); ?>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
@@ -53,7 +53,7 @@ $asset = function ( $rel ) { return esc_url( ETELID_URL . $rel . '?v=' . (int) @
 <div class="ec-shell">
   <aside class="ec-side" id="ec-side">
     <div class="ec-brand">
-      <span class="ec-logos"><img src="<?php echo esc_url( ETELID_URL . 'public/images/etel-master-coin-128.webp' ); ?>" alt="ETEL"><img src="<?php echo esc_url( ETELID_URL . 'public/images/etel-delivery-coin.webp' ); ?>" alt="ETEL"></span>
+      <span class="ec-logos"><img src="<?php echo esc_url( ETELID_URL . 'public/images/etel-master-coin-128.webp' ); ?>" alt="ETEL"><img src="<?php echo esc_url( ETELID_URL . 'public/images/etel-id-coin.webp' ); ?>" alt="ETEL"></span>
       <div><b>Etel-ID Admin</b><small>ኢትኤል ቡድን · Console</small></div>
     </div>
     <nav class="ec-nav" id="ec-nav">
