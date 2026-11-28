@@ -130,6 +130,7 @@ jobs:
           python3 delivery/tests/ci/check_backfill_removed.py
           python3 delivery/tests/ci/check_app_icons.py
           python3 delivery/tests/ci/check_system_icons.py
+          python3 delivery/tests/ci/check_login_role_marks.py
           python3 delivery/tests/ci/check_family_icons.py
           python3 delivery/tests/ci/check_start_screens.py
           python3 delivery/tests/ci/check_package_prices_admin.py
