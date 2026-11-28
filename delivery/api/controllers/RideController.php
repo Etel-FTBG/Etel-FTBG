@@ -2465,7 +2465,7 @@ case 'driver_get_demand': {
         foreach ($q->fetchAll() as $r) {
             list($cq, $cr) = hexgrid_cell_for($r['pickup_lat'], $r['pickup_lng'], $size);
             $k = $cq . ':' . $cr;
-            if (!isset($cells[$k])) $cells[$k] = array('n' => 0, 'waiting' => 0, 'idle' => 0, 'sl' => 0.0, 'sg' => 0.0);
+            if (!isset($cells[$k])) $cells[$k] = array('n' => 0, 'waiting' => 0, 'idle' => 0, 'sl' => 0.0, 'sg' => 0.0, 'q' => $cq, 'r' => $cr);
             $cells[$k]['n']++;
             $cells[$k]['sl'] += floatval($r['pickup_lat']);
             $cells[$k]['sg'] += floatval($r['pickup_lng']);
@@ -2492,6 +2492,9 @@ case 'driver_get_demand': {
         }
         $score = ($c['n'] + 2 * $c['waiting']) / ($c['idle'] + 1);
         $level = ($score >= 4 || ($c['waiting'] >= 1 && $c['idle'] == 0)) ? 'high' : ($score >= 2 ? 'med' : 'low');
+        /* heat 0..1 = how bright the hexagon is drawn on the driver map: the score, capped; a rider waiting with no free driver is always bright */
+        $heat = min(1.0, $score / 6.0);
+        if ($c['waiting'] >= 1 && $c['idle'] == 0) $heat = max($heat, 0.85);
         $km = null;
         if ($myLat !== null) {
             $dLat = deg2rad($lat - $myLat); $dLng = deg2rad($lng - $myLng);
@@ -2499,14 +2502,18 @@ case 'driver_get_demand': {
             $km = round(6371 * 2 * atan2(sqrt($a), sqrt(1 - $a)), 1);
         }
         $out[] = array('lat' => round($lat, 5), 'lng' => round($lng, 5), 'requests' => $c['n'], 'waiting' => $c['waiting'],
-                       'idle_drivers' => $c['idle'], 'score' => round($score, 1), 'level' => $level, 'distance_km' => $km);
+                       'idle_drivers' => $c['idle'], 'score' => round($score, 1), 'level' => $level, 'distance_km' => $km,
+                       'q' => $c['q'], 'r' => $c['r'], 'heat' => round($heat, 2));
     }
     usort($out, function ($a, $b) {
         if ($a['score'] != $b['score']) return $a['score'] < $b['score'] ? 1 : -1;
         if ($a['distance_km'] === null || $b['distance_km'] === null || $a['distance_km'] == $b['distance_km']) return 0;
         return $a['distance_km'] < $b['distance_km'] ? -1 : 1;
     });
-    ok(array('areas' => array_slice($out, 0, 8), 'window_min' => 45));
+    /* 'areas' = the list in the panel (top 8, unchanged). 'hexes' = every busy cell (up to 40) for the hexagon heat map, with the cell's axial (q, r), the cell size and the fare multiplier that is active now (peak window) or null. */
+    $surgeNow = null;
+    if (function_exists('rides_active_peak_multiplier')) { try { $sm = rides_active_peak_multiplier($pdo); if ($sm !== null && floatval($sm) > 1.0) $surgeNow = round(floatval($sm), 2); } catch (Exception $e) { $surgeNow = null; } }
+    ok(array('areas' => array_slice($out, 0, 8), 'hexes' => array_slice($out, 0, 40), 'size_m' => $size, 'surge_now' => $surgeNow, 'window_min' => 45));
     break;
 }
 
