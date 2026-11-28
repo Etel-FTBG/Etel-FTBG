@@ -3,7 +3,10 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { Linking, PixelRatio, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview';
-import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
+import { HUB_APPS, SITE_ORIGIN } from '../hub/apps';
+import { addEtelHost, hostOf, navDecision, onlyOnEtel, trustMessageFrom } from '../hub/webGuard';
+
+addEtelHost(hostOf(SITE_ORIGIN + '/'));
 import { BRIDGE_JS, FIT_JS, pageScaleJs, prefsJs } from '../hub/webBridge';
 import { PAGE_SCALE, usePageSize } from '../hub/pageSize';
 import { getSession, sessionJs, subscribeSession } from '../hub/session';
@@ -27,6 +30,8 @@ type WebHandle = { goBack(): void; reload(): void };
 const TEXT_ZOOM = Math.max(85, Math.min(130, Math.round(PixelRatio.getFontScale() * 100)));
 
 async function onBridgeMessage(e: WebViewMessageEvent) {
+  // Only ETEL's own pages may give the app a sign-in or switch background location on.
+  if (!trustMessageFrom(e.nativeEvent.url)) return;
   let msg: { type?: string; token?: string } = {};
   try {
     msg = JSON.parse(e.nativeEvent.data);
@@ -70,7 +75,8 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         ref={web}
         source={{ uri: app.url }}
         style={[styles.web, { backgroundColor: p.bg }]}
-        injectedJavaScriptBeforeContentLoaded={pageScaleJs(PAGE_SCALE[pageSize]) + (app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + (isLowData() ? 'window.ETEL_LOW_DATA=true;' : '') + BRIDGE_JS}
+        // The sign-in, settings and the message bridge are added only on ETEL's own site (onlyOnEtel checks inside the page).
+        injectedJavaScriptBeforeContentLoaded={pageScaleJs(PAGE_SCALE[pageSize]) + onlyOnEtel((app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + (isLowData() ? 'window.ETEL_LOW_DATA=true;' : '') + BRIDGE_JS)}
         injectedJavaScript={FIT_JS}
         onMessage={onBridgeMessage}
         onNavigationStateChange={(s: { canGoBack: boolean }) => patchPage(appKey, { canGoBack: s.canGoBack })}
@@ -79,14 +85,12 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         onHttpError={(ev: { nativeEvent: { statusCode: number } }) => {
           if (ev.nativeEvent.statusCode >= 500) patchPage(appKey, { failed: true, loading: false });
         }}
-        onShouldStartLoadWithRequest={(req: { url: string }) => {
-          // Stay inside ETEL; phone, mail and maps links open their own apps.
-          if (ALLOWED_ORIGINS.some((o) => req.url.startsWith(o)) || req.url.startsWith('about:') || req.url.startsWith('blob:') || req.url.startsWith('data:')) return true;
-          if (/^(tel:|mailto:|sms:|geo:|intent:|https:\/\/(www\.)?(google\.com\/maps|maps\.google\.com|waze\.com|wa\.me|t\.me))/.test(req.url)) {
-            Linking.openURL(req.url).catch(() => {});
-            return false;
-          }
-          return req.url.startsWith('https://');
+        onShouldStartLoadWithRequest={(req: { url: string; isTopFrame?: boolean }) => {
+          // ETEL pages and the payment pages stay inside the app; any other website opens in the phone's browser,
+          // where it cannot see the person's sign-in. Phone, mail, maps and Telegram links open their own apps.
+          const d = navDecision(req.url, req.isTopFrame !== false);
+          if (d === 'external') Linking.openURL(req.url).catch(() => {});
+          return d === 'load';
         }}
         javaScriptEnabled
         domStorageEnabled
@@ -96,7 +100,8 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         allowsInlineMediaPlayback
         // The licence, ID and selfie photos open the camera / file picker from inside the page.
         allowFileAccess
-        mediaCapturePermissionGrantType="grant"
+        // Camera for ETEL pages; any other page has to ask the person first.
+        mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
         mediaPlaybackRequiresUserAction={false}
         setSupportMultipleWindows={false}
         // Pull-to-refresh is off: it fought the map and the scrolling sheets, and could reload a page in the middle of a trip. The bar has Reload.
