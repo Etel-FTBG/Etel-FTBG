@@ -94,6 +94,6 @@ $asset = function ( $rel ) { return esc_url( ETELID_URL . $rel . '?v=' . (int) @
 <div class="ec-drawer-bg" id="ec-drawer-bg"><aside class="ec-drawer" id="ec-drawer"></aside></div>
 <div class="ec-toast" id="ec-toast"></div>
 <script src="<?php echo $asset( 'public/js/etelid-console.js' ); ?>"></script>
-<script src="/delivery/js/etel-langs.js?v=9" data-walk-am="1" defer></script>
+<script src="/delivery/js/etel-langs.js?v=10" data-walk-am="1" defer></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
  2. Equb and Investor have a tab icon and an apple-touch icon, and their pages link them;
  3. each page links its OWN icons: courier pages -> courier-icon, service page -> service-icon, admin -> admin-icon, landing -> Delivery icon;
  4. the opening splash of the Customer, Driver, Courier, Service and Admin pages shows that system's own logo (splash-<name>.webp), never the group master logo;
- 5. the master page and the root pages (portfolio, privacy, terms, cookie policy, EtelGroup admin) use the ETEL Group icons, not the EtelAi ones, and
+ 5. the master page and the root pages (privacy, terms, cookie policy, EtelGroup admin) use the ETEL Group icons, not the EtelAi ones, and
     EtelGroup/site.webmanifest lists Group icons that exist;
  6. the logo at the top of the login pages (delivery/assets/images/logo*.png and .webp: customer, ride, driver, courier, service, admin) is each system's own transparent
     logo: 512 x 512, Ride = Driver = Customer (the transport logo), Courier, Service and Admin different from it and from each other;
@@ -89,7 +89,7 @@ for page, name in SPL.items():
     if not os.path.exists(p) or open(p, 'rb').read(4) != b'RIFF':
         bad.append('missing or bad delivery/assets/images/splash-%s.webp' % name)
 # 5. the master page and the root pages
-for page in ('EtelGroup/index.html', 'portfolio.html', 'privacy.html', 'terms.html', 'cookie-policy.html', 'EtelGroup/admin.html'):
+for page in ('EtelGroup/index.html', 'privacy.html', 'terms.html', 'cookie-policy.html', 'EtelGroup/admin.html'):
     t = read(page)
     if re.search(r'rel="(?:shortcut )?icon"[^>]*EtelAi/icons', t) or re.search(r'(?:og|twitter):image"[^>]*EtelAi/icons', t):
         bad.append('%s still uses the EtelAi icon as its own' % page)

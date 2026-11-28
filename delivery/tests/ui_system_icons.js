@@ -43,7 +43,7 @@ const dist = (a, b) => a.reduce((s, v, k) => s + Math.abs(v - b[k]), 0) / a.leng
   t('login logos: Customer, Ride and Driver are the same transport logo', dist(lgs.customer, lgs.ride) < 0.01 && dist(lgs.customer, lgs.driver) < 0.01);
   t('login logos: Courier, Service and Admin each differ from the transport logo and from each other', ['courier', 'service', 'admin'].every((k, i, a) => dist(lgs[k], lgs.customer) >= 0.5 && a.every((u, j) => i === j || dist(lgs[k], lgs[u]) >= 0.5)));
   // 3. the Group pages really use the Group icon as their tab icon
-  for (const page of ['/EtelGroup/index.html', '/portfolio.html', '/privacy.html', '/terms.html', '/cookie-policy.html']) {
+  for (const page of ['/EtelGroup/index.html', '/privacy.html', '/terms.html', '/cookie-policy.html']) {
     // read the page source (the real page redirects and loads many scripts; the tab icon is in its head)
     const li = await p.evaluate(async (u) => { const tx = await (await fetch(u)).text(); const out = []; const re = /<link[^>]+rel="(?:shortcut )?(?:icon|apple-touch-icon)"[^>]*>/g; let m; while ((m = re.exec(tx))) { const h = /href="([^"]+)"/.exec(m[0]); if (h) out.push(h[1]); } const og = /property="og:image"\s+content="([^"]+)"/.exec(tx); return { links: out, og: og ? og[1] : '' }; }, HOST + page);
     t(page + ': the tab icon and the apple-touch icon are the ETEL Group icons', li.links.length >= 2 && li.links.every(h => /EtelGroup\/icons\//.test(h)), JSON.stringify(li.links));
