@@ -638,6 +638,6 @@ document.getElementById('rp-code').addEventListener('input', function(e) { e.tar
 document.getElementById('rp-confirm-password').addEventListener('keydown', function(e) { if (e.key === 'Enter') rpSetNewPassword(); });
 </script>
 <script src="/delivery/js/etel-help-fab.js" data-app="id" defer></script>
-<script src="/delivery/js/etel-langs.js?v=8" data-walk-am="1" defer></script>
+<script src="/delivery/js/etel-langs.js?v=9" data-walk-am="1" defer></script>
 </body>
 </html>

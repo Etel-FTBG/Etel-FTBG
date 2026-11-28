@@ -455,11 +455,11 @@ Wrong item		Wanti dogoggoraa	ጌጋ ሸቶ	Alaab khaldan
 Your points		Qabxii kee	ነጥብታትካ	Dhibcahaaga	
 Use my points		Qabxii koo fayyadami	ነጥብታተይ ተጠቐም	Isticmaal dhibcahayga	
 Not using points		Qabxii hin fayyadamne	ነጥቢ ኣይትጥቀምን	Ma isticmaalayo dhibco	
-Points		Qabxii	ነጥብታት	Dhibco	
+Points	ነጥቦች	Qabxii	ነጥብታት	Dhibco	
 Recent activity	የቅርብ ጊዜ እንቅስቃሴ	Sochii dhiyoo	ቀረባ ንጥፈታት	Dhaqdhaqaaqii ugu dambeeyay	
 worth		gatii	ዋጋ	qiimo	
 Order alerts are on		Beeksisni ajajaa banaadha	ምንጋር ትእዛዝ ተኸፊቱ	Ogeysiisyada dalabka waa shidan yihiin	
-Order again		Irra deebi'ii ajaji	ደጊምካ ኣዝዝ	Mar kale dalbo	
+Order again	እንደገና ይዘዙ	Irra deebi'ii ajaji	ደጊምካ ኣዝዝ	Mar kale dalbo	
 Hungry again?		Deebi'ee beelaye?	ከም ብሓድሽ ጥሚ?	Mar kale gaajo?	
 How was your order?		Ajajni kee akkam ture?	ትእዛዝካ ከመይ ነይሩ?	Sidee ahaa dalabkaagu?	
 Not now		Amma miti	ሕጂ ኣይኮነን	Hadda maaha	
@@ -2258,32 +2258,32 @@ For Partners	ለአጋሮች	Hiriyoota	ንሓባር	Wada-hawlgalayaasha
 Register as Partner	እንደ አጋር ይመዝገቡ	Akka hiriyaatti galmaa'i	ከም ሓባር ተመዝገብ	U diiwaangeli wada-hawlgale	
 About Etel Group	ስለ ኢትኤል ቡድን	Waa'ee gareen Etel	ብዛዕባ ጉጅለ ኢትኤል	Ku saabsan Kooxda Etel	
 Install ETEL Delivery App	ETEL Delivery መተግበሪያ ጫን	Appii ETEL Delivery fe'i	ኣፕ ETEL Delivery ጸዓን	Rakib app-ka ETEL Delivery	
-Track and view all orders		Ajajoota hunda hordofii ilaali	ኩሎም ትእዛዛት ተኸታተልን ርአን	Raac oo arag dhammaan dalabyada	
-Balance and transactions		Hanga fi daldalawwan	ሂሳብን ግብይታትን	Hadhaag iyo wareejinno	
-Saved restaurants		Mana nyaataa olkaa'aman	ዝተዓቕቡ ኣብሊዕ ቤታት	Makhaayadaha la keydiyay	
-Manage your locations		Bakkeewwan kee bulchi	ቦታታትካ ኣመሓድር	Maamul goobahaaga	
-Order updates & offers		Haaromsa ajajaa fi dhiyeessii	ሓደሽቲ ትእዛዛትን ቅድሚያትን	Cusbooneysiinta dalabka iyo dalabaadka	
-Account preferences		Filannoo akkaawuntii	ምርጫታት ኣካውንት	Doorbidyada koontada	
-Text, icons, buttons & logos		Barruu, mallattoowwan, qabduuwwan fi mallattoo daldalaa	ጽሑፍ፣ ምልክታት፣ ዝራብታትን ወግዕታትን	Qoraal, astaamo, badhamo iyo summado	
-Switch the app appearance		Bifa appii jijjiiri	ምርኣይ ኣፕ ቀይር	Beddel muuqaalka app-ka	
-Refresh app		Appii haaromsi	ኣፕ ሓድስ	Cusbooneysii app-ka	
-Reload shops, orders and prices		Suuqota, ajajoota fi gatii irra deebi'ii fe'i	ድኳናት፣ ትእዛዛትን ዋጋታትን ደጊምካ ጸዓን	Dib u rar dukaamada, dalabyada iyo qiimaha	
+Track and view all orders	ሁሉንም ትዕዛዞች ይከታተሉ እና ይመልከቱ	Ajajoota hunda hordofii ilaali	ኩሎም ትእዛዛት ተኸታተልን ርአን	Raac oo arag dhammaan dalabyada	
+Balance and transactions	ቀሪ ሂሳብ እና ግብይቶች	Hanga fi daldalawwan	ሂሳብን ግብይታትን	Hadhaag iyo wareejinno	
+Saved restaurants	የተቀመጡ ምግብ ቤቶች	Mana nyaataa olkaa'aman	ዝተዓቕቡ ኣብሊዕ ቤታት	Makhaayadaha la keydiyay	
+Manage your locations	አካባቢዎችዎን ያስተዳድሩ	Bakkeewwan kee bulchi	ቦታታትካ ኣመሓድር	Maamul goobahaaga	
+Order updates & offers	የትዕዛዝ ዝመናዎች እና ቅናሾች	Haaromsa ajajaa fi dhiyeessii	ሓደሽቲ ትእዛዛትን ቅድሚያትን	Cusbooneysiinta dalabka iyo dalabaadka	
+Account preferences	የመለያ ምርጫዎች	Filannoo akkaawuntii	ምርጫታት ኣካውንት	Doorbidyada koontada	
+Text, icons, buttons & logos	ጽሑፍ፣ አዶዎች፣ አዝራሮች እና አርማዎች	Barruu, mallattoowwan, qabduuwwan fi mallattoo daldalaa	ጽሑፍ፣ ምልክታት፣ ዝራብታትን ወግዕታትን	Qoraal, astaamo, badhamo iyo summado	
+Switch the app appearance	የመተግበሪያውን ገጽታ ይቀይሩ	Bifa appii jijjiiri	ምርኣይ ኣፕ ቀይር	Beddel muuqaalka app-ka	
+Refresh app	መተግበሪያውን አድስ	Appii haaromsi	ኣፕ ሓድስ	Cusbooneysii app-ka	
+Reload shops, orders and prices	ሱቆችን፣ ትዕዛዞችን እና ዋጋዎችን እንደገና ጫን	Suuqota, ajajoota fi gatii irra deebi'ii fe'i	ድኳናት፣ ትእዛዛትን ዋጋታትን ደጊምካ ጸዓን	Dib u rar dukaamada, dalabyada iyo qiimaha	
 Choose how Etel Pay checks you		Etel Pay akkamitti si mirkaneessu filadhu	ኢትኤል ፔይ ከመይ ከም ዘረጋግጸካ ምረጽ	Dooro sida Etel Pay kuu hubiyo	
-Saved		Olkaa'ame	ዝተዓቕበ	La keydiyay	
-PREMIUM MEMBER		MISEENSA PREMIYEEMII	ፕሪሚየም ኣባል	XUBIN PREMIUM	
-Good morning, {t}		Akkam bulte, {t}	ከመይ ኣምሲኹም, {t}	Subax wanaagsan, {t}	
-Good afternoon, {t}		Akkam oolte, {t}	ከመይ ዕለትኩም, {t}	Galab wanaagsan, {t}	
-Good evening, {t}		Akkam ooltan, {t}	ከመይ ኣምሲኹም, {t}	Fiid wanaagsan, {t}	
-Good day, {t}		Guyyaan gaarii, {t}	ጽቡቕ መዓልቲ, {t}	Maalin wanaagsan, {t}	
-{n}% OFF		%{n} HIR'ATA	{n}% ቅናሽ	{n}% DHIMIS	
-First Order Premium		Ajaja Jalqabaa Premiyeemii	ቀዳማይ ትእዛዝ ፕሪሚየም	Dalabka Horeeya Premium	
-{n} shops		suuqa {n}	{n} ድኳናት	{n} dukaan	
-{n} shop		suuqa {n}	{n} ድኳን	{n} dukaan	
-What do you want today?		Har'a maal barbaaddaa?	ሎሚ እንታይ ትደሊ?	Maanta maxaad rabtaa?	
-Order again?		Irra deebi'ii ajajuu?	ደጊምካ ተእዝዝ ዶ?	Mar kale dalbo?	
+Saved	የተቀመጠ	Olkaa'ame	ዝተዓቕበ	La keydiyay	
+PREMIUM MEMBER	ፕሪሚየም አባል	MISEENSA PREMIYEEMII	ፕሪሚየም ኣባል	XUBIN PREMIUM	
+Good morning, {t}	እንደምን አደሩ፣ {t}	Akkam bulte, {t}	ከመይ ኣምሲኹም, {t}	Subax wanaagsan, {t}	
+Good afternoon, {t}	እንደምን ዋሉ፣ {t}	Akkam oolte, {t}	ከመይ ዕለትኩም, {t}	Galab wanaagsan, {t}	
+Good evening, {t}	እንደምን አመሹ፣ {t}	Akkam ooltan, {t}	ከመይ ኣምሲኹም, {t}	Fiid wanaagsan, {t}	
+Good day, {t}	መልካም ቀን፣ {t}	Guyyaan gaarii, {t}	ጽቡቕ መዓልቲ, {t}	Maalin wanaagsan, {t}	
+{n}% OFF	{n}% ቅናሽ	%{n} HIR'ATA	{n}% ቅናሽ	{n}% DHIMIS	
+First Order Premium	የመጀመሪያ ትዕዛዝ ፕሪሚየም	Ajaja Jalqabaa Premiyeemii	ቀዳማይ ትእዛዝ ፕሪሚየም	Dalabka Horeeya Premium	
+{n} shops	{n} ሱቆች	suuqa {n}	{n} ድኳናት	{n} dukaan	
+{n} shop	{n} ሱቅ	suuqa {n}	{n} ድኳን	{n} dukaan	
+What do you want today?	ዛሬ ምን ይፈልጋሉ?	Har'a maal barbaaddaa?	ሎሚ እንታይ ትደሊ?	Maanta maxaad rabtaa?	
+Order again?	እንደገና ይዘዙ?	Irra deebi'ii ajajuu?	ደጊምካ ተእዝዝ ዶ?	Mar kale dalbo?	
 Restaurants		Manneen nyaataa	ኣብሊዕ ቤታት	Makhaayado	
 Highest rated		Madaallii ol'aanaa	ዝለዓለ ደረጃ	Qiimeynta ugu sarreysa	
-Search restaurants, dishes…		Manneen nyaataa, nyaata barbaadi…	ኣብሊዕ ቤታት፣ ኣብሊዕ ድለ…	Raadi makhaayado, cuntooyin…	
+Search restaurants, dishes…	ምግብ ቤቶችን፣ ምግቦችን ይፈልጉ…	Manneen nyaataa, nyaata barbaadi…	ኣብሊዕ ቤታት፣ ኣብሊዕ ድለ…	Raadi makhaayado, cuntooyin…	
 Restaurants & shops		Manneen nyaataa fi suuqota	ኣብሊዕ ቤታትን ድኳናትን	Makhaayado iyo dukaamo	
 Ethiopia's most ambitious holding group — uniting commerce, logistics, finance, and culture under a single sovereign identity.		Gareen qabeenya Itoophiyaa kan hawwii guddaa qabu — daldala, loojistiksii, faayinaansii fi aadaa eenyummaa bulchaa tokko jalatti walitti fidu.	ዝዓቢ ድልየት ዘለዎ ናይ ኢትዮጵያ ሆልዲንግ ጉጅለ — ንግዲ፣ ሎጂስቲክስ፣ ፋይናንስን ባህልን ኣብ ትሕቲ ሓደ ልዑላዊ መንነት ዘሓድር።	Kooxda ugu hammuunsan Itoobiya — ku midaysa ganacsiga, saadaasha, maaliyadda iyo dhaqanka hoos hal aqoonsi madax-bannaan.	
 Etel Group Established		Gareen Etel Hundaa'e	ጉጅለ ኢትኤል ተመስሪቱ	Kooxda Etel waa la aasaasay	
@@ -2375,3 +2375,29 @@ View Card	ካርድ ተመልከት	Kaardii ilaali	ካርድ ርአ	Arag Kaarka
 Verified Member	የተረጋገጠ አባል	Miseensa mirkanaa'e	ዝተረጋገጸ ኣባል	Xubin la xaqiijiyay	
 Card Services	የካርድ አገልግሎቶች	Tajaajila kaardii	ኣገልግሎታት ካርድ	Adeegyada Kaarka	
 This card is not active.	ይህ ካርድ ንቁ አይደለም።	Kaardiin kun hojiirra hin jiru.	እዚ ካርድ ንጡፍ ኣይኮነን።	Kaarkani ma firfircoona.	
+Our Portfolio · ንብረቶቻችን	ፖርትፎሊዮችን · ንብረቶቻችን	Poortfooliyoo Keenya	ፖርትፎሊዮና · ንብረቶቻችን	Poortfooliyahayaga	
+{n} companies.	{n} ኩባንያዎች።	Dhaabbilee {n}.	{n} ኩባንያታት።	{n} shirkadood.	
+Our companies.	ኩባንያዎቻችን።	Dhaabbilee keenya.	ኩባንያታትና።	Shirkadahayaga.	
+One vision.	አንድ ራዕይ።	Mul'ata tokko.	ሓደ ራእይ።	Hal aragti.	
+Every Etel Group company in one place — what's live today, and what's coming next. Every one of them shares a single identity: your Etel‑ID.	ሁሉም የኢትኤል ቡድን ኩባንያዎች በአንድ ቦታ — ዛሬ ቀጥታ የሆኑት እና በመቀጠል የሚመጡት። ሁሉም አንድ ማንነት ይጋራሉ፦ የእርስዎ Etel‑ID።	Dhaabbileen Gareen Etel hundi iddoo tokkotti — kan har'a kallattii fi kan itti aanu dhufu. Hundi eenyummaa tokko wal-qooddatu: Etel‑ID kee.	ኩሎም ኩባንያታት ጉጅለ ኢትኤል ኣብ ሓደ ቦታ — ሎሚ ቀጥታ ዘለዉን ቀጺሉ ዝመጽኡን። ኩሎም ሓደ መንነት ይካፈሉ፦ Etel‑ID ናትካ።	Shirkad kasta oo Kooxda Etel hal meel — kuwa maanta toos ah iyo kuwa soo socda. Dhammaantood waxay wadaagaan hal aqoonsi: Etel‑ID-gaaga.	
+Live Today	ዛሬ ቀጥታ	Har'a kallattii	ሎሚ ቀጥታ	Maanta toos	
+Operating Today · ዛሬ የሚሰሩ	ዛሬ የሚሰሩ	Har'a hojii irra jiru	ሎሚ ዝሰርሑ · ዛሬ የሚሰሩ	Maanta shaqeynaya	
+Live & Serving	ቀጥታ እና አገልግሎት በመስጠት ላይ	Kallattii fi tajaajilaa jira	ቀጥታን ኣገልግሎት ዝህብን	Toos oo Adeegaya	
+Ethiopia Today.	ኢትዮጵያን ዛሬ።	Itoophiyaa Har'a.	ኢትዮጵያ ሎሚ።	Itoobiya Maanta.	
+Coming in 2026	በ2026 ይመጣል	2026 keessa dhufa	ኣብ 2026 ይመጽእ	Imaanaya 2026-ka	
+Coming in 2026.	በ2026 ይመጣል።	2026 keessa dhufa.	ኣብ 2026 ይመጽእ።	Imaanaya 2026-ka.	
+On The Horizon · ወደፊት	ወደፊት	Fuuldura	ኣብ ኣድማስ · ወደፊት	Cirka	
+Back to Home	ወደ መነሻ ተመለስ	Gara Mana deebi'i	ናብ ቤት ተመለስ	Ku noqo Guriga	
+Visit {t}	{t} ጎብኝ	{t} daawwadhu	{t} ብጻሕ	Booqo {t}	
+Loading live companies…	ቀጥታ ኩባንያዎችን በመጫን ላይ…	Dhaabbilee kallattii fe'aa jira…	ቀጥታዊ ኩባንያታት ይጽዓኑ ኣለዉ…	Shirkadaha toos ah waa la rarayaa…	
+Could not load the live company list right now. Please refresh.	የቀጥታ ኩባንያ ዝርዝሩን አሁን መጫን አልተቻለም። እባክዎ ያድሱ።	Tarreen dhaabbilee kallattii amma fe'uu hin dandeenye. Maaloo haaromsi.	ዝርዝር ቀጥታዊ ኩባንያታት ሕጂ ክጽዓን ኣይተኻእለን። በጃኻ ሓድስ።	Liiska shirkadaha toos ah hadda lama rari karin. Fadlan cusbooneysii.	
+Ethiopia's most ambitious holding group — all our companies, one sovereign identity, one vision.	የኢትዮጵያ እጅግ ታላቅ ምኞት ያለው የሆልዲንግ ቡድን — ሁሉም ኩባንያዎቻችን፣ አንድ ሉዓላዊ ማንነት፣ አንድ ራዕይ።	Gareen qabeenya Itoophiyaa hawwii guddaa qabu — dhaabbilee keenya hundi, eenyummaa bulchaa tokko, mul'ata tokko.	ዝዓቢ ድልየት ዘለዎ ሆልዲንግ ጉጅለ ኢትዮጵያ — ኩሎም ኩባንያታትና፣ ሓደ ልዑላዊ መንነት፣ ሓደ ራእይ።	Kooxda ugu hammuunsan Itoobiya — dhammaan shirkadahayaga, hal aqoonsi madax-bannaan, hal aragti.	
+Logistics	ሎጂስቲክስ	Loojistiksii	ሎጂስቲክስ	Saadaasha	
+Tracking	ክትትል	Hordoffii	ኽትትል	La socod	
+SSO	SSO	SSO	SSO	SSO	
+Package and food delivery logistics with live tracking for drivers and customers.	የጥቅል እና የምግብ ማድረሻ ሎጂስቲክስ ለሾፌሮች እና ለደንበኞች ቀጥታ ክትትል ጋር።	Loojistiksii geessuu ba'aa fi nyaataa hordoffii kallattii konkolaachisootaa fi maamiltootaaf wajjin.	ሎጂስቲክስ ምቕራብ ጥቅልን ምግብን ምስ ቀጥታዊ ኽትትል ንሾፌራትን ዓማዊልን።	Saadaasha gaarsiinta xirmooyinka iyo cuntada oo leh la socod toos ah darawallada iyo macaamiisha.	
+One digital identity for every Etel Group service - sign in once, use everywhere.	ለእያንዳንዱ የኢትኤል ቡድን አገልግሎት አንድ ዲጂታል ማንነት - አንዴ ይግቡ፣ በሁሉም ቦታ ይጠቀሙ።	Eenyummaa dijitaalaa tokko tajaajila Gareen Etel hundaaf - al tokko seeni, iddoo hundatti fayyadami.	ሓደ ዲጂታላዊ መንነት ንነፍሲ ወከፍ ኣገልግሎት ጉጅለ ኢትኤል - ሓንሳ እተው ኣብ ኩሉ ቦታ ተጠቐም።	Hal aqoonsi dhijitaal ah adeeg kasta oo Kooxda Etel — gal hal mar, isticmaal meel kasta.	
+Gas and fuel delivery with cylinder exchange, tracked orders, and same-day service.	የጋዝ እና የነዳጅ ማድረስ ከሲሊንደር ልውውጥ፣ ከተከታተሉ ትዕዛዞች እና ከተመሳሳይ ቀን አገልግሎት ጋር።	Geessuu gaazii fi boba'aa jijjiirraa silindaraa, ajajoota hordofaman fi tajaajila guyyaa tokkoo wajjin.	ምቕራብ ጋዝን ነዳዲን ምስ ምልውዋጥ ሲሊንደር፣ ዝተኸታተሉ ትእዛዛትን ናይ ሓደ መዓልቲ ኣገልግሎትን።	Gaarsiinta gaaska iyo shidaalka oo leh beddelka sillindarka, dalabyo la raacay iyo adeeg isla maalinta.	
+General e-commerce marketplace for everyday goods across the region.	በክልሉ ላሉ የዕለት ተዕለት ዕቃዎች አጠቃላይ የኤሌክትሮኒክ ንግድ ገበያ።	Gabaa daldala elektirooniksii waliigalaa meeshaalee guyyaa guyyaa naannoo keessatti.	ሓፈሻዊ ዕዳጋ ኤሌክትሮኒክ ንግዲ ንዕለታዊ ዕቃታት ኣብ ክልል።	Suuq guud oo ganacsi elektaroonig ah oo alaabta maalinlaha ah ee gobolka.	
+Digital wallet, merchant payments, and transfers across the Etel Group ecosystem.	ዲጂታል ዋሌት፣ የነጋዴ ክፍያዎች እና በኢትኤል ቡድን ሥነ ምህዳር ውስጥ ዝውውሮች።	Waalet dijitaalaa, kaffaltii daldaltootaa fi dabarsa ekoosistamii Gareen Etel keessatti.	ዲጂታላዊ ዋሌት፣ ክፍሊት ነጋዶን ምስግጋራትን ኣብ ኢኮሲስተም ጉጅለ ኢትኤል።	Wallet dhijitaal ah, lacag bixinta ganacsatada iyo wareejinno nidaamka Kooxda Etel.	
+companies.	ኩባንያዎች።	dhaabbilee.	ኩባንያታት።	shirkado.	

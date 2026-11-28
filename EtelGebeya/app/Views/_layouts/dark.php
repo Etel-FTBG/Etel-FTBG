@@ -158,6 +158,6 @@ document.querySelectorAll('.nav-item:not([data-etel-display-open])').forEach(el 
 });
 </script>
 <script src="/delivery/js/etel-help-fab.js" data-app="gebeya" defer></script>
-<script src="/delivery/js/etel-langs.js?v=8" data-lang-url="<?= View::url('/lang/') ?>" data-old="a.topbar-btn[title='Toggle language']"></script>
+<script src="/delivery/js/etel-langs.js?v=9" data-lang-url="<?= View::url('/lang/') ?>" data-old="a.topbar-btn[title='Toggle language']"></script>
 </body>
 </html>
