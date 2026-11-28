@@ -91,6 +91,31 @@
     if (Object.prototype.hasOwnProperty.call(table, t)) return table[t];
     var p = strip(t);
     if (p[2] && p[2] !== t && Object.prototype.hasOwnProperty.call(table, p[2])) return p[1] + table[p[2]] + p[3];
+    var r = pat(t);
+    if (r == null && p[2] && p[2] !== t) { r = pat(p[2]); if (r != null) r = p[1] + r + p[3]; }
+    return r;
+  }
+  /* Texts with a changing number or name ("About 5 km", "Sender: Abebe"): a dictionary key may hold {n} (a number) or {t} (any text), e.g.
+     "{n} km away" -> "{n} km fagaatee". Two of one kind are numbered: {n1} {n2}. The translation may put them in any order. */
+  var PATS = [];
+  function tokKey(type, num, cnt) { return type + (num || (cnt[type] = (cnt[type] || 0) + 1)); }
+  function compile(en, tr) {
+    var parts = en.split(/(\{[nt]\d*\})/), cnt = {}, keys = [], re = '';
+    for (var i = 0; i < parts.length; i++) {
+      var m = /^\{([nt])(\d*)\}$/.exec(parts[i]);
+      if (m) { keys.push(tokKey(m[1], m[2], cnt)); re += m[1] === 'n' ? '(\\d+(?:[.,]\\d+)?)' : '(.+?)'; }
+      else re += parts[i].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    return { re: new RegExp('^' + re + '$'), keys: keys, tr: tr, w: en.replace(/\{[nt]\d*\}/g, '').length };
+  }
+  function pat(t) {
+    for (var i = 0; i < PATS.length; i++) {
+      var m = PATS[i].re.exec(t);
+      if (!m) continue;
+      var val = {}; for (var k = 0; k < PATS[i].keys.length; k++) val[PATS[i].keys[k]] = m[k + 1];
+      var cnt = {};
+      return PATS[i].tr.replace(/\{([nt])(\d*)\}/g, function (x, ty, num) { var v = val[tokKey(ty, num, cnt)]; return v == null ? x : v; });
+    }
     return null;
   }
   var seen = new WeakMap();    // text node -> the translated text we put there (to leave it alone)
@@ -138,12 +163,19 @@
     // dictionary file: i18n/<code>.js next to js/
     var base = mySrc ? mySrc.replace(/js\/[^\/?#]*(\?.*)?$/, '') : '/delivery/';
     var s = document.createElement('script');
-    s.src = base + 'i18n/' + cur + '.js?v=3'; s.async = true;
+    s.src = base + 'i18n/' + cur + '.js?v=4'; s.async = true;
     document.head.appendChild(s);
   }
   function add(code, dict) {
     DICTS[code] = dict || {};
-    if (code === cur) { table = DICTS[code]; if (document.body) run([document.body]); }
+    if (code === cur) {
+      var plain = {}; PATS = [];
+      Object.keys(DICTS[code]).forEach(function (k) {
+        if (/\{[nt]\d*\}/.test(k)) { try { PATS.push(compile(k, DICTS[code][k])); } catch (e) { /* a bad pattern is skipped */ } } else plain[k] = DICTS[code][k];
+      });
+      PATS.sort(function (a, b) { return b.w - a.w; });     // the most specific wording first
+      table = plain; if (document.body) run([document.body]);
+    }
   }
 
   /* ---------- the picker ---------- */
@@ -226,7 +258,7 @@
       '@media(forced-colors:active){#etel-lang-sheet .opt.on{outline:3px solid Highlight}}';
     document.head.appendChild(st);
   }
-  var CARET = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="9" height="9"><path d="M2 4l4 4 4-4"/></svg>';
+  var CARET = '<svg viewBox="0 0 12 12" fill="none" stroke="#FFE27A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="9" height="9"><path d="M2 4l4 4 4-4"/></svg>';
   var GLOBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg>';
   var CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
   function paintBtn() {
@@ -328,7 +360,7 @@
       } catch (e) {}
     } else if (!btn.parentNode) {
       var slot = document.querySelector('[data-etel-lang-host]');   // a page can reserve a place for the picker (the Admin header)
-      if (slot) { btn.classList.remove('fl'); slot.appendChild(btn); } else { btn.classList.add('fl'); document.body.appendChild(btn); }
+      if (slot && slot.getClientRects().length) { btn.classList.remove('fl'); slot.appendChild(btn); } else { btn.classList.add('fl'); document.body.appendChild(btn); }   // a spot that is hidden on this screen: float instead
     }
     paintBtn();
     return !!old;

@@ -37,7 +37,7 @@ for ci, code in enumerate(['am', 'om', 'ti', 'so', 'aa'], 1):
         if len(filled) < 350:
             bad.append('%s has only %d texts (expected 350 or more)' % (code, len(filled)))
         for k, v in filled:
-            if code == 'ti' and not eth.search(v) and not re.fullmatch(r'[A-Za-z0-9 .:/\-+%()?!…]*', v):
+            if code == 'ti' and not eth.search(v) and not re.fullmatch(r'[A-Za-z0-9 .:/\-+%()?!…{}~#·,]*', v):
                 bad.append('ti text without Ethiopic letters: %r -> %r' % (k, v))
             if code in ('om', 'so') and eth.search(v):
                 bad.append('%s text with Ethiopic letters: %r -> %r' % (code, k, v))

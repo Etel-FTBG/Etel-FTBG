@@ -119,6 +119,14 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
   t('real login page in Oromo: the sign-in sentence and the Choose app line are translated (no English left)', !/One sign-in for every|Need a specific app|Choose app/.test(bodyTxt));
   t('real login page: no page errors', lerr.length === 0, lerr.join('|'));
   await lp.close();
+  // ---------- texts with a changing number or name ({n} = number, {t} = any text in the dictionary keys) ----------
+  const NUMBODY = '<p id="a1">5 km away</p><p id="a2">Sender: Abebe</p><p id="a3">~4 min away \u00b7 3 seats</p><p id="a4">ETB 120 off your fare</p><p id="a5">\u25cf Open now \u2014 until 9:00 PM</p><p id="a6">12.5 km \u00b7 18 mins</p><p id="a7">Sender</p><p id="a8">7 km away from home</p>';
+  for (const [code, want] of [['om', { a1: '5 km fagaatee', a2: 'Ergaa: Abebe', a3: '~daqiiqaa 4 fagaatee \u00b7 teessoo 3', a4: 'kaffaltii kee irraa ETB 120 hir\'ata', a6: '12.5 km \u00b7 daqiiqaa 18' }], ['so', { a1: '5 km u jirta', a2: 'Dhiraha: Abebe', a4: '120 ka dhimis kharashkaaga'.replace('120', 'ETB 120') }], ['ti', { a1: '5 ኪ.ሜ ርሑቅ' }]]) {
+    const q = await stub(code, NUMBODY); await q.waitForFunction(() => document.getElementById('a1').textContent !== '5 km away', null, { timeout: 5000 }); await q.waitForTimeout(200);
+    for (const k of Object.keys(want)) t(code + ': "' + k + '" with a number or name is translated', (await q.textContent('#' + k)).trim() === want[k], await q.textContent('#' + k));
+    t(code + ': the open-now text with a time keeps its dot and is translated', code !== 'om' || /Amma banaadha/.test(await q.textContent('#a5')), await q.textContent('#a5'));
+    t(code + ': text that only looks similar stays English', (await q.textContent('#a8')) === '7 km away from home');
+  }
   // ---------- the owner's settings (Admin > Branding > Languages) ----------
   async function withCfg(cfg, stored, setup) {
     const q = await ctx.newPage(); const errs = []; q.on('pageerror', e => errs.push(e.message)); q.errs = errs; q.asked = 0;
