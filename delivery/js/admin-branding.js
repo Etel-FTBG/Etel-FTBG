@@ -27,7 +27,11 @@ const BRANDING_SLOTS = [
     { slot: 'logo_default', label: '🛍️ Customer', preview: 'assets/images/logo.png' },
   ]},
   { group: 'Splash & Favicon', items: [
-    { slot: 'splash',  label: '✨ Splash logo (all apps, shown briefly on open)', preview: 'assets/images/master-logo-splash.png' },
+    { slot: 'splash_transport', label: '🚖 Opening splash: Ride, Driver, Customer', preview: 'assets/images/splash-transport.webp' },
+    { slot: 'splash_courier', label: '📦 Opening splash: Courier', preview: 'assets/images/splash-courier.webp' },
+    { slot: 'splash_service', label: '🏪 Opening splash: Service', preview: 'assets/images/splash-service.webp' },
+    { slot: 'splash_admin', label: '🛡️ Opening splash: Admin', preview: 'assets/images/splash-admin.webp' },
+    { slot: 'splash',  label: '✨ Opening splash: all apps at once', preview: 'assets/images/splash-transport.webp' },
     { slot: 'favicon', label: '🌐 Browser tab favicon', preview: 'favicon.png' },
   ]},
 ];

@@ -18,8 +18,10 @@ var GROUPS = [
   { key: 'logos', title: 'Login page logos', note: 'The logo above the sign in form. Any shape works; it is shown at most 200 pixels tall.', square: false, items: [
     ['logo_driver', '🚖', 'Driver', 'assets/images/logo-driver.png'], ['logo_ride', '🛺', 'Ride', 'assets/images/logo-ride.png'], ['logo_courier', '📦', 'Courier', 'assets/images/logo-courier.png'],
     ['logo_service', '🏪', 'Service', 'assets/images/logo-service.png'], ['logo_admin', '🛡️', 'Admin', 'assets/images/logo-admin.png'], ['logo_default', '🛍️', 'Customer', 'assets/images/logo.png']] },
-  { key: 'splash', title: 'Splash and browser tab', note: 'The splash logo shows briefly when any app opens. The favicon is the tiny picture on the browser tab.', square: true, items: [
-    ['splash', '✨', 'Splash logo', 'assets/images/master-logo-splash.png'], ['favicon', '🌐', 'Browser tab icon', 'favicon.png']] }
+  { key: 'splash', title: 'Opening splash and browser tab', note: 'The picture that shows briefly when an app opens. Each app family has its own. "All apps at once" replaces all four with the same picture. The favicon is the tiny picture on the browser tab.', square: true, items: [
+    ['splash_transport', '🚖', 'Ride, Driver and Customer', 'assets/images/splash-transport.webp'], ['splash_courier', '📦', 'Courier', 'assets/images/splash-courier.webp'],
+    ['splash_service', '🏪', 'Service', 'assets/images/splash-service.webp'], ['splash_admin', '🛡️', 'Admin', 'assets/images/splash-admin.webp'],
+    ['splash', '✨', 'All apps at once (replaces the four above)', 'assets/images/splash-transport.webp'], ['favicon', '🌐', 'Browser tab icon', 'favicon.png']] }
 ];
 var BUST = Date.now(), PENDING = {}, DONE = {}, SLOTS = {};
 GROUPS.forEach(function (g) { g.items.forEach(function (i) { SLOTS[i[0]] = { g: g, i: i }; }); });

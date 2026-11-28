@@ -215,9 +215,14 @@ $SLOTS = [
     'logo_service'  => ['type' => 'logo',   'file' => 'logo-service'],
     'logo_admin'    => ['type' => 'logo',   'file' => 'logo-admin'],
     'logo_default'  => ['type' => 'logo',   'file' => 'logo'],
-    // Custom in-page splash overlay (see class comment in each app's
-    // <body> - single shared file, all five apps use the same one)
-    'splash'        => ['type' => 'splash', 'file' => 'master-logo-splash.png'],
+    // Opening splash picture (the in-page #etel-master-splash overlay): one slot per
+    // app family, because each family has its own logo (assets/images/splash-<name>.webp).
+    // 'splash' (all apps at once) writes all four.
+    'splash_transport' => ['type' => 'splash_app', 'files' => ['splash-transport.webp']],   // Customer, Ride, Driver
+    'splash_courier'   => ['type' => 'splash_app', 'files' => ['splash-courier.webp']],
+    'splash_service'   => ['type' => 'splash_app', 'files' => ['splash-service.webp']],
+    'splash_admin'     => ['type' => 'splash_app', 'files' => ['splash-admin.webp']],
+    'splash'           => ['type' => 'splash_app', 'files' => ['splash-transport.webp', 'splash-courier.webp', 'splash-service.webp', 'splash-admin.webp']],
     // Browser tab favicon (site root)
     'favicon'       => ['type' => 'favicon', 'file' => 'favicon.ico'],
 ];
@@ -315,12 +320,16 @@ if ($cfg['type'] === 'icon') {
     }
     imagedestroy($img);
 
-} elseif ($cfg['type'] === 'splash') {
-    $img = bup_resize_to($src, $srcW, $srcH, 512);
+} elseif ($cfg['type'] === 'splash_app') {
+    // The pages load these as WebP, so the server must be able to write WebP.
+    if (!function_exists('imagewebp')) bupfail('This server cannot write WebP images (GD without WebP) - the opening splash cannot be changed here', 500);
     $imgDir = $ROOT . '/assets/images';
     if (!is_dir($imgDir)) @mkdir($imgDir, 0755, true);
-    $path = $imgDir . '/' . $cfg['file'];
-    if (@imagepng($img, $path, 6)) $written[] = basename($path);
+    $img = bup_resize_to($src, $srcW, $srcH, 320);
+    foreach ($cfg['files'] as $f) {
+        $path = $imgDir . '/' . $f;
+        if (@imagewebp($img, $path, 90)) $written[] = basename($path);
+    }
     imagedestroy($img);
 
 } elseif ($cfg['type'] === 'favicon') {
