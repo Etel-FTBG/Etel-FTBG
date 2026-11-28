@@ -24,12 +24,24 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
   t('English: no dictionary asked for, text unchanged', (await p.textContent('#p1')) === 'Where are you going?');
   t('English: the picker button shows EN and is a floating button (no old button on this page)', (await p.textContent('#etel-lang-btn')).trim() === 'EN' && (await p.evaluate(() => document.getElementById('etel-lang-btn').classList.contains('fl'))));
   await p.click('#etel-lang-btn');
-  const opts = await p.evaluate(() => [...document.querySelectorAll('#etel-lang-sheet .opt')].map(o => ({ code: o.getAttribute('data-code'), name: o.querySelector('b').textContent, badge: (o.querySelector('.beta') || {}).textContent || '', dis: o.disabled, on: o.classList.contains('on') })));
+  const opts = await p.evaluate(() => [...document.querySelectorAll('#etel-lang-sheet .opt')].map(o => ({ code: o.getAttribute('data-code'), name: o.querySelector('b').textContent, badge: (o.querySelector('.tag') || {}).textContent || '', dis: o.classList.contains('soon'), flag: !!o.querySelector('svg.elg-flag'), on: o.classList.contains('on') })));
   t('the sheet lists the six languages in order', opts.map(o => o.code).join() === 'en,am,om,ti,so,aa', JSON.stringify(opts.map(o => o.code)));
   t('names are in their own language', opts[2].name === 'Afaan Oromoo' && opts[3].name === 'ትግርኛ' && opts[4].name === 'Soomaali' && opts[5].name === 'Qafar af' && opts[1].name === 'አማርኛ');
   t('Oromo, Tigrinya and Somali say BETA; Afar says COMING SOON and cannot be picked; English and Amharic have no badge', opts[2].badge === 'BETA' && opts[3].badge === 'BETA' && opts[4].badge === 'BETA' && opts[5].badge === 'COMING SOON' && opts[5].dis === true && !opts[0].badge && !opts[1].badge, JSON.stringify(opts.map(o => o.badge)));
   t('the current language (English) is marked', opts[0].on && !opts[2].on);
   t('the sheet text is not touched by the translator (data-no-i18n)', (await p.getAttribute('#etel-lang-sheet', 'data-no-i18n')) === '1');
+  // flags and readable colours, even when the page forces its own button and text colours
+  await p.addStyleTag({ content: 'button,b,em,p,span,small{color:#222!important;background:#eee!important}' });
+  const look = await p.evaluate(() => { const rgb = c => c.match(/\d+/g).slice(0, 3).map(Number); const lum = a => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(a[0]) + 0.7152 * f(a[1]) + 0.0722 * f(a[2]); };
+    const bg = rgb(getComputedStyle(document.querySelector('#etel-lang-sheet .box')).backgroundColor.indexOf('rgb') === 0 ? getComputedStyle(document.querySelector('#etel-lang-sheet .box')).backgroundColor : 'rgb(14,18,38)');
+    const ratio = el => { const L1 = lum(rgb(getComputedStyle(el).color)), L2 = lum([14, 18, 38]); return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05); };
+    const names = [...document.querySelectorAll('#etel-lang-sheet .tx b')].map(ratio), subs = [...document.querySelectorAll('#etel-lang-sheet .tx em')].map(ratio), note = ratio(document.querySelector('#etel-lang-sheet .note'));
+    return { n: Math.min.apply(null, names), s: Math.min.apply(null, subs), note, btn: ratio(document.querySelector('#etel-lang-btn span')) }; });
+  t('every language row has its own flag', opts.every(o => o.flag));
+  t('language names are high contrast (7:1 or better) on the sheet, even though the page forces dark button text', look.n >= 7, JSON.stringify(look));
+  t('English names, the note and the button text are at least 4.5:1', look.s >= 4.5 && look.note >= 4.5, JSON.stringify(look));
+  t('the close button is there and closes the sheet', await p.evaluate(() => { document.querySelector('#etel-lang-sheet .x').click(); return !document.getElementById('etel-lang-sheet').classList.contains('open'); }));
+  await p.click('#etel-lang-btn');
   // Escape closes
   await p.keyboard.press('Escape'); t('Escape closes the sheet', !(await p.evaluate(() => document.getElementById('etel-lang-sheet').classList.contains('open'))));
   // picking Afar does nothing
@@ -105,5 +117,26 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
   t('real login page in Oromo: the role buttons are translated where the dictionary has the word (Driver -> Konkolaachisaa) and the other ones stay English', texts.some(x => /Konkolaachisaa/.test(x)) && texts.some(x => /Courier|Service|Customer/.test(x)), JSON.stringify(texts));
   t('real login page: no page errors', lerr.length === 0, lerr.join('|'));
   await lp.close();
+  // ---------- the owner's settings (Admin > Branding > Languages) ----------
+  async function withCfg(cfg, stored, setup) {
+    const q = await ctx.newPage(); const errs = []; q.on('pageerror', e => errs.push(e.message)); q.errs = errs; q.asked = 0;
+    await q.route('http://app.test/**', r => { const u = r.request().url(); if (u.includes('/delivery/js/') || u.includes('/delivery/i18n/')) return r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(path.join(ROOT, new URL(u).pathname)) });
+      if (u.includes('/api/boot.php')) { q.asked++; return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: cfg }) }); }
+      return r.fulfill({ contentType: 'text/html', body: PAGE('<script>window.ETEL={api:"http://app.test/delivery/api/boot.php"}</script><p id="p1">Where are you going?</p>') }); });
+    await q.addInitScript(a => { try { localStorage.clear(); if (a) localStorage.setItem('etel_lang', a); } catch (e) {} }, stored);
+    await q.goto('http://app.test/delivery/ride/'); return q;
+  }
+  const CFG1 = { default: 'en', langs: [{ code: 'en', status: 'live' }, { code: 'am', status: 'live' }, { code: 'om', status: 'off' }, { code: 'ti', status: 'live' }, { code: 'so', status: 'beta' }, { code: 'aa', status: 'beta' }] };
+  let c1 = await withCfg(CFG1, 'en'); await c1.waitForFunction(() => localStorage.getItem('etel_lang_cfg')); await c1.click('#etel-lang-btn');
+  const rows = await c1.evaluate(() => [...document.querySelectorAll('#etel-lang-sheet .opt')].map(o => o.getAttribute('data-code') + ':' + ((o.querySelector('.tag') || {}).textContent || '') + (o.classList.contains('soon') ? ':soon' : '')));
+  t('owner settings: a language switched off is hidden, live has no tag, beta has BETA, and Afar can now be chosen', rows.join() === 'en:,am:,ti:,so:BETA,aa:BETA', rows.join());
+  t('the settings are kept on the phone for the next visit', !!(await c1.evaluate(() => localStorage.getItem('etel_lang_cfg'))));
+  let c2 = await withCfg(CFG1, 'om'); await c2.waitForNavigation({ timeout: 5000 }).catch(() => null); await c2.waitForFunction(() => localStorage.getItem('etel_lang') === 'en', null, { timeout: 5000 });
+  t('a visitor whose language was switched off is moved back to English', (await c2.evaluate(() => localStorage.getItem('etel_lang'))) === 'en');
+  let c3 = await withCfg(Object.assign({}, CFG1, { default: 'so' }), ''); await c3.waitForFunction(() => localStorage.getItem('etel_lang') === 'so', null, { timeout: 5000 });
+  t('a new visitor starts in the language the owner chose as the default', (await c3.evaluate(() => localStorage.getItem('etel_lang'))) === 'so');
+  await c3.close();
+  let c4 = await withCfg(Object.assign({}, CFG1, { default: 'so' }), 'am'); await c4.waitForTimeout(600);
+  t('a visitor who already chose a language keeps it, whatever the default is', (await c4.evaluate(() => localStorage.getItem('etel_lang'))) === 'am', await c4.evaluate(() => localStorage.getItem('etel_lang')));
   await b.close(); srv.close(); console.log(pass + ' passed, ' + fails.length + ' failed'); fails.forEach(f => console.log(' FAIL ' + f)); process.exit(fails.length ? 1 : 0);
 })();

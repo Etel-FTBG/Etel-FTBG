@@ -65,6 +65,16 @@ for page in ('customer.html', 'login.html', 'servicegiver.html', 'ride/index.htm
     if not re.search(r'<script src="(?:\.\./)?js/etel-langs\.js\?v=[0-9.]+" defer></script>', rd('delivery/' + page)):
         bad.append(page + ' does not load js/etel-langs.js')
 
+adm = rd('delivery/admin.html')
+if 'js/admin-languages.js' not in adm or 'ETEL_LANGS_NO_PICKER' not in adm:
+    bad.append('admin.html does not load the Languages control (js/admin-languages.js)')
+for code in ('en', 'am', 'om', 'ti', 'so', 'aa'):
+    if not re.search(r"\b%s: '<(rect|path|circle)" % code, js):
+        bad.append('etel-langs.js has no flag for ' + code)
+lc = rd('delivery/api/lib/lang_config.php')
+if "'beta', 'soon', 'off'" not in lc or 'lang_state_' not in lc:
+    bad.append('api/lib/lang_config.php does not keep the language states')
+
 boot = rd('delivery/api/boot.php')
 if "array('en', 'am', 'om', 'ti', 'so', 'aa')" not in boot:
     bad.append("api/boot.php set_user_language does not accept the six codes")
