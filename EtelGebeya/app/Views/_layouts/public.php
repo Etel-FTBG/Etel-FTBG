@@ -20,7 +20,8 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <title><?= isset($pageTitle) ? e($pageTitle) . ' -- ' : '' ?>Etel Gebeya</title>
   <meta name="description" content="<?= e(t('storefront.meta_description')) ?>">
   <meta name="theme-color" content="#D4AF37">
-  <link rel="icon" type="image/svg+xml" href="<?= View::url('/public/favicon.svg') ?>">
+  <link rel="icon" type="image/png" href="<?= View::url('/public/icon-96.png') ?>?v=2">
+  <link rel="apple-touch-icon" href="<?= View::url('/public/apple-touch-icon.png') ?>?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
