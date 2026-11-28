@@ -387,3 +387,10 @@ Same loop (one draft PR per change, `gh api ... -F draft=true`, subscribe with t
 - Old seals replaced in `EtelId/public/images`: `logo-driver.webp` (transport badge), `logo-ride.webp` (ride badge), `etel-delivery-coin.webp` (delivery badge, used on the Customer card), new `etel-id-coin.webp` (ID badge) used as the second coin in the portal header, hero, console and admin (the JS now points to it). Delivery's own coin files were already the new badges.
 - CI: `delivery/tests/ci/check_favicons.py` (root favicon sizes, icon links on the user pages, EtelId pictures not green). sw: delivery etel-v317, Pay etelpay-v20, Ai etel-v6.
 - Not changed on purpose: product logos of other systems, `EtelId-fix-phase1` (stale copy), `Etel-Driver-App` (needs a new APK).
+
+## 36. One tab icon for every system: the ae monogram (28 Nov 2026)
+- Dagi sent the gold "ae" monogram on a navy marble disc (1024 px) and asked: use it for the browser tab of ALL systems. This replaces the 27 Nov rule "every system shows its own logo in the tab".
+- Source in the repo: `EtelGroup/icons/brand/etel-monogram-source.jpg`. `python3 tools/brand/make_tab_icons.py` cuts the gold ring + navy disc + monogram (radius 398, the thin outer ring and balls are too fine for 16 px) and writes `EtelGroup/icons/tab-icon-{16,32,48,96,192}.png`, the root `favicon.ico`, `favicon-32.png`, `delivery/favicon.ico/.png` and `Etel.Pay/wallet/favicon.ico`.
+- Every `<link rel="icon">` in the pages (75 files: Delivery, Pay, Ai, ERP, Taxi, Madeya, Gebeya, Group, EtelId templates) is now `/EtelGroup/icons/tab-icon-96.png?v=1` (one shared file, same site). `delivery/login.html` no longer changes the tab icon by role. Apple-touch icons, manifests and app icons stay per system (home screen and app are NOT changed).
+- Tests changed to match: `check_system_icons.py`, `check_family_icons.py`, `ui_system_icons.js`; `check_favicons.py` now fails if any `rel="icon"` link in a page is not the shared tab icon. sw: delivery etel-v318, agent v25, Pay v21, Ai v7, ERP shell v3.
+- EtelId zips: remember the plugin folder layout (section 35 and the working-method skill).

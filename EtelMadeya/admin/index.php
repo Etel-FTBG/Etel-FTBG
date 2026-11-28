@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
     <link rel="stylesheet" href="../assets/css/madeya-alerts-r5.css">
     <script src="../assets/js/madeya-pro-r2.js?v=2"></script>
-    <link rel="icon" type="image/png" href="../assets/images/madeya-icon-192.png?v=2">
+    <link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">
     <link rel="apple-touch-icon" href="../assets/images/madeya-apple-touch-icon.png?v=2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>

@@ -2,7 +2,7 @@
 // Minimal SW: does NOT intercept any fetches.
 // This prevents interference with WebLLM model downloads.
 
-const CACHE      = 'etel-v6';
+const CACHE      = 'etel-v7';
 const SKILL_CACHE = 'etel-skills-v1';
 
 // ── INSTALL ──
