@@ -115,6 +115,8 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
   await lp.getByText('Choose app').first().click().catch(() => {}); await lp.waitForTimeout(800);
   const texts = await lp.evaluate(() => [...document.querySelectorAll('.del-rtab')].map(b => b.innerText.trim()));
   t('real login page in Oromo: the role buttons are translated where the dictionary has the word (Driver -> Konkolaachisaa) and the other ones stay English', texts.some(x => /Konkolaachisaa/.test(x)) && texts.some(x => /Courier|Service|Customer/.test(x)), JSON.stringify(texts));
+  const bodyTxt = await lp.evaluate(() => document.body.innerText);
+  t('real login page in Oromo: the sign-in sentence and the Choose app line are translated (no English left)', !/One sign-in for every|Need a specific app|Choose app/.test(bodyTxt));
   t('real login page: no page errors', lerr.length === 0, lerr.join('|'));
   await lp.close();
   // ---------- the owner's settings (Admin > Branding > Languages) ----------

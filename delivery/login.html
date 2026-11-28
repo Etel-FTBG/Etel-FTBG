@@ -505,7 +505,7 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
 @media (max-width:340px) { .del-role-tabs { padding:14px 10px 0; gap:3px; } .del-rtab { flex:1 1 0; min-width:0; font-size:9.5px; padding:9px 0; } }
 </style>
 <script src="js/etel-display-settings.js?v=1.4" defer></script>
-<script src="js/etel-langs.js?v=2" defer></script>
+<script src="js/etel-langs.js?v=3" defer></script>
 </head>
 <body>
 <script>/* light by default; dark only when the person chose it (core.js keeps the same key) */try{if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark-theme')}catch(e){}</script>
@@ -657,7 +657,7 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
 
           <button class="del-auth-ghost" onclick="switchMode('register')" style="margin-top:4px" data-i18n="create_etelid_account">Create EtelID Account →</button>
           <p id="auto-switch" style="display:none;text-align:center;font-size:12px;color:var(--ink3);margin:14px 0 0">
-            Need a specific app? <button type="button" onclick="showRoleTabs()" style="background:none;border:none;color:var(--g5);font-weight:700;font-size:12px;cursor:pointer;padding:0">Choose app</button>
+            <span data-i18n="need_app_q">Need a specific app?</span> <button type="button" onclick="showRoleTabs()" style="background:none;border:none;color:var(--g5);font-weight:700;font-size:12px;cursor:pointer;padding:0" data-i18n="choose_app">Choose app</button>
           </p>
         </div>
 
@@ -809,6 +809,10 @@ ETEL_I18N.register('login', {
     role_title_default: 'Login',
     signin_to_continue: 'Sign in to continue',
     welcome_back_prefix: 'Welcome back, ',
+    welcome_back_auto: 'Welcome back',
+    signin_auto_sub: 'One sign-in for every ETEL app. We open the right one for your account.',
+    need_app_q: 'Need a specific app?',
+    choose_app: 'Choose app',
     signin_account_prefix: 'Sign in to continue to your ',
     signin_account_suffix: ' account.',
     welcome_word_customer: 'Customer',
@@ -866,6 +870,10 @@ ETEL_I18N.register('login', {
     role_title_default: 'መግቢያ',
     signin_to_continue: 'ለመቀጠል ይግቡ',
     welcome_back_prefix: 'እንኳን ደህና መጡ፣ ',
+    welcome_back_auto: 'እንኳን ተመለሱ',
+    signin_auto_sub: 'ለሁሉም የኢትኤል መተግበሪያዎች አንድ መግቢያ። ለመለያዎ ትክክለኛውን እንከፍታለን።',
+    need_app_q: 'የተወሰነ መተግበሪያ ይፈልጋሉ?',
+    choose_app: 'መተግበሪያ ይምረጡ',
     signin_account_prefix: 'ወደ ',
     signin_account_suffix: ' መለያዎ ለመግባት ይግቡ።',
     welcome_word_customer: 'ደንበኛ',
