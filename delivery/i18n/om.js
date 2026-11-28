@@ -1,4 +1,4 @@
-/* ETEL language dictionary om (BETA): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */
+/* ETEL language dictionary om (om, ti, so: BETA drafts): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */
 EtelLangs.add("om", {
 "12 Hawassa zones covered":"Naannoowwan Hawaasaa 12 haguugaman",
 "A courier with the vehicle you chose will pick it up.":"Ergamaan konkolaataa ati filatte qabu ni fudhata.",

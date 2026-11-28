@@ -20,18 +20,20 @@ if subprocess.call([sys.executable, os.path.join(root, 'tools', 'i18n', 'build_l
 
 rows = [l.split('\t') for l in rd('tools/i18n/strings.tsv').split('\n') if l.strip()]
 head, rows = rows[0], rows[1:]
-if head != ['English', 'om', 'ti', 'so', 'aa']:
+if head != ['English', 'am', 'om', 'ti', 'so', 'aa']:
     bad.append('strings.tsv header is %r' % head)
 keys = [r[0] for r in rows]
 if len(keys) != len(set(keys)):
     bad.append('strings.tsv has an English text twice')
 eth = re.compile('[ሀ-፿]')
 counts = {}
-for ci, code in enumerate(['om', 'ti', 'so', 'aa'], 1):
+for ci, code in enumerate(['am', 'om', 'ti', 'so', 'aa'], 1):
     vals = [(r[0], r[ci] if len(r) > ci else '') for r in rows]
     filled = [(k, v) for k, v in vals if v.strip()]
     counts[code] = len(filled)
-    if code != 'aa':
+    if code == 'am' and len(filled) < 600:
+        bad.append('am has only %d texts (expected 600 or more)' % len(filled))
+    if code not in ('aa', 'am'):
         if len(filled) < 350:
             bad.append('%s has only %d texts (expected 350 or more)' % (code, len(filled)))
         for k, v in filled:
@@ -61,12 +63,12 @@ if counts.get('aa', 0) >= 150 and aa_soon:
 if len(js) > 30000:
     bad.append('etel-langs.js is over 30 KB')
 
-for page in ('customer.html', 'login.html', 'servicegiver.html', 'ride/index.html', 'driver/index.html', 'courier/index.html', 'courier/courier-index.html'):
-    if not re.search(r'<script src="(?:\.\./)?js/etel-langs\.js\?v=[0-9.]+" defer></script>', rd('delivery/' + page)):
+for page in ('customer.html', 'login.html', 'servicegiver.html', 'ride/index.html', 'driver/index.html', 'courier/index.html', 'courier/courier-index.html', 'admin.html', 'admin-login.html', 'investor/index.html', 'equb/index.html', 'index.html', 'install.html', 'claim.html', 'status.html'):
+    if not re.search(r'<script src="(?:\.\./)?js/etel-langs\.js\?v=[0-9.]+"[^>]* defer></script>', rd('delivery/' + page)):
         bad.append(page + ' does not load js/etel-langs.js')
 
 adm = rd('delivery/admin.html')
-if 'js/admin-languages.js' not in adm or 'ETEL_LANGS_NO_PICKER' not in adm:
+if 'js/admin-languages.js' not in adm or 'data-walk-am' not in adm or 'data-etel-lang-host' not in adm:
     bad.append('admin.html does not load the Languages control (js/admin-languages.js)')
 for code in ('en', 'am', 'om', 'ti', 'so', 'aa'):
     if not re.search(r"\b%s: '<(rect|path|circle)" % code, js):

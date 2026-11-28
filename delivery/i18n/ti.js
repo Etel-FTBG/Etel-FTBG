@@ -1,4 +1,4 @@
-/* ETEL language dictionary ti (BETA): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */
+/* ETEL language dictionary ti (om, ti, so: BETA drafts): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */
 EtelLangs.add("ti", {
 "12 Hawassa zones covered":"12 \u12a8\u1263\u1265\u1273\u1275 \u1203\u12cb\u1233 \u12dd\u123d\u1348\u1291",
 "A courier with the vehicle you chose will pick it up.":"\u12a3\u1265\u133b\u1212 \u1265\u1270\u123d\u12a8\u122d\u12ab\u122a \u12dd\u1218\u1228\u133d\u12ab\u12ee \u12ed\u12c8\u1235\u12f6\u1362",

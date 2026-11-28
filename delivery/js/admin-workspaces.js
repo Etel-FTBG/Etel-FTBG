@@ -72,11 +72,25 @@ function label(key) {
 function icon(key) { var el = itemFor(key), ic = el && el.querySelector('.nav-icon'); return ic ? ic.textContent.trim() : '•'; }
 function pagesOf(w) { var out = []; w.sections.forEach(function (s) { s[1].forEach(function (p) { if (usable(p)) out.push(p); }); }); return out; }
 function wsUsable(w) { return pagesOf(w).length > 0; }
-var LOADERS = { ridepay: 1, menucat: 1, promos: 1, orderchats: 1, branding: 1 };
 function openPage(key) {
   var el = itemFor(key); if (!el) return;
-  if (key.charAt(0) === '#' || LOADERS[key]) { el.click(); return; }   // these menu items also start their own loader (the cards of Branding, the lists of Menu, Promos ...): a plain switchPage would show an empty page
+  if (key.charAt(0) === '#') { el.click(); return; }
   if (typeof window.switchPage === 'function') window.switchPage(key, el);
+}
+
+/* Some menu items start their own loader in their inline onclick (Branding cards, Menu lists, Promos ...). Pages opened any other way
+   (the home cards, the find-a-page results, the dashboard's "Needs attention" links) used to show empty. So switchPage starts that loader itself;
+   each loader is wrapped so that the menu click that follows (which also calls it) does not load twice. */
+var LOAD = { branding: 'loadBrandingPanel', ridepay: 'ridePaymentsLoad', menucat: 'loadMenuCatalog', promos: 'loadPromos', orderchats: 'loadOrderChats' };
+function startLoader(page) {
+  var fn = LOAD[page], f = window[fn];
+  if (typeof f !== 'function') return;
+  if (!f._once) {
+    var inner = f, last = 0;
+    var w = function () { var n = Date.now(); if (n - last < 600) return; last = n; return inner.apply(this, arguments); };
+    w._once = 1; window[fn] = w; f = w;
+  }
+  f();
 }
 
 function css() {
@@ -291,6 +305,7 @@ function wire() {
       if (page === 'wshome') panel();
       if (page !== 'wshome' && OWNER[page] && OWNER[page].indexOf(cur) < 0) { cur = OWNER[page][0]; try { localStorage.setItem(STORE, cur); } catch (e) { /* ignore */ } }
       var r = orig.apply(this, arguments);
+      if (LOAD[page]) startLoader(page);
       if (page === 'wshome') {
         var w = wsById(cur), t = document.getElementById('page-title'); if (t) t.textContent = w.label + ' home';
         var ab = document.getElementById('action-buttons'); if (ab) ab.innerHTML = '';

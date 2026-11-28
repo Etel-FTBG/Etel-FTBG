@@ -125,7 +125,7 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
     await q.route('http://app.test/**', r => { const u = r.request().url(); if (u.includes('/delivery/js/') || u.includes('/delivery/i18n/')) return r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(path.join(ROOT, new URL(u).pathname)) });
       if (u.includes('/api/boot.php')) { q.asked++; return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: cfg }) }); }
       return r.fulfill({ contentType: 'text/html', body: PAGE('<script>window.ETEL={api:"http://app.test/delivery/api/boot.php"}</script><p id="p1">Where are you going?</p>') }); });
-    await q.addInitScript(a => { try { localStorage.clear(); if (a) localStorage.setItem('etel_lang', a); } catch (e) {} }, stored);
+    await q.addInitScript(a => { try { if (!sessionStorage.getItem('__cleared')) { sessionStorage.setItem('__cleared', '1'); localStorage.clear(); if (a) localStorage.setItem('etel_lang', a); } } catch (e) {} }, stored);
     await q.goto('http://app.test/delivery/ride/'); return q;
   }
   const CFG1 = { default: 'en', langs: [{ code: 'en', status: 'live' }, { code: 'am', status: 'live' }, { code: 'om', status: 'off' }, { code: 'ti', status: 'live' }, { code: 'so', status: 'beta' }, { code: 'aa', status: 'beta' }] };
