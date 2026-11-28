@@ -23,13 +23,13 @@ try {
     $token = eg_nget($pdo, 'tg_token');
     $text = trim((string)($m['text'] ?? ''));
     if (preg_match('/^\/start\s+notify_([a-z0-9-]{1,60})$/i', $text, $mm)) {
-        $slug = strtolower($mm[1]);
+        $slug = eg_soon_slug($pdo, strtolower($mm[1]));
         $c = $pdo->prepare("SELECT c.name FROM companies c JOIN company_launch l ON l.slug = c.slug WHERE c.slug = ? AND c.status = 'coming_soon' AND l.notify_enabled = 1");
         $c->execute(array($slug));
         $co = $c->fetch();
         if ($co) {
             $pdo->prepare('INSERT IGNORE INTO launch_notify (slug, contact, ip_hash) VALUES (?,?,?)')->execute(array($slug, 'tg:' . $chat, ''));
-            eg_tg_send($token, $chat, 'You are on the list. We will message you here when ' . $co['name'] . ' launches.');
+            eg_tg_send($token, $chat, 'You are on the list. We will message you here on launch day.');
         } else {
             eg_tg_send($token, $chat, 'Sign-ups for this company are not open right now.');
         }

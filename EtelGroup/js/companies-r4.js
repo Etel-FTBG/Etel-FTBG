@@ -67,6 +67,7 @@
     if (!el) return;
     el.innerHTML = companies.map(function (c) {
       var disabled = c.status !== 'live';
+      if (disabled) return '<a href="#services" role="menuitem" style="pointer-events:none;"><span class="dd-dot" style="background:#D4AF37"></span>' + blurTxt('Surprise') + '<span class="dd-sub">Coming Soon</span></a>';
       var href = disabled ? '#services' : esc(c.url);
       return '<a href="' + href + '" ' + (disabled ? '' : 'target="_blank" rel="noopener"') + ' role="menuitem"' +
         (disabled ? ' style="opacity:0.5;pointer-events:none;"' : '') + '>' +
@@ -82,6 +83,7 @@
     if (!el) return;
     el.innerHTML = companies.map(function (c) {
       var disabled = c.status !== 'live';
+      if (disabled) return '<a class="mob-company-link" href="#" style="opacity:0.6;pointer-events:none;"><span class="mob-company-dot" style="background:#D4AF37"></span><span class="mob-company-name">' + blurTxt('Surprise') + '</span></a>';
       var shortName = c.name.replace(/^Etel\s+/i, '');
       return '<a class="mob-company-link" href="' + (disabled ? '#' : esc(c.url)) + '" ' +
         (disabled ? 'style="opacity:0.4;pointer-events:none;"' : 'target="_blank" rel="noopener" onclick="closeMob()"') + '>' +
@@ -106,7 +108,26 @@
     return '<div class="co-icon co-orb-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>';
   }
 
+  // Coming soon = a surprise. The public list hides the real name, text, link and picture of these companies; they show as a blurred mystery card.
+  var TEASERS = ['A new chapter is on its way.', 'Built in Ethiopia. Revealed soon.', 'Not yet. Very soon.', 'Watch this space.', 'Something new is coming.'];
+  var SOON_COLORS = ['#D4AF37', '#E6C24F', '#C8922A', '#F2CC6B'];
+  function isSoon(c) { return c.status !== 'live'; }
+  function blurTxt(t) { return '<span class="eg-blur" aria-hidden="true">' + esc(t) + '</span>'; }
+  function mysteryCardHtml(c, i) {
+    var extra = '';
+    if (c.launch_text) extra += '<span class="co-launch">' + esc(c.launch_text) + '</span>';
+    if (Number(c.notify_enabled) === 1) extra += '<button type="button" class="co-notify-btn" data-notify="' + esc(c.slug) + '" data-name="this surprise">Notify me</button>';
+    return '<div class="co-card co-orb-card js-card co-card-soon co-card-mystery" style="--co-color:' + SOON_COLORS[i % SOON_COLORS.length] + '" data-delay="' + Math.min(i, 9) + '">' +
+      '<div class="co-orb">' + ringHtml() + '<span class="co-mystery-pic" aria-hidden="true"><b>?</b></span></div>' +
+      '<p class="co-name">Surprise</p>' +
+      '<p class="co-category">' + blurTxt('Coming soon') + '</p>' +
+      '<p class="co-desc">' + TEASERS[i % TEASERS.length] + '</p>' +
+      '<div class="co-meta"><span class="co-badge co-badge-plan"><span class="co-badge-dot"></span>Coming Soon</span>' + extra + '</div>' +
+      '</div>';
+  }
+
   function coCardHtml(c, i) {
+    if (isSoon(c)) return mysteryCardHtml(c, i);
     var isLive = c.status === 'live';
     var href = isLive ? esc(c.url) : '#';
     var badgeClass = isLive ? 'co-badge-live' : 'co-badge-plan';
@@ -165,13 +186,12 @@
     notifyBox.className = 'eg-notify-bg';
     notifyBox.innerHTML = '<div class="eg-notify" role="dialog" aria-modal="true" aria-label="Notify me">' +
       '<button type="button" class="eg-notify-x" aria-label="Close">\u2715</button>' +
-      '<h3>Tell me when <span></span> launches</h3>' +
+      '<h3>Tell me when the surprise launches</h3>' +
       '<p>Leave your email or phone number and we will message you once, on launch day. No spam.</p>' +
       '<form novalidate><input type="text" name="contact" inputmode="email" autocomplete="email" placeholder="Email or phone number" maxlength="160" required>' +
       '<input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0">' +
       '<button type="submit" class="btn btn-primary">Notify me</button><div class="eg-notify-msg" role="status"></div></form>' +
       (notifyBot ? '<div class="eg-notify-or"><span>or</span></div><a class="eg-notify-tg" href="https://t.me/' + esc(notifyBot) + '?start=notify_' + esc(slug) + '" target="_blank" rel="noopener">Get it on Telegram</a>' : '') + '</div>';
-    notifyBox.querySelector('h3 span').textContent = name;
     document.body.appendChild(notifyBox);
     var input = notifyBox.querySelector('input[name=contact]'); input.focus();
     notifyBox.addEventListener('click', function (e) { if (e.target === notifyBox || e.target.closest('.eg-notify-x')) closeNotify(); });
@@ -183,7 +203,7 @@
       fetch(apiBase() + '?action=notify_launch', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: slug, contact: contact, website: notifyBox.querySelector('input[name=website]').value }) })
         .then(function (r) { return r.json(); }).then(function (d) {
-          if (d && (d.ok || d.success)) { notifyBox.querySelector('form').innerHTML = '<p class="eg-notify-ok">\u2713 Thank you! We will let you know when ' + esc(name) + ' launches.</p>'; setTimeout(closeNotify, 3500); }
+          if (d && (d.ok || d.success)) { notifyBox.querySelector('form').innerHTML = '<p class="eg-notify-ok">\u2713 Thank you! We will let you know when it launches.</p>'; setTimeout(closeNotify, 3500); }
           else { msg.textContent = (d && (d.error || d.message)) || 'Could not save - try again.'; msg.className = 'eg-notify-msg err'; btn.disabled = false; }
         }).catch(function () { msg.textContent = 'Network error - try again.'; msg.className = 'eg-notify-msg err'; btn.disabled = false; });
     });
@@ -238,6 +258,7 @@
     if (!el) return;
     el.innerHTML = companies.map(function (c) {
       var disabled = c.status !== 'live';
+      if (disabled) return '<a href="#" style="opacity:0.55;pointer-events:none;" class="footer-link"><span class="footer-link-dot" style="color:#D4AF37"></span>' + blurTxt('Surprise') + '</a>';
       return '<a href="' + (disabled ? '#' : esc(c.url)) + '" ' +
         (disabled ? 'style="opacity:0.45;pointer-events:none;"' : 'target="_blank" rel="noopener"') +
         ' class="footer-link"><span class="footer-link-dot" style="color:' + esc(c.dot_color) + '"></span>' +

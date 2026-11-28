@@ -19,6 +19,8 @@ const COMPANIES = [
   co('etel-transport', 'Etel Transport', 'soon', ''),
   co('etel-media', 'Etel Media', 'soon', '')
 ];
+// the real API hides every coming-soon company (name, text, link, picture) and gives the sign-up button a private key
+const MASKED = COMPANIES.map(c => c.status === 'live' ? c : Object.assign({}, c, { slug: 'zkey' + c.slug.length + c.slug.charCodeAt(5), mystery: 1, name: '', tagline: '', tagline_am: '', description_short: '', description_long: '', url: '', logo_path: '', icon_key: '', tags: '' }));
 const WANT = { 'etel-madeya': 'etel-madeya.webp', 'etel-delivery': 'etel-transport.webp', 'etel-id': 'etel-id.webp', 'etel-ride': 'etel-transport.webp', 'etel-pay': 'etel-pay.webp', 'etel-market': 'etel-gebeya.webp', 'etel-media': 'etel-entertainment.webp' };
 const probe = (sel) => {
   const parse = s => { const m = s.match(/[\d.]+/g) || []; return { r: +m[0] || 0, g: +m[1] || 0, b: +m[2] || 0, a: m.length > 3 ? +m[3] : 1 }; };
@@ -38,7 +40,7 @@ const probe = (sel) => {
     const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.route(/maps\.googleapis|gstatic|cdnjs|jsdelivr|fonts\.|etel-ai-widget|etel-help-fab/, r => r.abort());
     await p.route(/\.php/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: {} }) }));
-    await p.route(/action=list_companies/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: { companies: COMPANIES, notify_bot: '' } }) }));
+    await p.route(/action=list_companies/, r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: { companies: MASKED, notify_bot: '' } }) }));
     await p.route(/\/delivery\/apk\/|ethelmarket\.com/, r => r.fulfill({ status: 404, body: '' }));
     await p.goto(HOST + '/EtelGroup/index.html', { waitUntil: 'load' }); await p.waitForTimeout(2500);
     await p.evaluate(th => document.documentElement.setAttribute('data-theme', th), mode.theme);
@@ -47,12 +49,15 @@ const probe = (sel) => {
     t(n + 'nine company cards are drawn', cards.length === 9, JSON.stringify(cards.map(c => c.name)));
     const by = (nm) => cards.find(c => c.name === nm) || {};
     const NM = { 'etel-madeya': 'Etel Madeya', 'etel-delivery': 'Etel Delivery', 'etel-id': 'Etel ID', 'etel-ride': 'Etel Ride', 'etel-pay': 'Etel Pay', 'etel-market': 'Etel Market', 'etel-media': 'Etel Media' };
-    for (const k of Object.keys(WANT)) t(n + NM[k] + ' shows the ' + WANT[k] + ' badge (not its old logo_path)', (by(NM[k]).img || '').indexOf('/EtelGroup/icons/brand/' + WANT[k]) > -1 && (by(NM[k]).img || '').indexOf('old-coin') < 0 && !by(NM[k]).round, JSON.stringify(by(NM[k])));
+    for (const k of Object.keys(WANT).filter(k => ['etel-madeya', 'etel-delivery', 'etel-id', 'etel-ride'].indexOf(k) > -1)) t(n + NM[k] + ' shows the ' + WANT[k] + ' badge (not its old logo_path)', (by(NM[k]).img || '').indexOf('/EtelGroup/icons/brand/' + WANT[k]) > -1 && (by(NM[k]).img || '').indexOf('old-coin') < 0 && !by(NM[k]).round, JSON.stringify(by(NM[k])));
     t(n + 'every card has the gold ring with six dots, and it turns', cards.every(c => c.dots === 6 && c.spin === 'co-orb-spin'), JSON.stringify(cards.map(c => [c.dots, c.spin])));
     t(n + 'the cards are navy plates with no background picture (the picture is inside the ring)', await p.evaluate(() => [].slice.call(document.querySelectorAll('#services .co-orb-card')).every(c => getComputedStyle(c).backgroundColor === 'rgb(12, 20, 48)' && !c.style.backgroundImage && getComputedStyle(c).clipPath === 'none')));
-    t(n + 'Etel AI keeps its own logo from the database, drawn round inside the ring', /EtelAi\/icons\/icon-192\.png/.test(by('Etel AI').img) && by('Etel AI').round, JSON.stringify(by('Etel AI')));
-    t(n + 'Etel Transport (no badge, no logo) keeps its icon inside the ring', by('Etel Transport').icon && !by('Etel Transport').img, JSON.stringify(by('Etel Transport')));
-    t(n + 'the icon of a company without a picture is a round disc (not squashed)', await p.evaluate(() => { const e = document.querySelector('#services .co-orb-icon'); const r = e.getBoundingClientRect(); return r.width > 60 && Math.abs(r.width - r.height) < 2; }));
+    // coming soon = a surprise: no name, no hint, a blurred mystery picture
+    const soon = await p.evaluate(() => [].slice.call(document.querySelectorAll('#services .co-card-mystery')).map(c => ({ html: c.innerHTML, name: c.querySelector('.co-name').textContent, pic: !!c.querySelector('.co-mystery-pic'), img: !!c.querySelector('.co-orb-img, .co-orb-icon, svg'), notify: (c.querySelector('.co-notify-btn') || { getAttribute: () => '' }).getAttribute('data-notify') })));
+    t(n + 'the five coming soon companies are mystery cards', soon.length === 5 && soon.every(c => c.name === 'Surprise' && c.pic && !c.img), JSON.stringify(soon.map(c => [c.name, c.pic, c.img])));
+    t(n + 'nothing on the page says what is coming (no Pay, Market, AI, Transport or Media on a coming soon card)', soon.every(c => !/Pay|Market|AI|Transport|Media|example\.com|etel-/i.test(c.html.replace(/Coming Soon/g, ''))), soon.map(c => c.html).join('').slice(0, 200));
+    t(n + 'the mystery picture is a round disc', await p.evaluate(() => { const e = document.querySelector('#services .co-mystery-pic'); const r = e.getBoundingClientRect(); return r.width > 60 && Math.abs(r.width - r.height) < 2 && getComputedStyle(e).borderRadius.indexOf('50%') > -1; }));
+    t(n + 'the page text and the menus do not name the coming soon companies', await p.evaluate(() => { const names = ['Etel Pay', 'Etel Market', 'Etel AI', 'Etel Transport', 'Etel Media']; const parts = ['nav-dropdown-list', 'mobile-nav-list', 'footer-companies-list', 'co-group-soon'].map(i => (document.getElementById(i) || {}).innerHTML || ''); return parts.every(h => names.every(x => h.indexOf(x) < 0)); }));
     // the ETEL Group logo with its turning ring, above the companies; the old Ecosystem section is gone
     const hub = await p.evaluate(() => { const h = document.querySelector('#services .co-hub'); const im = h && h.querySelector('.co-hub-img'); const ring = h && h.querySelector('.co-hub-ring'); const g = document.querySelector('#services .companies-grid, #services .co-group'); return h ? { img: im.getAttribute('src').split('?')[0], w: im.getBoundingClientRect().width, dots: h.querySelectorAll('.co-hub-ring i').length, spin: getComputedStyle(ring).animationName, above: !!(g && (h.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING)), inServices: true } : null; });
     t(n + 'the ETEL Group logo sits above the companies in a turning ring with six dots', hub && hub.img === 'EtelGroup/icons/brand/etel-group-master.webp' && hub.w >= 200 && hub.dots === 6 && hub.spin === 'co-orb-spin' && hub.above, JSON.stringify(hub));

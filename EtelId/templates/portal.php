@@ -3176,6 +3176,6 @@ window.addEventListener('error',function(e){ _eidLog('er','JS: '+e.message+' ('+
 <script>window.ETEL_CODE_API=<?php echo wp_json_encode(esc_url_raw(rest_url('etelid/v1/code/'))); ?>;</script>
 <script src="<?php echo esc_url(ETELID_URL . 'assets/etel-code-widget.js'); ?>?v=4" defer></script>
 <?php } ?>
-<script src="/delivery/js/etel-langs.js?v=10" data-walk-am="1" defer></script>
+<script src="/delivery/js/etel-langs.js?v=11" data-walk-am="1" defer></script>
 </body>
 </html>
