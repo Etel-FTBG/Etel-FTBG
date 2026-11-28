@@ -13,7 +13,7 @@ const JS = fs.readFileSync(path.join(__dirname, '..', 'js', 'etel-start-screens.
     const links = await p.evaluate(() => [...document.querySelectorAll('link[rel="apple-touch-startup-image"]')].map(l => ({ h: l.getAttribute('href'), m: l.media })));
     if (role) {
       t(role + ': 13 start screens', links.length === 13, String(links.length));
-      t(role + ': files are the role\'s own jpg in /delivery/icons/', links.every(l => /^\/delivery\/icons\/[a-z]+-splash-\d+x\d+\.jpg/.test(l.h) && l.h.indexOf('/' + role + '-splash-') > 0), links[0] && links[0].h);
+      t(role + ': files are the role\'s own jpg in /delivery/icons/', links.every(l => /^http:\/\/etel\.test\/delivery\/icons\/[a-z]+-splash-\d+x\d+\.jpg/.test(l.h) && l.h.indexOf('/' + role + '-splash-') > 0), links[0] && links[0].h);
       t(role + ': the media rule matches the file size', links.every(l => { const m = /(\d+)x(\d+)\.jpg/.exec(l.h); return l.m.indexOf('device-width: ' + m[1] + 'px') > -1 && l.m.indexOf('device-height: ' + m[2] + 'px') > -1; }));
       t(role + ': every file really exists', links.every(l => fs.existsSync(path.join(__dirname, '..', 'icons', l.h.split('/').pop().split('?')[0]))));
     } else t((url) + ': no start screens added (core.js keeps Delivery / Ride)', links.length === 0, String(links.length));
