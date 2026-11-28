@@ -51,7 +51,7 @@ VIEWS.overview = function () {
     if (!m.success) { VIEW.innerHTML = '<div class="ec-empty">' + esc(err(m)) + '</div>'; return; }
     var st = m.data.stats || {}, total = (st.active || 0) + (st.suspended || 0) + (st.revoked || 0) + (st.expired || 0);
     var tot = m.data.total || total;
-    var h = '<section class="ec-hero"><div class="ec-hero-row"><div class="logos"><img src="' + esc(C.url) + 'public/images/etel-master-coin-128.webp" alt=""><img src="' + esc(C.url) + 'public/images/etel-delivery-coin.webp" alt=""></div>' +
+    var h = '<section class="ec-hero"><div class="ec-hero-row"><div class="logos"><img src="' + esc(C.url) + 'public/images/etel-master-coin-128.webp" alt=""><img src="' + esc(C.url) + 'public/images/etel-id-coin.webp" alt=""></div>' +
       '<div><div class="eyebrow">Etel-ID · Corporate identity</div><h2>Welcome, ' + esc(C.name) + '</h2><p>' + num(tot) + ' Etel-IDs issued across every Etel company.</p></div>' +
       '<div class="ec-hero-actions"><a class="btn btn-primary btn-sm" data-view="issue">+ Issue new ID</a><a class="btn btn-outline btn-sm" data-view="members">Open members</a></div></div></section>';
     h += '<div class="ec-stats">' +

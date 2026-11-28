@@ -30,17 +30,17 @@ $home_parts = wp_parse_url(home_url());
 $site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
             . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
 $logo_group    = $site_root . '/EtelGroup/icons/etelgroup-logo.png';
-$logo_delivery = defined('ETELID_URL') ? ETELID_URL . 'public/images/etel-delivery-coin.webp' : '';
-$logo_ride     = defined('ETELID_URL') ? ETELID_URL . 'public/images/logo-ride.webp' : '';
-$logo_driver   = defined('ETELID_URL') ? ETELID_URL . 'public/images/logo-driver.webp' : '';
+$logo_delivery = defined('ETELID_URL') ? ETELID_URL . 'public/images/etel-delivery-coin.webp?v=3' : '';
+$logo_ride     = defined('ETELID_URL') ? ETELID_URL . 'public/images/logo-ride.webp?v=3' : '';
+$logo_driver   = defined('ETELID_URL') ? ETELID_URL . 'public/images/logo-driver.webp?v=3' : '';
 $logo_etelpay  = $site_root . '/Etel.Pay/wallet/logo.png';
 $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.webp';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=2' ); ?>">
-<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=2' ); ?>">
+<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=3' ); ?>">
+<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=3' ); ?>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EtelID</title>
