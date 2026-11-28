@@ -994,8 +994,8 @@ switch ($action) {
         require __DIR__ . '/controllers/AuthController.php';
         break;
     case 'set_user_language': {
-        // Persists the caller's one-click language choice (currently 'en'
-        // or 'am') to their account, so it follows them across devices -
+        // Persists the caller's one-click language choice (currently 'en',
+        // 'am', 'om', 'ti', 'so' or 'aa') to their account, so it follows them across devices -
         // the client also keeps it in localStorage for instant effect
         // and for signed-out pages. Whitelisted values only; never trust
         // an arbitrary string into a column read back and rendered as a
@@ -1003,7 +1003,7 @@ switch ($action) {
         $pdo = db(); $u = require_auth($pdo);
         $body = json_decode(file_get_contents('php://input'), true);
         $lang = isset($body['lang']) ? trim($body['lang']) : '';
-        if (!in_array($lang, array('en', 'am'), true)) fail('Unsupported language', 400);
+        if (!in_array($lang, array('en', 'am', 'om', 'ti', 'so', 'aa'), true)) fail('Unsupported language', 400);
         if (!in_array('lang', etel_table_columns($pdo, 'users'), true)) fail('Language preference not supported on this install', 501);
         $pdo->prepare('UPDATE users SET lang = ? WHERE id = ?')->execute(array($lang, $u['id']));
         ok(array('lang' => $lang));
