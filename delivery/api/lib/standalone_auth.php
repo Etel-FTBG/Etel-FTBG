@@ -1,8 +1,8 @@
 <?php
 /* ETEL Delivery - the sign-in checks for API files that do NOT go through boot.php.
 
-   updater-api.php, upload.php, admin-branding.php, documents_upload.php, documents_download.php and
-   backfill_open_trip_fares.php read the login token themselves. They checked the signature, the age and
+   updater-api.php, upload.php, admin-branding.php, documents_upload.php and documents_download.php
+   read the login token themselves. They checked the signature, the age and
    token_version, but NOT the rules boot.php's get_auth_user() / require_auth() add:
      - a disabled account (users.active = 0),
      - a device the person signed out (auth_sessions.revoked_at),
