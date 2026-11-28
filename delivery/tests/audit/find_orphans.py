@@ -46,7 +46,6 @@ SUSPECTS = [
     # Other potentially dead files
     'api\\updaterapi.php',
     'api\\updater.php',   # api/updater.php
-    'api\\backfill_open_trip_fares.php',
     'api\\diagnose.php',
     'api\\etel-os.php',
     'api\\etelid_auth.php',
