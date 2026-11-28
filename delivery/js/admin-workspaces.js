@@ -72,9 +72,10 @@ function label(key) {
 function icon(key) { var el = itemFor(key), ic = el && el.querySelector('.nav-icon'); return ic ? ic.textContent.trim() : '•'; }
 function pagesOf(w) { var out = []; w.sections.forEach(function (s) { s[1].forEach(function (p) { if (usable(p)) out.push(p); }); }); return out; }
 function wsUsable(w) { return pagesOf(w).length > 0; }
+var LOADERS = { ridepay: 1, menucat: 1, promos: 1, orderchats: 1, branding: 1 };
 function openPage(key) {
   var el = itemFor(key); if (!el) return;
-  if (key.charAt(0) === '#') { el.click(); return; }
+  if (key.charAt(0) === '#' || LOADERS[key]) { el.click(); return; }   // these menu items also start their own loader (the cards of Branding, the lists of Menu, Promos ...): a plain switchPage would show an empty page
   if (typeof window.switchPage === 'function') window.switchPage(key, el);
 }
 
