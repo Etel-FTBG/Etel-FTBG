@@ -710,6 +710,6 @@ if (_scene && _card && window.matchMedia('(hover:hover)').matches) {
 </script>
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
-<script src="/delivery/js/etel-langs.js?v=6" data-walk-am="1" defer></script>
+<script src="/delivery/js/etel-langs.js?v=7" data-walk-am="1" defer></script>
 </body>
 </html>

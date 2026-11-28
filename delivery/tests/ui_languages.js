@@ -114,7 +114,7 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
   t('real login page in Oromo: html lang om, the picker is there showing OM, the old EN / አማ switch is hidden, the Oromo dictionary was loaded', L.lang === 'om' && L.btn && L.oldHidden && /OM/.test(L.short) && L.scripts === 1, JSON.stringify(L));
   await lp.getByText('Choose app').first().click().catch(() => {}); await lp.waitForTimeout(800);
   const texts = await lp.evaluate(() => [...document.querySelectorAll('.del-rtab')].map(b => b.innerText.trim()));
-  t('real login page in Oromo: the role buttons are translated where the dictionary has the word (Driver -> Konkolaachisaa) and the other ones stay English', texts.some(x => /Konkolaachisaa/.test(x)) && texts.some(x => /Courier|Service|Customer/.test(x)), JSON.stringify(texts));
+  t('real login page in Oromo: the role buttons are translated (Driver -> Konkolaachisaa, Customer -> Maamilaa)', texts.some(x => /Konkolaachisaa/.test(x)) && texts.some(x => /Maamilaa/.test(x)), JSON.stringify(texts));
   const bodyTxt = await lp.evaluate(() => document.body.innerText);
   t('real login page in Oromo: the sign-in sentence and the Choose app line are translated (no English left)', !/One sign-in for every|Need a specific app|Choose app/.test(bodyTxt));
   t('real login page: no page errors', lerr.length === 0, lerr.join('|'));
@@ -126,6 +126,14 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
     for (const k of Object.keys(want)) t(code + ': "' + k + '" with a number or name is translated', (await q.textContent('#' + k)).trim() === want[k], await q.textContent('#' + k));
     t(code + ': the open-now text with a time keeps its dot and is translated', code !== 'om' || /Amma banaadha/.test(await q.textContent('#a5')), await q.textContent('#a5'));
     t(code + ': text that only looks similar stays English', (await q.textContent('#a8')) === '7 km away from home');
+  }
+  // ---------- sample texts of the deeper Admin panels, EtelId, the Group page and Pay (all four languages have them) ----------
+  const SAMPLES = ['Pickup confirm waiting', 'Take back from courier', 'Register a courier step by step', 'Peak-hour surge', 'Save delivery fees', 'Phone Number or Etel Code', 'Sign in with Face / Fingerprint',
+    'Send Reset Code', 'Quick Register', 'Radical Transparency', 'Send a message', 'Top up wallet', 'Step 2 of 4', 'Orders that need a courier right now. Assign by hand.'];
+  for (const code of ['om', 'ti', 'so']) {
+    const q = await stub(code, '<p id="h0">Booking</p>' + SAMPLES.map((x, i) => '<p id="s' + i + '">' + x + '</p>').join('')); await q.waitForFunction(() => document.getElementById('s0').textContent !== 'Pickup confirm waiting', null, { timeout: 5000 }); await q.waitForTimeout(150);
+    const got = await q.evaluate(n => [...Array(n).keys()].map(i => document.getElementById('s' + i).textContent), SAMPLES.length);
+    t(code + ': deeper Admin, EtelId, Group, Pay and Admin home samples are translated (' + got.filter((v, i) => v !== SAMPLES[i]).length + ' of ' + SAMPLES.length + ')', got.every((v, i) => v !== SAMPLES[i]), got.filter((v, i) => v === SAMPLES[i]).join(' | '));
   }
   // ---------- the owner's settings (Admin > Branding > Languages) ----------
   async function withCfg(cfg, stored, setup) {

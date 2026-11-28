@@ -163,7 +163,7 @@
     // dictionary file: i18n/<code>.js next to js/
     var base = mySrc ? mySrc.replace(/js\/[^\/?#]*(\?.*)?$/, '') : '/delivery/';
     var s = document.createElement('script');
-    s.src = base + 'i18n/' + cur + '.js?v=4'; s.async = true;
+    s.src = base + 'i18n/' + cur + '.js?v=5'; s.async = true;
     document.head.appendChild(s);
   }
   function add(code, dict) {
