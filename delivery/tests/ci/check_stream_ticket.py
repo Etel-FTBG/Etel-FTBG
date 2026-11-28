@@ -20,8 +20,8 @@ js = read('js/etel-stream-ticket.js')
 if re.search(r'\beval\(|document\.write', js):
     bad.append('etel-stream-ticket.js uses eval / document.write')
 # the only places allowed to build a stream or beacon address with a token (all reach the wrapper); a new one must be added here on purpose
-# (admin.html: the system-test stream, and the legacy one-time fare backfill tool link, which is a separate page and is documented to be deleted after use)
-allowed = {'admin.html': 2, 'js/driver.js': 2, 'js/ride.js': 1, 'js/customer.js': 1}
+# (admin.html: the system-test stream only; the one-time fare backfill tool link was removed on 28 Nov 2026)
+allowed = {'admin.html': 1, 'js/driver.js': 2, 'js/ride.js': 1, 'js/customer.js': 1}
 for f, n in allowed.items():
     c = len(re.findall(r"[?&]token=' \+", read(f)))
     if c != n:
