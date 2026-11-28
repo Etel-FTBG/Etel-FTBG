@@ -148,6 +148,7 @@ jobs:
           python3 delivery/tests/ci/check_cron_monitor_visible.py
           python3 delivery/tests/ci/check_rides_health_card.py
           python3 delivery/tests/ci/check_idle_logout.py
+          python3 delivery/tests/ci/check_apk_check.py
           python3 delivery/tests/ci/check_admin_shield.py
           python3 delivery/tests/ci/check_htaccess_protect.py
           python3 delivery/tests/ci/check_courier_dark_colors.py
