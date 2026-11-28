@@ -215,7 +215,7 @@ Same loop as before (one draft PR per change, Dagi merges, Claude sends a zip of
 - **Live settings on 25 Nov:** Ethiopia-only = monitor; `url_token_mode` and `url_key_mode` = monitor (to set to Refuse once the log filters stay empty for a day); `entry_mode` = block.
 
 **Cron and health (#924, #935-#938):**
-- The Android preview APK builds automatically again when `Etel-Driver-App/**` changes on main (#924, `.eas/workflows/build-android-preview.yml`).
+- The Android preview APK is MANUAL ONLY since 28 Nov 2026 (Expo > Workflows > Run workflow > "Android preview APK"): the Free plan's Android builds ran out and every merge failed in red. It was automatic from #924. App code still reaches phones by itself through `publish-update.yml`. Both `.eas/workflows` copies (repo root and `Etel-Driver-App/`) must stay the same; `Etel-Driver-App/tests/easWorkflows.test.js` checks it.
 - Admin > Ride > Rides had NO "System health" and "Live trip watch" cards since 24 Oct: a comment inside their box made `el.firstChild` true (#935; use `children.length`).
 - `cron_ride_monitor.php` stopped on 18 Nov. #936 made it visible (steps wrapped, heartbeat always written, the reason in `etel_heartbeat.ride_monitor_error`, shown on the Cron job row); that showed the cause (#937): `webpush.php` called boot-only `etel_env()` from cron, a fatal on any push, since the Phase 3 backup alert pushes every run while the backup is stale. Now `etel_wp_env()`.
 - #938: the backup job wrote its heartbeat in the DB server's zone (3 h early, a false red hour before each run); only the heartbeat connection is synced.
