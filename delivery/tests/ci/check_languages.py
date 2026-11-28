@@ -77,6 +77,20 @@ lc = rd('delivery/api/lib/lang_config.php')
 if "'beta', 'soon', 'off'" not in lc or 'lang_state_' not in lc:
     bad.append('api/lib/lang_config.php does not keep the language states')
 
+
+# the other ETEL systems load the same picker from /delivery/js/etel-langs.js (same site, so the choice is shared)
+OTHERS = ['Etel.Pay/wallet/login.html', 'Etel.Pay/wallet/wallet.html', 'Etel.Pay/wallet/send.html', 'Etel.Pay/wallet/profile.html', 'EtelAi/login.html', 'EtelAi/admin.html', 'EtelAi/customer.html', 'EtelAi/index.html',
+          'EtelERP/index.html', 'EtelTaxi/index.html', 'EtelTaxi/driver.html', 'EtelTaxi/admin.html', 'EtelTaxi/verify.html', 'EtelGroup/index.html', 'EtelGroup/admin.html', 'EtelGroup/investors/portal.html',
+          'EtelGroup/investors/admin.html', 'EtelGebeya/admin.html', 'EtelGebeya/app/Views/_layouts/dark.php', 'EtelGebeya/app/Views/_layouts/public.php', 'EtelMadeya/index.php', 'EtelMadeya/admin/index.php',
+          'EtelId/templates/portal.php', 'EtelId/templates/auth-page.php', 'EtelId/templates/admin-console.php', 'EtelId/templates/apply-form.php', 'EtelId/templates/profile-update.php',
+          'EtelId/templates/reset-password.php', 'EtelId/templates/verify.php']
+for f in OTHERS:
+    if not re.search(r'<script src="/delivery/js/etel-langs\.js\?v=[0-9.]+"', rd(f)):
+        bad.append(f + ' does not load /delivery/js/etel-langs.js')
+for f in OTHERS:
+    if f.startswith('Etel.Pay') and 'data-lang-key="ep_lang"' not in rd(f):
+        bad.append(f + ' (Pay) does not keep its own language in step (data-lang-key="ep_lang")')
+
 boot = rd('delivery/api/boot.php')
 if "array('en', 'am', 'om', 'ti', 'so', 'aa')" not in boot:
     bad.append("api/boot.php set_user_language does not accept the six codes")

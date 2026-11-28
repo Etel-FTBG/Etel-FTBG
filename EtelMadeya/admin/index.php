@@ -436,5 +436,6 @@
     <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/admin-app-r13.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
+<script src="/delivery/js/etel-langs.js?v=5" data-walk-am="1" defer></script>
 </body>
 </html>

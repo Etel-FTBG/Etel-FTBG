@@ -25,6 +25,12 @@
   var DICTS = {};
   var me = document.currentScript, mySrc = (me && me.src) || '';
   var WALK_AM = !!window.ETEL_LANGS_WALK_AM || !!(me && me.getAttribute('data-walk-am'));
+  /* Other ETEL systems (Pay, Gebeya ...) have their own English / Amharic engine. Script tag options, all optional:
+     data-lang-key="ep_lang"   also write this storage key (am or en) so that app's own engine follows the picker (also on load: put the tag before the app's scripts);
+     data-lang-url="/x/lang/"  also ask the server to switch its own language (GET <url>am or <url>en, with cookies) before the page reloads;
+     data-old="sel|sel"        extra selectors of that app's own language buttons: they are hidden and the picker takes their place. */
+  var BR_KEY = me && me.getAttribute('data-lang-key'), BR_URL = me && me.getAttribute('data-lang-url'), BR_OLD = me && me.getAttribute('data-old');
+  var SERVER_LANG = (document.documentElement.getAttribute('lang') || '').slice(0, 2);
 
   /* The owner controls each language in Admin > Branding > Languages: live (no tag), beta, soon (listed, cannot be chosen), off (hidden), and which one new visitors start in.
      get_language_config is read in the background and kept for 6 hours; until it is read the built-in states above apply. */
@@ -39,6 +45,14 @@
   function stored() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
   function get() { var v = stored(); if (usable(v)) return v; return (!v && CFG && usable(CFG.def)) ? CFG.def : 'en'; }
   /* English and Amharic stay with an app's own engine; a page that has none (Admin, Pay, ...) puts data-walk-am="1" on this script tag and gets Amharic from i18n/am.js like the other languages. */
+  function mirror(c) { if (BR_KEY) { try { localStorage.setItem(BR_KEY, c === 'am' ? 'am' : 'en'); } catch (e) {} } }
+  function bridge(c, then) {
+    if (!BR_URL) { then(); return; }
+    var done = false, go = function () { if (!done) { done = true; then(); } };
+    var u = BR_URL.charAt(BR_URL.length - 1) === '/' ? BR_URL : BR_URL + '/';
+    try { fetch(u + (c === 'am' ? 'am' : 'en'), { credentials: 'include', redirect: 'manual' }).then(go, go); } catch (e) { go(); }
+    setTimeout(go, 1500);
+  }
   function isNew(c) { return c !== 'en' && (c !== 'am' || WALK_AM) && !!find(c); }
 
   function saveToAccount(c) {
@@ -56,7 +70,8 @@
     if (same) return;
     try { document.documentElement.setAttribute('lang', c); } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('etel:lang', { detail: c })); } catch (e) {}
-    setTimeout(function () { location.reload(); }, 60);
+    mirror(c);
+    setTimeout(function () { bridge(c, function () { location.reload(); }); }, 60);
   }
 
   /* ---------- translating what is on screen (new languages only) ---------- */
@@ -132,7 +147,7 @@
   }
 
   /* ---------- the picker ---------- */
-  var OLD = ['#ride-lang-btn', '#drv-lang-btn', '#cl8-lang', '.sg-lang', '.del-lang-switch', '[data-act="toggleCustomerLanguage"]'];
+  var OLD = (BR_OLD ? BR_OLD.split('|') : []).concat(['#ride-lang-btn', '#drv-lang-btn', '#cl8-lang', '.sg-lang', '.del-lang-switch', '[data-act="toggleCustomerLanguage"]']);
   var btn = null, sheet = null;
 
   /* Each language has its own flag (30 x 20, drawn here so it works offline). The Ethiopian regional flags are contested: if a community
@@ -292,10 +307,10 @@
     css();
     var host = null, old = null;
     for (var i = 0; i < OLD.length; i++) {
-      var el = document.querySelector(OLD[i]);
-      if (el) { old = el; break; }
+      var all = document.querySelectorAll(OLD[i]);
+      for (var j = 0; j < all.length; j++) { all[j].setAttribute('data-etel-oldlang', '1'); if (!old) old = all[j]; }   // every old button is hidden; the picker takes the place of the first
     }
-    if (old) { old.setAttribute('data-etel-oldlang', '1'); host = old.parentNode; }
+    if (old) host = old.parentNode;
     if (!btn) {
       btn = document.createElement('button'); btn.type = 'button'; btn.id = 'etel-lang-btn'; btn.setAttribute('data-no-i18n', '1');
       btn.setAttribute('aria-haspopup', 'dialog');
@@ -318,8 +333,14 @@
     paintBtn();
     return !!old;
   }
+  mirror(get());
   function start() {
-    if (window.ETEL_LANGS_NO_PICKER) return;   // the Admin page only borrows the flags
+    if (window.ETEL_LANGS_NO_PICKER) return;
+    if (BR_URL) {      // the server of that app keeps its own language: bring it in line once per visit
+      var want = get() === 'am' ? 'am' : 'en', fl = 'etel_br_' + want, seen = null;
+      try { seen = sessionStorage.getItem(fl); } catch (e) {}
+      if (SERVER_LANG && SERVER_LANG !== want && !seen) { try { sessionStorage.setItem(fl, '1'); } catch (e) {} bridge(want, function () { location.reload(); }); return; }
+    }   // the Admin page only borrows the flags
     mount();
     loadConfig();
     if (isNew(cur)) startTranslator();
