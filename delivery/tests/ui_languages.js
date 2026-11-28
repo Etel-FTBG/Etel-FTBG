@@ -60,6 +60,15 @@ const PAGE = (extra) => '<!doctype html><html lang="en"><head><meta charset="utf
     t(code + ': no page errors', q.errs.length === 0, q.errs.join('|'));
     await q.close();
   }
+  // Customer, Service Giver and login texts (their English lives in data-i18n keys; the walker matches the English values on screen)
+  const APPS = '<p id="c1">Place Order</p><p id="c2">Delivery Fee</p><p id="c3">Today\'s Orders</p><p id="c4">Forgot password?</p><p id="c5">Sign in with EtelID</p><p id="c6">\u{1F4E6} My Orders</p><p id="c7">View cart \u2192</p>';
+  for (const code of ['om', 'ti', 'so']) {
+    const q = await stub(code, APPS); await q.waitForFunction(() => document.getElementById('c1').textContent !== 'Place Order', null, { timeout: 5000 });
+    const r = await q.evaluate(() => ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'].map(i => document.getElementById(i).textContent));
+    t(code + ': Customer, Service Giver and login texts are translated (' + r.slice(0, 3).join(' | ') + ')', r.slice(0, 5).every((v, i) => v !== ['Place Order', 'Delivery Fee', "Today's Orders", 'Forgot password?', 'Sign in with EtelID'][i]), JSON.stringify(r));
+    t(code + ': emoji in front and arrows behind are kept', /^\u{1F4E6} /u.test(r[5]) && r[5] !== '\u{1F4E6} My Orders' && /\u2192$/.test(r[6]), JSON.stringify([r[5], r[6]]));
+    await q.close();
+  }
   // Amharic: this file does nothing to the text (the apps' own engine does that)
   const am = await stub('am', BODY); await am.waitForTimeout(500);
   t('Amharic: the dictionary of the new languages is not loaded and the text is left to the apps', (await am.textContent('#p1')) === 'Where are you going?' && (await am.evaluate(() => !document.querySelector('script[src*="i18n/"]'))));
