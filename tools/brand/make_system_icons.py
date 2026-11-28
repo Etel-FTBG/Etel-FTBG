@@ -88,6 +88,25 @@ def family():
     save_set('taxi', 'EtelTaxi/assets/images', 'taxi-', sizes=(96, 192, 512), maskable=True)
     save_plain('taxi', 'EtelTaxi/assets/images/etel-logo.png', 512)
 
+
+START_SIZES = ((640, 1136), (750, 1334), (1242, 2208), (1125, 2436), (828, 1792), (1242, 2688), (1170, 2532), (1284, 2778), (1179, 2556), (1290, 2796),
+               (1536, 2048), (1668, 2388), (2048, 2732))
+
+def start_screens():
+    """iOS start screens (icons/<role>-splash-WxH.jpg): the role's badge on the navy glow, for Courier, Service Giver, Admin and Agent"""
+    for name, role in (('courier', 'courier'), ('service', 'service'), ('admin', 'admin'), ('agent', 'agent')):
+        badge = Image.open(BRAND % name).convert('RGBA')
+        for w, h in START_SIZES:
+            y, x = np.mgrid[0:h, 0:w].astype(np.float32)
+            d = np.clip(np.hypot((x - w * 0.5) / w, (y - h * 0.44) / h) / 0.62, 0, 1)[..., None]
+            c0 = np.array([30, 46, 92], np.float32); c1 = np.array([6, 10, 26], np.float32)
+            bg = Image.fromarray((c0 * (1 - d) + c1 * d).clip(0, 255).astype(np.uint8), 'RGB').convert('RGBA')
+            side = int(round(min(0.62 * w, 0.40 * h)))
+            b = badge.resize((side, side), Image.LANCZOS)
+            bg.alpha_composite(b, (int(round(w / 2 - side / 2)), int(round(h * 0.44 - side / 2))))
+            bg.convert('RGB').save('delivery/icons/%s-splash-%dx%d.jpg' % (role, w, h), 'JPEG', quality=84, optimize=True, progressive=True)
+        print('start screens', role)
+
 GROUPS = {
     # the Delivery family (icons keep the <role>-icon-N.png names the manifests use)
     'delivery': lambda: [
@@ -108,6 +127,7 @@ GROUPS = {
     'group': lambda: save_set('group-master', 'EtelGroup/icons', ''),
     # the other systems (Pay, Ai, ERP, Madeya, Gebeya, Id, Taxi)
     'family': family,
+    'startscreens': start_screens,
 }
 
 if __name__ == '__main__':
