@@ -304,6 +304,6 @@ function egToggleWishlist(id, btn) {
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="gebeya"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="gebeya" defer></script>
-<script src="/delivery/js/etel-langs.js?v=7" data-lang-url="<?= View::url('/lang/') ?>" data-old=".eg-lang"></script>
+<script src="/delivery/js/etel-langs.js?v=8" data-lang-url="<?= View::url('/lang/') ?>" data-old=".eg-lang"></script>
 </body>
 </html>
