@@ -804,5 +804,6 @@ document.getElementById('pf-form').addEventListener('submit', function(e) {
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="id" defer></script>
+<script src="/delivery/js/etel-langs.js?v=5" data-walk-am="1" defer></script>
 </body>
 </html>

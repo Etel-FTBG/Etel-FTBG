@@ -125,5 +125,6 @@ $T = function ($pair) use ($E) { return '<span' . ($pair['am'] !== '' ? ' data-t
     <script src="assets/js/driver-mine-r1.js"></script>
     <script src="assets/js/driver-app-r8.js"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="madeya" defer></script>
+<script src="/delivery/js/etel-langs.js?v=5" data-old="#langBtn"></script><script>document.addEventListener("DOMContentLoaded",function(){try{if(localStorage.getItem("etel_lang")==="am"&&typeof currentLang!=="undefined"&&currentLang==="en"&&document.getElementById("langBtn"))toggleLang();}catch(e){}});</script>
 </body>
 </html>
