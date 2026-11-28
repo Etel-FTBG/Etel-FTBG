@@ -39,7 +39,7 @@ if str(cfg.get('runtimeVersion')) != '1':
 try:
     from PIL import Image
     import numpy as np
-    m = np.asarray(Image.open(os.path.join(root, 'EtelGroup/icons/brand/etel-group-master.webp')).convert('RGBA').resize((384, 384))).astype(int)
+    m = np.asarray(Image.open(os.path.join(root, 'EtelGroup/icons/brand/etel-group-master.webp')).convert('RGBA').resize((384, 384), Image.LANCZOS)).astype(int)
     for f in ('splash-icon.png', 'splash-logo.png', 'etel-master.png'):
         a = np.asarray(Image.open(os.path.join(A, f)).convert('RGBA')).astype(int)
         if a.shape != m.shape or np.abs(a - m).mean() > 3:

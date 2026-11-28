@@ -10,7 +10,7 @@
     window.__egApps = true;
     var APK_BASE = '/delivery/apk/';
     var APPS = [
-        { key: 'etel',     file: '\u12A2E_Etel.apk',     name: 'ETEL',          logo: '/EtelGroup/icons/brand/etel-group-master.webp?v=1', main: true,
+        { key: 'etel',     file: '\u12A2E_Etel.apk',     name: 'ETEL',          logo: '/EtelGroup/icons/brand/etel-group-master.webp?v=2', main: true,
           en: 'The all-in-one app: shop, ride, pay and more', am: 'ሁሉንም አገልግሎት በአንድ መተግበሪያ' },
         { key: 'delivery', file: '\u12A2E_Delivery.apk', name: 'ETEL Delivery', logo: '/EtelGroup/icons/brand/etel-transport.webp?v=1',
           en: 'Food, shops and packages to your door', am: 'ምግብ፣ ሱቆችና ጥቅሎች እስከ በርዎ' },

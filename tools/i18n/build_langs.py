@@ -18,7 +18,21 @@ out_dir = os.path.join(root, 'delivery', 'i18n')
 CODES = ['am', 'om', 'ti', 'so', 'aa']
 
 def esc(s):
-    return ''.join(c if 32 <= ord(c) < 127 and c not in '\\"' else ('\\"' if c == '"' else ('\\\\' if c == '\\' else '\\u%04x' % ord(c))) for c in s)
+    out = []
+    for c in s:
+        o = ord(c)
+        if 32 <= o < 127 and c not in '\\"':
+            out.append(c)
+        elif c == '"':
+            out.append('\\"')
+        elif c == '\\':
+            out.append('\\\\')
+        elif o > 0xFFFF:                                   # emoji: a JavaScript \u escape holds 4 digits, so write the surrogate pair
+            o -= 0x10000
+            out.append('\\u%04x\\u%04x' % (0xD800 + (o >> 10), 0xDC00 + (o & 0x3FF)))
+        else:
+            out.append('\\u%04x' % o)
+    return ''.join(out)
 
 def build():
     rows = [l.rstrip('\n').split('\t') for l in open(tsv, encoding='utf-8').read().split('\n') if l.strip()]
