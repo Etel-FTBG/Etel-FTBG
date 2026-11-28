@@ -49,7 +49,7 @@
       }).join('');
       var hasLogo = !!c.logo_path;
       var bg = hasLogo
-        ? 'background-image:linear-gradient(180deg, rgba(10,8,4,.30) 0%, rgba(10,8,4,.62) 55%, rgba(8,6,3,.94) 100%), url(\'' + esc(c.logo_path).replace(/'/g, "\\'") + '\');background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat'
+        ? 'background-image:linear-gradient(180deg, rgba(10,8,4,.66) 0%, rgba(10,8,4,.82) 45%, rgba(8,6,3,.97) 100%), url(\'' + esc(c.logo_path).replace(/'/g, "\\'") + '\');background-size:cover,cover;background-position:center,center;background-repeat:no-repeat,no-repeat'
         : '';
       return (
         '<article class="pf-card pf-card-live js-card" data-delay="' + Math.min(i, 9) + '" style="--pf-color:' + esc(c.dot_color) + ';' + bg + '">' +
@@ -93,6 +93,8 @@
     var totalEl = document.getElementById('pf-total-count');
     var liveEl = document.getElementById('pf-live-count');
     if (totalEl) totalEl.textContent = companies.length;
+    var ttl = document.getElementById('pf-title-count');   // the headline follows the real number (it said Eight while the list had 11)
+    if (ttl) ttl.textContent = companies.length;
     if (liveEl) liveEl.textContent = liveCount;
   }
 

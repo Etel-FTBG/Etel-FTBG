@@ -163,7 +163,7 @@
     // dictionary file: i18n/<code>.js next to js/
     var base = mySrc ? mySrc.replace(/js\/[^\/?#]*(\?.*)?$/, '') : '/delivery/';
     var s = document.createElement('script');
-    s.src = base + 'i18n/' + cur + '.js?v=6'; s.async = true;
+    s.src = base + 'i18n/' + cur + '.js?v=8'; s.async = true;
     document.head.appendChild(s);
   }
   function add(code, dict) {
@@ -366,6 +366,25 @@
     return !!old;
   }
   mirror(get());
+  /* A floating button must not sit on top of another fixed button of the page (EtelId's theme button): move it left of that one. */
+  function avoid() {
+    if (!btn || !btn.classList.contains('fl')) return;
+    btn.style.right = '';
+    var r = btn.getBoundingClientRect(), cy = r.top + r.height / 2, hit = null, i, j, els, e, cs, q;
+    for (i = 0; i < 3 && !hit; i++) {
+      els = document.elementsFromPoint([r.left + 4, r.left + r.width / 2, r.right - 4][i], cy);
+      for (j = 0; j < els.length; j++) {
+        e = els[j];
+        if (e === btn || btn.contains(e) || e === document.body || e === document.documentElement) continue;
+        for (; e && e !== document.body; e = e.parentElement) {
+          cs = getComputedStyle(e); q = e.getBoundingClientRect();
+          if ((cs.position === 'fixed' || cs.position === 'absolute') && q.width < 260 && q.height < 140) { hit = q; break; }
+        }
+        if (hit) break;
+      }
+    }
+    if (hit) btn.style.right = Math.round(window.innerWidth - hit.left + 8) + 'px';
+  }
   function start() {
     if (window.ETEL_LANGS_NO_PICKER) return;
     if (BR_URL) {      // the server of that app keeps its own language: bring it in line once per visit
@@ -375,6 +394,7 @@
     }   // the Admin page only borrows the flags
     mount();
     loadConfig();
+    setTimeout(avoid, 400); setTimeout(avoid, 1500); window.addEventListener('resize', avoid);
     if (isNew(cur)) startTranslator();
     var tries = 0, iv = setInterval(function () {
       var hadOld = mount();
