@@ -4,6 +4,12 @@ Over-the-air updates cover JavaScript changes. A change to native code (a new AP
 the ETEL app reads `version.json`, and when `versionCode` is higher than the installed build it offers
 "Download and install", shows live progress, checks the file's SHA-256, and opens Android's installer.
 
+## Before you publish: check the file
+- Use the **preview** profile. It makes an installable **.apk**. The production profile makes an **.aab** (Play Store only); renaming it to .apk gives "There was a problem parsing the package".
+- Open `https://ethelmarket.com/delivery/apk-check.html` on the phone, pick the APK, and read the answer (complete? real APK? signed? 64-bit and 32-bit phones?). The file is read on the phone only.
+- Upload with cPanel File Manager and wait until it finishes. The size in File Manager must match the built file.
+- The app works on Android 7.0 (API 24) and newer, on 64-bit and 32-bit ARM phones.
+
 ## Publishing a new build
 1. Run the EAS build (preview profile, APK). On the build page note **Version code** (the number, e.g. 12) and **App version**.
 2. Download the APK and upload it here as `etel.apk` (replace the old one).
