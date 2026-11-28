@@ -25,7 +25,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/madeya-liters.css">
     <link rel="stylesheet" href="assets/css/madeya-alerts-r5.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
-    <link rel="icon" href="assets/img/etel-logo.png">
+    <link rel="icon" type="image/png" href="assets/images/madeya-icon-192.png?v=2">
+    <link rel="apple-touch-icon" href="assets/images/madeya-apple-touch-icon.png?v=2">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="<?= isset($_GET['embed']) ? 'mc-embed' : '' ?>">

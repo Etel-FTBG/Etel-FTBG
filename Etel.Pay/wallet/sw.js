@@ -6,7 +6,7 @@
  *   Navigation          → Network-first → offline.html fallback
  */
 
-const CACHE     = 'etelpay-v18';   // bumped: the wallet starts in the light theme (js/pay-theme.js)
+const CACHE     = 'etelpay-v19';   // bumped: the wallet starts in the light theme (js/pay-theme.js)
 //   // bumped: PIN prompt + escaping in core.js/api.js, on top of the theme files
 const PRECACHE  = [
   './login',

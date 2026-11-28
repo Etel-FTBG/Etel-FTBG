@@ -52,6 +52,42 @@ def save_tab(name, out, size=96):
     Image.open(BRAND % name).convert('RGBA').resize((size, size), Image.LANCZOS).save(out, optimize=True)
     print('tab logo', name, '->', out)
 
+
+def save_ico(name, out, sizes=(16, 32, 48)):
+    """favicon.ico with several sizes (badge on the navy square, like the PNG icons)"""
+    badge = Image.open(BRAND % name).convert('RGBA')
+    big = icon(badge, 256).convert('RGBA')
+    big.save(out, format='ICO', sizes=[(n, n) for n in sizes])
+    print('favicon', name, '->', out)
+
+def save_plain(name, out, size=512):
+    """a transparent badge picture, same file name the system already used for its logo"""
+    im = Image.open(BRAND % name).convert('RGBA').resize((size, size), Image.LANCZOS)
+    if out.endswith('.webp'):
+        im.save(out, 'WEBP', quality=90, method=6, exact=True)
+    else:
+        im.save(out, optimize=True)
+    print('logo', name, '->', out)
+
+def family():
+    """Etel.Pay, EtelAi, EtelERP, EtelMadeya, EtelGebeya, EtelId and EtelTaxi: each system's OWN icon set and logo (28 Nov 2026)"""
+    P = 'Etel.Pay/wallet'
+    save_set('pay', P + '/icons', '', maskable=True)                       # icons/icon-N.png, apple-touch-icon.png, icon-192/512-maskable.png
+    save_set('pay', P, '', maskable=False)                                 # the same files at the wallet root (older pages still ask for them)
+    save_plain('pay', P + '/icons/logo.png', 300); save_plain('pay', P + '/logo.png', 300)
+    save_ico('pay', P + '/favicon.ico')
+    save_set('ai', 'EtelAi/icons', '', sizes=(192, 512), maskable=True, apple=None)
+    save_plain('ai', 'EtelAi/icons/etel-logo.png', 192); save_plain('ai', 'EtelAi/icons/etel-logo-full.png', 192)
+    save_set('erp', 'EtelERP/assets/icons', '', sizes=(192, 512), maskable=True)
+    save_plain('erp', 'EtelERP/assets/icons/logo.png', 256)
+    save_set('madeya', 'EtelMadeya/assets/images', 'madeya-', sizes=(192, 512), maskable=True)
+    save_plain('madeya', 'EtelMadeya/assets/img/etel-logo.png', 512); save_plain('madeya', 'EtelMadeya/assets/images/icon.png', 512)
+    save_set('gebeya', 'EtelGebeya/public', '', sizes=(96, 192, 512), maskable=True)
+    save_plain('gebeya', 'EtelGebeya/public/assets/img/etel-master-seal.webp', 512)
+    save_set('id', 'EtelId/public/images', 'etelid-', sizes=(96, 192, 512), maskable=False)
+    save_set('taxi', 'EtelTaxi/assets/images', 'taxi-', sizes=(96, 192, 512), maskable=True)
+    save_plain('taxi', 'EtelTaxi/assets/images/etel-logo.png', 512)
+
 GROUPS = {
     # the Delivery family (icons keep the <role>-icon-N.png names the manifests use)
     'delivery': lambda: [
@@ -70,6 +106,8 @@ GROUPS = {
     ],
     # the master page (ETEL Group)
     'group': lambda: save_set('group-master', 'EtelGroup/icons', ''),
+    # the other systems (Pay, Ai, ERP, Madeya, Gebeya, Id, Taxi)
+    'family': family,
 }
 
 if __name__ == '__main__':

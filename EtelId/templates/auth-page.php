@@ -33,6 +33,8 @@ $init_tab  = ( get_query_var('etelid_page') === 'signup' ) ? 'signup' : 'login';
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=2' ); ?>">
+<link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=2' ); ?>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Etel-ID — <?php echo $init_tab === 'signup' ? 'Create Account' : 'Sign In'; ?> · <?php echo esc_html($org_name); ?></title>
