@@ -55,6 +55,30 @@ def main():
     for bad in ("xx", "", "english", "OM", "om-ET", "am;DROP", "<b>", "en,am"):
         s, r = call("set_user_language", {"lang": bad}, token=tok)
         check("%r is refused with 400 'Unsupported language'" % bad, s == 400 and r.get("success") is False and "unsupported" in str(r.get("message", "")).lower(), (s, r))
+    # the owner's control: get_language_config is public, admin_save_languages is admin only and cleans what it is given
+    s, r = call("get_language_config")
+    d = r.get("data") or {}
+    states = dict((x.get("code"), x.get("status")) for x in d.get("langs", []))
+    check("anyone can read the language settings (no sign-in): six languages, English live", s == 200 and list(states) == ["en", "am", "om", "ti", "so", "aa"] and states.get("en") == "live", (s, r))
+    s, r = call("admin_save_languages", {"default": "so", "langs": {"so": "live"}}, token=tok)
+    check("a customer cannot save the language settings", r.get("success") is False and s in (401, 403), (s, r))
+    s, r = call("login", {"phone": "0900000000", "password": "admin1234"})
+    atok = (r.get("data") or {}).get("token")
+    if not atok:
+        print("  SKIP no seeded demo admin: the admin part of the language settings is not tested")
+    else:
+        s, r = call("admin_save_languages", {"default": "so", "langs": {"en": "off", "om": "off", "ti": "live", "so": "beta", "aa": "banana", "xx": "live"}}, token=atok)
+        cfg = (r.get("data") or {}).get("config") or {}
+        check("admin save: English stays live, bad states and unknown codes are ignored", s == 200 and cfg.get("langs", {}).get("en") == "live" and cfg["langs"].get("aa") == "soon" and "xx" not in cfg["langs"], (s, r))
+        s, r = call("get_language_config")
+        d = r.get("data") or {}
+        states = dict((x.get("code"), x.get("status")) for x in d.get("langs", []))
+        check("the saved states are what the picker reads: Oromo hidden, Tigrinya live, Somali beta, default Somali", states.get("om") == "off" and states.get("ti") == "live" and states.get("so") == "beta" and d.get("default") == "so", (s, r))
+        s, r = call("admin_save_languages", {"default": "om", "langs": {"om": "off"}}, token=atok)
+        check("a hidden language cannot be the default (falls back to English)", (r.get("data") or {}).get("config", {}).get("default") == "en", (s, r))
+        s, r = call("admin_get_languages", {}, token=atok)
+        check("admin can read the settings with how many people chose each language", s == 200 and "stats" in (r.get("data") or {}), (s, r))
+        call("admin_save_languages", {"default": "en", "langs": {"om": "beta", "ti": "beta", "so": "beta", "aa": "soon", "am": "live"}}, token=atok)
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     for f in FAIL:
         print("  FAIL: " + f)

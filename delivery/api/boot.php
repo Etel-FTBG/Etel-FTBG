@@ -1865,6 +1865,9 @@ switch ($action) {
     case 'admin_integrations_get': case 'admin_integrations_save': case 'admin_integrations_test': case 'admin_integrations_add': case 'admin_integrations_remove':
         require __DIR__ . '/controllers/IntegrationController.php';
         break;
+    case 'get_language_config': case 'admin_get_languages': case 'admin_save_languages':
+        require __DIR__ . '/controllers/LangController.php';
+        break;
     case 'get_tip_options': case 'admin_get_courier_pay': case 'admin_save_courier_pay': case 'admin_preview_courier_pay': case 'admin_get_order_pay': case 'admin_set_order_pay':
         require __DIR__ . '/controllers/CourierPayController.php';
         break;
