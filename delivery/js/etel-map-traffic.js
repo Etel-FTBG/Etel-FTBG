@@ -1,7 +1,7 @@
 /* ETEL - Traffic button on the driver and courier maps (v1.0, 28 Nov 2026)
  * Same idea as the rider map button (js/ride-map-traffic.js): a small white square in the right-centre stack of the Google map controls.
  * Tap it to show Google's live traffic colours (green = moving, orange = slow, red = jammed); tap again to hide. The choice is remembered per app.
- * One file for both apps: the page says which one with data-app="driver" (map = DRV.map) or data-app="courier" (map = window.__etelCourierMap).
+ * One file for both apps: the page says which one with data-app="driver" (map = DRV.map) or data-app="courier" (map = the courier app's own top-level variable map, or window.__etelCourierMap).
  * Own file: it does not edit the app bundles. Does nothing when Google Maps or the map is not there yet.
  */
 (function () {
@@ -16,7 +16,12 @@
   var layer = null, added = false;
 
   function getMap() {
-    try { return app === "driver" ? (window.DRV && window.DRV.map) : window.__etelCourierMap; } catch (e) { return null; }
+    try {
+      if (app === "driver") return window.DRV && window.DRV.map;
+      // the courier app keeps its map in a top-level variable called map (a script-level let, visible to other classic scripts)
+      try { if (typeof map !== "undefined" && map && map.controls) return map; } catch (e) {}
+      return window.__etelCourierMap;
+    } catch (e) { return null; }
   }
   function saved() { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } }
   function save(v) { try { localStorage.setItem(KEY, v ? "1" : "0"); } catch (e) {} }

@@ -519,6 +519,90 @@ case 'courier_update_order_status': {
     }
     break;
 }
+case 'courier_get_demand': {
+    /* "Hot areas" for couriers (28 Nov 2026): where delivery jobs nobody has taken yet are piling up, compared with how many couriers are online there.
+       Counts per hexagon cell (about 700 m, the same grid as the driver map) and the cell's own (q, r) - never an order, customer, address or phone.
+       Open job = no courier yet, not cancelled / delivered, placed in the last 3 hours, paid if paid online. A job "waiting" = open for 10 minutes or more.
+       Score = (jobs + 2 x waiting) / (online couriers + 1); same level / heat rules as api driver_get_demand, so the map looks the same as the driver map. */
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    $size = 700.0;
+    $myLat = isset($body['lat']) && is_numeric($body['lat']) ? floatval($body['lat']) : null;
+    $myLng = isset($body['lng']) && is_numeric($body['lng']) ? floatval($body['lng']) : null;
+    if ($myLat === null) {
+        try {
+            $m = $pdo->prepare('SELECT last_lat, last_lng FROM couriers WHERE id = ?');
+            $m->execute(array($courier['id']));
+            $mr = $m->fetch();
+            if ($mr && $mr['last_lat'] !== null && (floatval($mr['last_lat']) || floatval($mr['last_lng']))) { $myLat = floatval($mr['last_lat']); $myLng = floatval($mr['last_lng']); }
+        } catch (Exception $e) {}
+    }
+    $cells = array();
+    $idleCouriers = array();
+    try {
+        $q = $pdo->query("SELECT COALESCE(NULLIF(o.pickup_lat, 0), sg.lat) AS la, COALESCE(NULLIF(o.pickup_lng, 0), sg.lng) AS lo,
+                                 TIMESTAMPDIFF(MINUTE, o.placed_at, NOW()) AS age_min
+                          FROM orders o
+                          LEFT JOIN order_assignments oa ON o.id = oa.order_id
+                          LEFT JOIN service_givers sg ON oa.service_giver_id = sg.id
+                          WHERE (o.courier_id IS NULL OR o.courier_id = 0)
+                            AND o.status NOT IN ('cancelled','delivered')
+                            AND o.placed_at > DATE_SUB(NOW(), INTERVAL 3 HOUR)
+                            AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
+                            AND (oa.status IN ('pending','preparing','assigned','accepted') OR (oa.id IS NULL AND o.order_kind = 'package'))
+                          LIMIT 2000");
+        foreach ($q->fetchAll() as $r) {
+            if ($r['la'] === null || $r['lo'] === null || (!floatval($r['la']) && !floatval($r['lo']))) continue;
+            list($cq, $cr) = hexgrid_cell_for($r['la'], $r['lo'], $size);
+            $k = $cq . ':' . $cr;
+            if (!isset($cells[$k])) $cells[$k] = array('n' => 0, 'waiting' => 0, 'idle' => 0, 'sl' => 0.0, 'sg' => 0.0, 'q' => $cq, 'r' => $cr);
+            $cells[$k]['n']++;
+            $cells[$k]['sl'] += floatval($r['la']);
+            $cells[$k]['sg'] += floatval($r['lo']);
+            if (intval($r['age_min']) >= 10) $cells[$k]['waiting']++;
+        }
+        $dq = $pdo->query("SELECT last_lat, last_lng FROM couriers
+                           WHERE status = 'online' AND last_lat IS NOT NULL AND last_lng IS NOT NULL
+                             AND last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                           LIMIT 500");
+        $idleCouriers = $dq->fetchAll();
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not load demand', 500);
+    }
+    $out = array();
+    foreach ($cells as $c) {
+        $lat = $c['sl'] / $c['n']; $lng = $c['sg'] / $c['n'];
+        $c['idle'] = 0; // online couriers within 600 m of the area's centre
+        foreach ($idleCouriers as $d) {
+            $dl = deg2rad(floatval($d['last_lat']) - $lat); $dg = deg2rad(floatval($d['last_lng']) - $lng);
+            $h = sin($dl / 2) * sin($dl / 2) + cos(deg2rad($lat)) * cos(deg2rad(floatval($d['last_lat']))) * sin($dg / 2) * sin($dg / 2);
+            if (6371 * 2 * atan2(sqrt($h), sqrt(1 - $h)) <= 0.6) $c['idle']++;
+        }
+        $score = ($c['n'] + 2 * $c['waiting']) / ($c['idle'] + 1);
+        $level = ($score >= 4 || ($c['waiting'] >= 1 && $c['idle'] == 0)) ? 'high' : ($score >= 2 ? 'med' : 'low');
+        $heat = min(1.0, $score / 6.0);
+        if ($c['waiting'] >= 1 && $c['idle'] == 0) $heat = max($heat, 0.85);
+        $km = null;
+        if ($myLat !== null) {
+            $dLat = deg2rad($lat - $myLat); $dLng = deg2rad($lng - $myLng);
+            $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($myLat)) * cos(deg2rad($lat)) * sin($dLng / 2) * sin($dLng / 2);
+            $km = round(6371 * 2 * atan2(sqrt($a), sqrt(1 - $a)), 1);
+        }
+        $out[] = array('lat' => round($lat, 5), 'lng' => round($lng, 5), 'requests' => $c['n'], 'waiting' => $c['waiting'],
+                       'idle_drivers' => $c['idle'], 'score' => round($score, 1), 'level' => $level, 'distance_km' => $km,
+                       'q' => $c['q'], 'r' => $c['r'], 'heat' => round($heat, 2));
+    }
+    usort($out, function ($a, $b) {
+        if ($a['score'] != $b['score']) return $a['score'] < $b['score'] ? 1 : -1;
+        if ($a['distance_km'] === null || $b['distance_km'] === null || $a['distance_km'] == $b['distance_km']) return 0;
+        return $a['distance_km'] < $b['distance_km'] ? -1 : 1;
+    });
+    ok(array('areas' => array_slice($out, 0, 8), 'hexes' => array_slice($out, 0, 40), 'size_m' => $size, 'surge_now' => null, 'window_min' => 180));
+    break;
+}
+
 case 'courier_get_profile': {
     // This action was called by the live courier app but never
     // existed anywhere in the backend - a genuinely missing feature,

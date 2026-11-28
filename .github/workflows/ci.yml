@@ -127,6 +127,7 @@ jobs:
           python3 delivery/tests/ci/check_launcher_icons.py
           python3 delivery/tests/ci/check_ride_map_traffic.py
           python3 delivery/tests/ci/check_driver_hex_heat.py
+          python3 delivery/tests/ci/check_courier_hot_areas.py
           python3 delivery/tests/ci/check_app_icons.py
           python3 delivery/tests/ci/check_system_icons.py
           python3 delivery/tests/ci/check_family_icons.py

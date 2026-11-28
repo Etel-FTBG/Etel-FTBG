@@ -155,5 +155,7 @@ run php tests/expo_push_messages_test.php
 run php tests/etelid_role_verdict_test.php
 run php tests/etelid_phone_trust_test.php
 run python3 tests/courier_pay_smoke.py
+run python3 tests/courier_demand_smoke.py
+run python3 tests/ride_demand_heat_smoke.py
 echo; [ $rc = 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
 exit $rc
