@@ -6,7 +6,7 @@
 <!DOCTYPE html>
 <html lang="<?= $locale ?>">
 <head>
-  <link rel="icon" type="image/png" href="<?= View::url('/public/icon-96.png') ?>?v=3">
+  <link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">
   <link rel="apple-touch-icon" href="<?= View::url('/public/apple-touch-icon.png') ?>?v=3">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">

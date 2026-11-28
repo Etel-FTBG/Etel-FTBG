@@ -1,5 +1,5 @@
 /* App shell cache so EtelERP opens on a weak connection. The API is never cached. */
-var CACHE = 'etelerp-shell-v2';
+var CACHE = 'etelerp-shell-v3';
 var SHELL = ['./', 'index.html', 'assets/css/app.css', 'assets/js/core.js', 'assets/js/views_main.js', 'assets/js/views_sell.js',
   'assets/js/views_inv.js', 'assets/js/views_lists.js', 'assets/js/views_team.js', 'assets/icons/logo.png', 'assets/icons/icon-192.png', 'assets/icons/apple-touch-icon.png', 'manifest.webmanifest'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });

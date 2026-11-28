@@ -39,7 +39,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/png" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-icon-96.png?v=3' ); ?>">
+<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">
 <link rel="apple-touch-icon" href="<?php echo esc_url( ETELID_URL . 'public/images/etelid-apple-touch-icon.png?v=3' ); ?>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">

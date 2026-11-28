@@ -56,18 +56,20 @@ for k in ('equb', 'investor'):
     for n in ('icons/%s-icon-96.png' % k, 'icons/%s-apple-touch-icon.png' % k):
         if not os.path.exists(os.path.join(D, n)):
             bad.append('missing delivery/' + n)
-# 3. pages link their own icons
+# 3. pages link their own apple-touch icon (home screen) and the shared ae monogram as tab icon (28 Nov 2026)
 LINKS = {
-    'delivery/courier/index.html': ['courier-icon-96.png', 'courier-apple-touch-icon.png'],
-    'delivery/courier/courier-index.html': ['courier-icon-96.png', 'courier-apple-touch-icon.png'],
-    'delivery/servicegiver.html': ['service-icon-96.png', 'service-apple-touch-icon.png'],
-    'delivery/admin.html': ['admin-icon-96.png', 'admin-apple-touch-icon.png'],
-    'delivery/equb/index.html': ['equb-icon-96.png', 'equb-apple-touch-icon.png'],
-    'delivery/investor/index.html': ['investor-icon-96.png', 'investor-apple-touch-icon.png'],
-    'delivery/index.html': ['icons/icon-96.png', 'icons/apple-touch-icon.png'],
+    'delivery/courier/index.html': ['courier-apple-touch-icon.png'],
+    'delivery/courier/courier-index.html': ['courier-apple-touch-icon.png'],
+    'delivery/servicegiver.html': ['service-apple-touch-icon.png'],
+    'delivery/admin.html': ['admin-apple-touch-icon.png'],
+    'delivery/equb/index.html': ['equb-apple-touch-icon.png'],
+    'delivery/investor/index.html': ['investor-apple-touch-icon.png'],
+    'delivery/index.html': ['icons/apple-touch-icon.png'],
 }
 for page, need in LINKS.items():
     t = read(page)
+    if 'EtelGroup/icons/tab-icon-96.png' not in t:
+        bad.append('%s must use the shared tab icon (EtelGroup/icons/tab-icon-96.png)' % page)
     for n in need:
         if n not in t:
             bad.append('%s must link %s' % (page, n))

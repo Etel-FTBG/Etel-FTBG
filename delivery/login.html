@@ -36,27 +36,27 @@
   // - the exact bug this fixes.
   if (isDriver) {
     document.write('<link rel="manifest" href="manifest-driver.json">');
-    document.write('<link rel="icon" type="image/png" href="icons/driver-icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/driver-apple-touch-icon.png">');
   } else if (isRide) {
     document.write('<link rel="manifest" href="manifest-ride.json">');
-    document.write('<link rel="icon" type="image/png" href="icons/ride-icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/ride-apple-touch-icon.png">');
   } else if (isCourier) {
     document.write('<link rel="manifest" href="manifest-courier.json">');
-    document.write('<link rel="icon" type="image/png" href="icons/courier-icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/courier-apple-touch-icon.png">');
   } else if (isService) {
     document.write('<link rel="manifest" href="manifest-service.json">');
-    document.write('<link rel="icon" type="image/png" href="icons/service-icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/service-apple-touch-icon.png">');
   } else if (isAdmin) {
     document.write('<link rel="manifest" href="manifest-admin.json">');
-    document.write('<link rel="icon" type="image/png" href="icons/admin-icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/admin-apple-touch-icon.png">');
   } else if (isCustomer) {
     document.write('<link rel="manifest" href="manifest.json">');
-    document.write('<link rel="icon" type="image/png" href="icons/icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">');
   } else {
     // Previously this branch did nothing, and a second, unconditional
@@ -69,7 +69,7 @@
     // crawler (or a real "Add to Home Screen") would have picked up:
     // always manifest.php, never manifest-ride.json, no matter the URL.
     document.write('<link rel="manifest" href="manifest.php">');
-    document.write('<link rel="icon" type="image/png" href="icons/icon-96.png">');
+    document.write('<link rel="icon" type="image/png" href="/EtelGroup/icons/tab-icon-96.png?v=1">');
     document.write('<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">');
   }
 })();
@@ -1065,7 +1065,7 @@ function syncManifestForRole(tabId) {
   var manifestLink = document.querySelector('link[rel="manifest"]');
   if (manifestLink && manifestLink.getAttribute('href') !== manifestHref) manifestLink.setAttribute('href', manifestHref);
   var iconLink = document.querySelector('link[rel="icon"]');
-  if (iconLink && iconLink.getAttribute('href') !== iconHref) iconLink.setAttribute('href', iconHref);
+  /* the tab icon is the same ae monogram for every system: it does not change with the role */
   var appleLink = document.querySelector('link[rel="apple-touch-icon"]');
   if (appleLink && appleLink.getAttribute('href') !== appleHref) appleLink.setAttribute('href', appleHref);
 

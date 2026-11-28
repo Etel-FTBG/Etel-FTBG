@@ -55,7 +55,7 @@ const dist = (a, b) => a.reduce((s, v, k) => s + Math.abs(v - b[k]), 0) / a.leng
   const PG = { '/delivery/courier/index.html': ['courier-icon-96', 'splash-courier.webp'], '/delivery/servicegiver.html': ['service-icon-96', 'splash-service.webp'], '/delivery/admin.html': ['admin-icon-96', 'splash-admin.webp'], '/delivery/customer.html': ['icon-96', 'splash-transport.webp'], '/delivery/driver/index.html': ['driver-icon-96', 'splash-transport.webp'], '/delivery/equb/index.html': ['equb-icon-96', ''], '/delivery/investor/index.html': ['investor-icon-96', ''] };
   for (const [page, [ic, sp]] of Object.entries(PG)) {
     const tx = await p.evaluate(async (u) => (await (await fetch(u)).text()), HOST + page);
-    t(page + ': links its own tab icon (' + ic + ')', tx.indexOf(ic + '.png') > -1);
+    t(page + ': links the shared ae tab icon (EtelGroup/icons/tab-icon-96.png, same on every system since 28 Nov 2026)', tx.indexOf('EtelGroup/icons/tab-icon-96.png') > -1);
     if (sp) t(page + ': the opening splash shows its own logo (' + sp + '), not the group master logo', tx.indexOf(sp) > -1 && tx.indexOf('master-logo-splash.png') < 0);
   }
   // the real login page picks the logo by role

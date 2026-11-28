@@ -89,22 +89,23 @@ for path, base in (('Etel.Pay/wallet/manifest.json', 'Etel.Pay/wallet'), ('EtelA
                    ('EtelERP/manifest.webmanifest', 'EtelERP'), ('EtelMadeya/pwa/manifest.json', 'EtelMadeya/pwa')):
     manifest_icons(path, base)
 
-# pages link their own icons
+T = 'EtelGroup/icons/tab-icon-96.png'   # the shared ae monogram is the tab icon of every system (28 Nov 2026); apple-touch icons stay per system
+# pages link the tab icon and, where they have one, their own apple-touch icon
 def has(path, *needles):
     t = open(P(path), encoding='utf-8', errors='replace').read()
     for n in needles:
         if n not in t:
             bad.append('%s does not contain %s' % (path, n))
-has('Etel.Pay/wallet/login.html', 'icons/icon-96.png', 'icons/apple-touch-icon.png')
-has('EtelAi/index.html', 'icons/icon-192.png'); has('EtelAi/admin.html', 'icons/icon-192.png')
-has('EtelERP/index.html', 'assets/icons/icon-192.png', 'assets/icons/apple-touch-icon.png')
-has('EtelMadeya/index.php', 'madeya-icon-192.png'); has('EtelMadeya/admin/index.php', 'madeya-icon-192.png')
-has('EtelGebeya/app/Views/_layouts/public.php', '/public/icon-96.png', '/public/apple-touch-icon.png')
-has('EtelGebeya/admin.html', 'public/icon-96.png')
+has('Etel.Pay/wallet/login.html', T, 'icons/apple-touch-icon.png')
+has('EtelAi/index.html', T); has('EtelAi/admin.html', T)
+has('EtelERP/index.html', T, 'assets/icons/apple-touch-icon.png')
+has('EtelMadeya/index.php', T); has('EtelMadeya/admin/index.php', T)
+has('EtelGebeya/app/Views/_layouts/public.php', T, '/public/apple-touch-icon.png')
+has('EtelGebeya/admin.html', T)
 for f in ('index', 'admin', 'driver', 'verify'):
-    has('EtelTaxi/%s.html' % f, 'taxi-icon-96.png')
+    has('EtelTaxi/%s.html' % f, T)
 for f in ('portal', 'auth-page', 'verify', 'apply-form'):
-    has('EtelId/templates/%s.php' % f, 'etelid-icon-96.png')
+    has('EtelId/templates/%s.php' % f, T)
 t = open(P('EtelGebeya/admin.html'), encoding='utf-8', errors='replace').read()
 if 'data:image/svg+xml' in t.split('</head>')[0].split('rel="icon"')[-1][:80]:
     bad.append('EtelGebeya/admin.html still uses the old data: favicon')
