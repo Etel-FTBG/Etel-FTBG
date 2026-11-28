@@ -416,3 +416,595 @@ Offer declined	Dhiyeessi didame	ሓሳብ ተነጽጉ	Soo jeedinta waa la diida
 You're offline	Interneetii alaa jirta	ኣብ መስመር የለኻን	Waad offline tahay	
 You're online	Interneetii irra jirta	ኣብ መስመር ኣለኻ	Waad onlayn tahay	
 📦 New job available!	📦 Hojiin haaraan jira!	📦 ሓድሽ ስራሕ ኣሎ!	📦 Shaqo cusub ayaa jirta!	
+Home	Mana	ገዛ	Hoyga	
+Favorites	Kan jaallatamu	ዝፈትዎም	Kuwa la jecel yahay	
+Orders	Ajajoota	ትእዛዛት	Dalabyo	
+Open	Banaa	ክፉት	Furan	
+Closed	Cufaa	ዕጹው	Xiran	
+Delivery from ETB	Geessii ETB irraa	ኣቕርቦት ካብ ETB	Gaarsiin laga bilaabo ETB	
+Your order	Ajaja kee	ትእዛዝካ	Dalabkaaga	
+Order placed	Ajajni kaa'ame	ትእዛዝ ተሰዲዱ	Dalabka waa la gudbiyay	
+Courier assigned	Ergamaan ramadame	ኣብጻሒ ተመዲቡ	Qaade ayaa loo xilsaaray	
+On the way	Karaarra	ኣብ መገዲ	Waddada ku jira	
+Track	Hordofi	ተኸታተል	La soco	
+more	kan biraa	ተወሳኺ	kale	
+Popular	Kan beekamaa	ዝፍለጥ	Caan ah	
+Deals	Dhiyeessa addaa	ፍሉይ ቅናሽ	Heshiisyo	
+Quick	Ariifataa	ቅልጡፍ	Degdeg	
+Enter code	Koodii galchi	ኮድ ኣእትው	Geli koodh	
+Discount	Hir'ina	ቅናሽ	Dhimis	
+You save	Ati olkaa'ta	እትቕንሶ	Waad badbaadisaa	
+Rate your order	Ajaja kee madaali	ንትእዛዝካ ደረጃ ሃብ	Qiimee dalabkaaga	
+Overall	Waliigala	ጠቕላላ	Guud ahaan	
+Order quality	Qulqullina ajajaa	ጽሬት ትእዛዝ	Tayada dalabka	
+Courier	Ergamaa	ኣብጻሒ	Qaade	
+What stood out?	Maaltu mul'ate?	እንታይ ኣደናቒቑ?	Maxaa soo baxay?	
+Tell us more (optional)…	Nutti himi (dirqama miti)…	ዝያዳ ንገረና (ኣማራጺ)…	Noo sheeg wax dheeraad ah (ikhtiyaari)…	
+Submit rating	Madaallii ergi	ደረጃ ስደድ	Dir qiimeynta	
+Please choose an overall rating	Maaloo madaallii waliigalaa filadhu	በጃኹም ጠቕላላ ደረጃ ምረጹ	Fadlan dooro qiimeyn guud	
+Thanks for your review!	Yaada keef galatoomi!	ስለ ርእይቶኻ የቐንየልና!	Waad ku mahadsan tahay faallooyinkaaga!	
+Your rating	Madaallii kee	ደረጃኻ	Qiimeyntaada	
+Reply from the shop	Deebii suuqaa	መልሲ ካብ ድኳን	Jawaab ka timid dukaanka	
+Fast delivery	Geessii ariifataa	ቅልጡፍ ኣቕርቦት	Gaarsiin degdeg ah	
+Great taste	Mi'aa gaarii	ጥዑም ጣዕሚ	Dhadhan fiican	
+Well packed	Gaarii qophaa'e	ጽቡቕ ተዳልዩ	Si fiican loo xiray	
+Friendly courier	Ergamaa michuu	ባህርያዊ ኣብጻሒ	Qaade saaxiibtinimo leh	
+Good value	Gatii gaarii	ጽቡቕ ዋጋ	Qiimo fiican	
+Late	Turte	ደንጉዩ	Daahay	
+Arrived cold	Qabbanaa'ee ga'e	ብርቱዕ ሒዙ በጺሑ	Wuxuu yimid qabow	
+Wrong item	Wanti dogoggoraa	ጌጋ ሸቶ	Alaab khaldan	
+Your points	Qabxii kee	ነጥብታትካ	Dhibcahaaga	
+Use my points	Qabxii koo fayyadami	ነጥብታተይ ተጠቐም	Isticmaal dhibcahayga	
+Not using points	Qabxii hin fayyadamne	ነጥቢ ኣይትጥቀምን	Ma isticmaalayo dhibco	
+Points	Qabxii	ነጥብታት	Dhibco	
+Recent activity	Sochii dhiyoo	ቀረባ ንጥፈታት	Dhaqdhaqaaqii ugu dambeeyay	
+worth	gatii	ዋጋ	qiimo	
+Order alerts are on	Beeksisni ajajaa banaadha	ምንጋር ትእዛዝ ተኸፊቱ	Ogeysiisyada dalabka waa shidan yihiin	
+Order again	Irra deebi'ii ajaji	ደጊምካ ኣዝዝ	Mar kale dalbo	
+Hungry again?	Deebi'ee beelaye?	ከም ብሓድሽ ጥሚ?	Mar kale gaajo?	
+How was your order?	Ajajni kee akkam ture?	ትእዛዝካ ከመይ ነይሩ?	Sidee ahaa dalabkaagu?	
+Not now	Amma miti	ሕጂ ኣይኮነን	Hadda maaha	
+Cancel order	Ajaja haqi	ትእዛዝ ሰርዝ	Jooji dalabka	
+Cancel this order?	Ajaja kana haquu?	እዚ ትእዛዝ ትስርዞ?	Ma joojisaa dalabkan?	
+Anything to add? (optional)	Wanti dabaluu? (dirqama miti)	ዝወሰኽካዮ ኣሎ? (ኣማራጺ)	Wax ma ku dari lahayd? (ikhtiyaari)	
+Yes, cancel order	Eeyyee, ajaja haqi	እወ፡ ትእዛዝ ሰርዝ	Haa, jooji dalabka	
+Keep my order	Ajaja koo qabadhu	ትእዛዘይ ሓዝ	Ii hay dalabkayga	
+Your order was cancelled	Ajajni kee haqameera	ትእዛዝካ ተሰሪዙ	Dalabkaaga waa la joojiyay	
+Please choose a reason	Maaloo sababa filadhu	በጃኹም ምኽንያት ምረጹ	Fadlan dooro sabab	
+Could not cancel the order	Ajaja haquu hin dandeenye	ትእዛዝ ክስረዝ ኣይተኻኣለን	Dalabka lama joojin karin	
+I changed my mind	Yaada koo jijjiiredheera	ሓሳበይ ቀይረ	Waan bedelay fikirkayga	
+I ordered by mistake	Dogoggoraan ajajeera	ብጌጋ ኣዚዘ	Waxaan dalbaday si khalad ah	
+It is taking too long	Yeroo dheeraa fudhataa jira	ብዙሕ ግዜ ይወስድ ኣሎ	Waxay qaadanaysaa waqti dheer	
+Another reason	Sababa biraa	ካልእ ምኽንያት	Sabab kale	
+Sold out today	Har'a dhuma	ሎሚ ተወዲኡ	Maanta waa dhammaaday	
+Unavailable	Hin argamu	ኣይርከብን	Lama heli karo	
+Could not load that order	Ajaja sana fe'uu hin dandeenye	እቲ ትእዛዝ ክጽዓን ኣይተኻኣለን	Dalabkaas lama rari karin	
+View cart	Gaarii ilaali	ጋሪ ርአ	Eeg baasgadka	
+item	wanta	ሸቶ	shay	
+items	wantoota	ሸቶታት	shay	
+Clear filters	Calaltuu qulqulleessi	ማጻረይ ኣጽሪ	Tirtir shaandheynta	
+Good morning	Ganama gaarii	እንቋዕ ደሓን ኣምሰኹም	Subax wanaagsan	
+Good afternoon	Galgala gaarii	እንቋዕ ደሓን ሓዲርኩም	Galab wanaagsan	
+Good evening	Galgala gaarii	እንቋዕ ደሓን ኣምሰኹም	Habeen wanaagsan	
+What would you like today?	Har'a maal barbaaddaa?	ሎሚ እንታይ ትደሊ?	Maxaad rabtaa maanta?	
+Food	Nyaata	መግቢ	Cunto	
+Groceries	Nyaata mana keessaa	መግቢ ገዛ	Raashin	
+Pharmacy	Faarmaasii	መድሃኒት ቤት	Farmashiiyo	
+Ride	Imala	ጉዕዞ	Safar	
+min	daq	ደቒቕ	daq	
+From	Irraa	ካብ	Laga bilaabo	
+Search restaurants, food, cuisines…	Gabateewwan nyaataa, nyaata barbaadi…	ቤት መግቢ፡ መግቢ ድለ…	Raadi makhaayado, cunto…	
+Instant pickup	Fudhachuu battalumatti	ቅልጡፍ ምስናይ	Qaadasho degdeg ah	
+Be a Driver	Konkolaachisaa ta'i	ሾፌር ኩን	Noqo darawal	
+Earn with ETEL	ETEL waliin argadhu	ምስ ኢትኤል ረኽቦ	La kasbo ETEL	
+Restaurants & Shops	Mana nyaataa fi suuqaa	ቤት መግብን ድኳናትን	Makhaayado & Dukaamo	
+See all	Hunda ilaali	ኩሉ ርአ	Eeg dhammaan	
+Available Items	Wantoota jiran	ዘለዉ ሸቶታት	Alaabta diyaarka ah	
+View all	Hunda ilaali	ኩሉ ርአ	Eeg dhammaan	
+Become a Partner	Hiriyaa ta'i	መሻርኽቲ ኩን	Noqo lammaane	
+Become a Courier	Ergamaa ta'i	ኣብጻሒ ኩን	Noqo qaade	
+Contact	Quunnamtii	ርክብ	Xiriir	
+Privacy	Dhoksaa	ምስጢር	Asturnaan	
+My Orders	Ajajoota koo	ትእዛዛተይ	Dalabyadayda	
+Wallet & Payments	Korojoo fi kaffaltii	ቦርሳን ክፍሊትን	Boorsada & Lacag bixinta	
+My Cart	Gaarii koo	ጋሪየይ	Baasgadkayga	
+Subtotal	Waliigala xiqqaa	ንኡስ ጠቕላላ	Wadarta hoose	
+Delivery Fee	Kaffaltii geessii	ክፍሊት ኣቕርቦት	Khidmadda gaarsiinta	
+Service Charge	Kaffaltii tajaajilaa	ክፍሊት ኣገልግሎት	Khidmadda adeegga	
+Free	Bilisa	ነጻ	Bilaash	
+Order details	Ibsa ajajaa	ዝርዝር ትእዛዝ	Faahfaahinta dalabka	
+For	Kan	ንዅነ	Loogu talagalay	
+Note	Yaadannoo	መዘኻኸሪ	Xusuus	
+Courier tip	Kennaa ergamaa	ቲፕ ኣብጻሒ	Tip-ka qaadaha	
+Tip your courier	Ergamaa kee kennaa kenni	ንኣብጻሒኻ ቲፕ ሃብ	Tip ugu sii qaadahaaga	
+No tip	Kennaa hin jiru	ቲፕ የለን	Tip ma jiro	
+Custom	Kan ofii	ብመረጽካዮ	Gaar ah	
+Amount in ETB	Hanga ETB	መጠን ብ ETB	Qaddar ETB ah	
+Your saved places	Iddoowwan kee olkaa'aman	ዝተቐመጡ ቦታታትካ	Goobahaaga la kaydiyay	
+Save this address	Teessoo kana olkaa'i	እዚ ኣድራሻ ዕቀብ	Kaydi cinwaankan	
+Address saved	Teessoon olkaa'ame	ኣድራሻ ተቐሚጡ	Cinwaanka waa la kaydiyay	
+Could not save the address	Teessoo olkaa'uu hin dandeenye	ኣድራሻ ክቕመጥ ኣይተኻኣለን	Cinwaanka lama kaydin karin	
+Delivery Address *	Teessoo geessii *	ኣድራሻ ኣቕርቦት *	Cinwaanka gaarsiinta *	
+Recipient Name *	Maqaa fudhataa *	ስም ተቐባሊ *	Magaca qaataha *	
+Recipient Phone *	Bilbila fudhataa *	ተሌፎን ተቐባሊ *	Taleefanka qaataha *	
+Notes (optional)	Yaadannoo (dirqama miti)	መዘኻኸሪ (ኣማራጺ)	Xusuusyo (ikhtiyaari)	
+Payment Method	Mala kaffaltii	መንገዲ ክፍሊት	Habka lacag bixinta	
+No activity yet — your first delivered order earns points.	Sochiin hin jiru — ajajni kee jalqabaa dhiyaate qabxii argata.	ክሳብ ሕጂ ንጥፈት የለን — ቀዳማይ ዝቐረበ ትእዛዝካ ነጥቢ ይረኽብ።	Weli dhaqdhaqaaq ma jiro — dalabkaaga ugu horreeya ee la gaarsiiyo wuxuu helayaa dhibco.	
+Chat with the shop & courier	Suuqaa fi ergamaa waliin haasa'i	ምስ ድኳንን ኣብጻሒን ተዛረብ	La sheekee dukaanka & qaadaha	
+Turn on order alerts	Beeksisa ajajaa banaa	ምንጋር ትእዛዝ ኣንቅሕ	Shid ogeysiisyada dalabka	
+Notifications are blocked in your browser settings	Beeksisni qindaa'ina browser kee keessatti cufameera	ንግርታት ኣብ ቅዓት ብራውዘርካ ተዓጽዩ ኣሎ	Ogeysiisyada waa laga xiray dejinta browser-kaaga	
+Tap a star - it takes 10 seconds	Urjii tuqi - sekondii 10 fudhata	ኮኾብ ንካዕ - 10 ካልኢት ይወስድ	Taabo xiddig - waxay qaadataa 10 ilbiriqsi	
+Your order was cancelled. Our team will refund your payment.	Ajajni kee haqameera. Garee keenyi kaffaltii kee deebisa.	ትእዛዝካ ተሰሪዙ። ጉጅለና ክፍሊትካ ይምለስ።	Dalabkaaga waa la joojiyay. Kooxdeenu waxay kuu soo celinaysaa lacagtaada.	
+Based on recent deliveries - approximate	Geessii dhiyoo irratti hundaa'e - tilmaama	ኣብ ቀረባ ኣቕርቦታት ዝተመስርተ - ግምት	Ku salaysan gaarsiimihii dhawaa - qiyaas	
+Those items are no longer available	Wantoonni sun hin jiran	እቶም ሸቶታት ሕጂ የለዉን	Alaabtaas hadda ma jirto	
+added to your cart at today's prices	gaarii keetti gatii har'aatiin dabalame	ብዋጋ ሎሚ ናብ ጋሪኻ ተወሲኹ	lagu daray baasgadkaaga qiimaha maanta	
+unavailable, skipped	hin jiru, darbameera	ኣይርከብን፡ ሓሊፉ	lama heli karo, la ka booday	
+No matches for these filters	Calaltuuwwan kanaaf wanti hin argamne	ንዞም ማጻረያት ዝሰማማዕ የለን	Ma jiraan natiijooyin shaandheyntan	
+Place Order	Ajaja kaa'i	ትእዛዝ ኣእምት	Dalbo	
+Search address, shop, landmark…	Teessoo, suuqaa, mallattoo barbaadi…	ኣድራሻ፡ ድኳን፡ ምልክት ድለ…	Raadi cinwaan, dukaan, calaamad…	
+Full name	Maqaa guutuu	ምሉእ ስም	Magaca oo dhan	
+Special instructions…	Ajaja addaa…	ፍሉይ መምርሒ…	Tilmaamo gaar ah…	
+Ethiopian Wallet	Korojoo Itoophiyaa	ናይ ኢትዮጵያ ቦርሳ	Boorsada Itoobiya	
+Pay courier on delivery	Ergamaaf yeroo geessii kaffali	ንኣብጻሒ ብምቕራብ ክፈል	U bixi qaadaha marka la gaarsiiyo	
+Bank transfer	Dabarsa baankii	ምቕያር ባንኪ	Wareejin bangi	
+Trending	Kan ariifatee deemu	ዝተፈላለየ	La daawado badan	
+Top Rated	Madaallii ol'aanaa	ልዑል ደረጃ	Ugu sarreeya	
+Fast	Ariifataa	ቅልጡፍ	Degdeg	
+Budget	Baajata	በጀት	Miisaaniyad	
+Pizza	Piizzaa	ፒዛ	Pizza	
+Burgers	Burgerii	በርገር	Burger	
+Ethiopian	Itoophiyaa	ኢትዮጵያዊ	Itoobiya	
+Healthy	Fayya qabeessa	ጥዑይ	Caafimaad	
+Coffee	Buna	ቡን	Qaxwo	
+Bakery	Mana daakuu	ዳቦ ቤት	Makhaayad rooti	
+LIMITED	DAANGAAN	ድሩት	KOOBAN	
+TODAY	HAR'A	ሎሚ	MAANTA	
+FREE DELIVERY	GEESSII BILISAA	ነጻ ኣቕርቦት	GAARSIIN BILAASH AH	
+Orders above ETB 500	Ajajoota ETB 500 ol	ትእዛዛት ልዕሊ ETB 500	Dalabyo ka badan ETB 500	
+WEEKEND	DAMEE-DHUGAA	ቅነ-ሰሙን	FASAX	
+Weekend Special	Addaa dhuma torbanii	ፍሉይ ቅነ-ሰሙን	Gaar ah fasaxa	
+shops	suuqota	ድኳናት	dukaamo	
+Send a package	Qooda ergi	ፓኬጅ ስደድ	Dir xirmo	
+Anywhere in Hawassa · you pick the vehicle	Hawaasaa keessatti eessayyuu · konkolaataa ati filatta	ኣብ ዝዀነ ሃዋሳ · ተሽከርካሪ ባዕልኻ ትምርጽ	Meel kasta oo Hawaasa ah · adigu dooro gaadhiga	
+Where	Eessa	ኣበይ	Xaggee	
+Pay	Kaffali	ክፈል	Bixi	
+Pick up from	Irraa fudhadhu	ካብ ውሰድ	Ka qaad	
+Street, building, landmark	Daandii, ijaarsa, mallattoo	ጽርግያ፡ ህንጻ፡ ምልክት	Waddo, dhisme, calaamad	
+Use my location	Bakka koo fayyadami	ቦታይ ተጠቐም	Isticmaal goobtayda	
+Or choose the area	Ykn naannoo filadhu	ወይ ከባቢ ምረጽ	Ama dooro aagga	
+Choose area	Naannoo filadhu	ከባቢ ምረጽ	Dooro aagga	
+Saved places	Iddoowwan olkaa'aman	ዝተቐመጡ ቦታታት	Goobaha la kaydiyay	
+Sender name	Maqaa ergaa	ስም ሰዳዲ	Magaca diraha	
+Sender phone	Bilbila ergaa	ተሌፎን ሰዳዲ	Taleefanka diraha	
+Recipient name	Maqaa fudhataa	ስም ተቐባሊ	Magaca qaataha	
+Recipient phone	Bilbila fudhataa	ተሌፎን ተቐባሊ	Taleefanka qaataha	
+How big is it?	Hangam guddaa?	ክንደይ ዓቢ እዩ?	Intee leeg weyn yahay?	
+Weight (kg)	Ulfaatina (kg)	ክብደት (ኪ.ግ)	Miisaan (kg)	
+What is inside?	Maaltu keessa jira?	እንታይ ኣሎ ኣብ ውሽጢ?	Maxaa ku jira?	
+For example: books, clothes	Fknf: kitaabota, uffata	ንኣብነት: መጻሕፍቲ፡ ክዳውንቲ	Tusaale: buugaag, dhar	
+Note for the courier (optional)	Yaadannoo ergamaaf (dirqama miti)	መዘኻኸሪ ንኣብጻሒ (ኣማራጺ)	Xusuus qaadaha ah (ikhtiyaari)	
+How will you pay?	Akkamitti kaffalta?	ከመይ ክትኸፍል ኢኻ?	Sidee ayaad u bixinaysaa?	
+Pay the courier when they pick it up	Ergamaaf yeroo isaan fudhatan kaffali	ንኣብጻሒ ክወስዶ ከሎ ክፈል	U bixi qaadaha marka uu qaado	
+Etel Pay wallet	Korojoo Etel Pay	ቦርሳ ኢትኤል ክፍሊት	Boorsada Etel Pay	
+Pay from your wallet	Korojoo keetii kaffali	ካብ ቦርሳኻ ክፈል	Ka bixi boorsadaada	
+Pay online	Interneetiin kaffali	ኣብ መስመር ክፈል	Ku bixi onlayn	
+Summary	Cuunfaa	ጽጉም	Soo koobid	
+Book package	Qooda ajaji	ፓኬጅ ኣዝዝ	Dalbo xirmo	
+Getting prices…	Gatii argachaa jira…	ዋጋ የምጽእ ኣሎ…	Waxaa la helayaa qiimaha…	
+Package booked	Qoodni ajajame	ፓኬጅ ተኣዚዙ	Xirmada waa la dalbay	
+A courier with the vehicle you chose will pick it up.	Ergamaan konkolaataa ati filatte qabu ni fudhata.	ኣብጻሒ ብተሽከርካሪ ዝመረጽካዮ ይወስዶ።	Qaade leh gaadhiga aad dooratay ayaa qaadi doona.	
+Track package	Qooda hordofi	ፓኬጅ ተኸታተል	La soco xirmada	
+Try again	Irra deebi'i	ደጊምካ ፈትን	Isku day mar kale	
+Could not load. Check your connection.	Fe'uu hin dandeenye. Walqunnamtii kee ilaali.	ክጽዓን ኣይተኻኣለን። ርክብካ ርአ።	Lama rari karin. Hubi xiriirkaaga.	
+Enter the pickup address.	Teessoo ka'umsaa galchi.	ኣድራሻ መሳፈሪ ኣእትው።	Geli cinwaanka qaadashada.	
+Enter the drop-off address.	Teessoo ga'umsaa galchi.	ኣድራሻ መወረዲ ኣእትው።	Geli cinwaanka dejinta.	
+Enter the sender name.	Maqaa ergaa galchi.	ስም ሰዳዲ ኣእትው።	Geli magaca diraha.	
+Enter the recipient name.	Maqaa fudhataa galchi.	ስም ተቐባሊ ኣእትው።	Geli magaca qaataha.	
+Choose the package size.	Hanga qoodaa filadhu.	ዓቐን ፓኬጅ ምረጽ።	Dooro cabbirka xirmada.	
+Enter the weight in kg.	Ulfaatina kg'n galchi.	ክብደት ብኪ.ግ ኣእትው።	Geli miisaanka kg.	
+Choose a vehicle.	Konkolaataa filadhu.	ተሽከርካሪ ምረጽ።	Dooro gaadhiga.	
+Could not get your location.	Bakka kee argachuu hin dandeenye.	ቦታኻ ክርከብ ኣይተኻኣለን።	Goobtaada lama helin.	
+Package details	Ibsa qoodaa	ዝርዝር ፓኬጅ	Faahfaahinta xirmada	
+To	Gara	ናብ	U	
+Show this to the courier when they come to collect the package.	Ergamaan qooda fudhachuuf yommuu dhufu kana agarsiisi.	ኣብጻሒ ፓኬጅ ክወስድ ክመጽእ ከሎ እዚ ኣርእዮ።	U tus tan qaadaha marka uu yimaado inuu qaato xirmada.	
+Delivery journey	Imala geessii	ጉዕዞ ኣቕርቦት	Safarka gaarsiinta	
+Finding a courier	Ergamaa barbaadaa jira	ኣብጻሒ ይደልይ ኣሎ	Waxaa la raadinayaa qaade	
+Courier is heading to pick it up	Ergamaan fudhachuuf deemaa jira	ኣብጻሒ ክወስዶ ይኸይድ ኣሎ	Qaadaha ayaa u socda inuu qaado	
+On the way to the recipient	Gara fudhataa karaarra	ናብ ተቐባሊ ኣብ መገዲ	Wadada u socda qaataha	
+Cancelled	Haqame	ተሰሪዙ	La joojiyay	
+Courier accepted	Ergamaan fudhate	ኣብጻሒ ተቐቢሉ	Qaadaha wuu aqbalay	
+Total time	Yeroo waliigalaa	ጠቕላላ ግዜ	Wadarta waqtiga	
+Courier found in	Ergamaan argame keessatti	ኣብጻሒ ዝተረኽበ ኣብ	Qaade la helay muddo	
+Reached the pickup in	Bakka ka'umsaa ga'e keessatti	መሳፈሪ በጺሑ ኣብ	Wuxuu gaadhay qaadashada muddo	
+The trip took	Imalli fudhate	ጉዕዞ ወሲዱ	Safarku wuxuu qaatay	
+running now	amma hojiirra	ሕጂ ይሰርሕ ኣሎ	hadda socda	
+Light / Dark mode	Bifa ifaa / dukkanaa	ብርሃናዊ / ጸሊም ገጽ	Qaabka iftiinka / mugdiga	
+Choose on map	Kaartaa irratti filadhu	ኣብ ካርታ ምረጽ	Ka dooro khariidadda	
+Set the pickup point	Bakka ka'umsaa kaa'i	ነጥቢ መሳፈሪ ኣእምት	Deji meesha qaadashada	
+Set the drop-off point	Bakka ga'umsaa kaa'i	ነጥቢ መወረዲ ኣእምት	Deji meesha dejinta	
+Search a street or place	Daandii ykn iddoo barbaadi	ጽርግያ ወይ ቦታ ድለ	Raadi waddo ama meel	
+Confirm pickup here	Bakka ka'umsaa as mirkaneessi	መሳፈሪ ኣብዚ ኣረጋግጽ	Halkan ku xaqiiji qaadashada	
+Confirm drop-off here	Bakka ga'umsaa as mirkaneessi	መወረዲ ኣብዚ ኣረጋግጽ	Halkan ku xaqiiji dejinta	
+Finding the address…	Teessoo barbaadaa jira…	ኣድራሻ ይደልይ ኣሎ…	Waxaa la raadinayaa cinwaanka…	
+Move the map to place the pin	Kaartaa socodsiisi pinii kaa'uuf	ፒን ንምቕማጥ ካርታ ኣንቅስቅስ	Dhaqaaji khariidadda si aad u dhigto pin-ka	
+Loading the map…	Kaartaa fe'aa jira…	ካርታ ይጽዓን ኣሎ…	Waxaa la raraya khariidadda…	
+The map could not load. Check your connection.	Kaartaan fe'amuu hin dandeenye. Walqunnamtii kee ilaali.	እቲ ካርታ ክጽዓን ኣይተኻኣለን። ርክብካ ርአ።	Khariidadda lama rari karin. Hubi xiriirkaaga.	
+My location	Bakka koo	ቦታይ	Goobtayda	
+Recipient	Fudhataa	ተቐባሊ	Qaataha	
+Pinned on the map	Kaartaa irratti kaa'ame	ኣብ ካርታ ተቐሚጡ	Lagu dhejiyay khariidadda	
+Documents	Sanadoota	ሰነዳት	Dukumeentiyo	
+Clothes	Uffata	ክዳውንቲ	Dhar	
+Electronics	Elektirooniksii	ኤሌክትሮኒክስ	Qalab elektaroonik ah	
+Gift	Kennaa	ህያብ	Hadiyad	
+Less weight	Ulfaatina xiqqaa	ትሑት ክብደት	Miisaan yar	
+More weight	Ulfaatina caalu	ዝዓበየ ክብደት	Miisaan badan	
+Safe hand-over with PINs	Kennuu amansiisaa PIN'n	ውሑስ ርክብ ብ PIN	Gacan-ka-gacan ammaan ah oo PIN leh	
+Best price	Gatii gaarii	ዝሓሸ ዋጋ	Qiimaha ugu fiican	
+Delivery speed	Saffisa geessii	ቅልጣፈ ኣቕርቦት	Xawaaraha gaarsiinta	
+Standard	Idilee	መዐቀኒ	Caadi	
+Express	Ariifataa	ቅልጡፍ	Degdeg ah	
+Delivery fee	Kaffaltii geessii	ክፍሊት ኣቕርቦት	Khidmadda gaarsiinta	
+Express extra	Dabalataa ariifataa	ተወሳኺ ቅልጡፍ	Dheeraad degdeg ah	
+Telebirr	Telebirr	ተሌብር	Telebirr	
+Abyssinia Bank	Baankii Abyssinia	ባንኪ ኣቢሲንያ	Bangiga Abyssinia	
+Commercial Bank of Ethiopia	Baankii Daldalaa Itoophiyaa	ንግዳዊ ባንኪ ኢትዮጵያ	Bangiga Ganacsiga Itoobiya	
+Not available yet	Amma hin jiru	ክሳብ ሕጂ ኣይርከብን	Weli lama heli karo	
+Account	Akkaawuntii	ኣካውንት	Akoon	
+Transfer reference number	Lakkoofsa wabii dabarsaa	ቁጽሪ ምጥቃስ ምቕያር	Lambarka tixraaca wareejinta	
+Courier location paused - it updates when their phone reconnects	Bakki ergamaa addaan citeera - bilbilli isaa yoo deebi'e haaromfama	ቦታ ኣብጻሒ ጠጠው ኢሉ - ተሌፎኑ ምስ ተራኸበ ይሓድስ	Goobta qaadaha waa joogsatay - way cusboonaysiin marka taleefankiisa dib isku xirmo	
+Scan Courier's QR to Confirm Delivery	QR ergamaa scan godhi geessii mirkaneessuuf	QR ኣብጻሒ ስካን ግበር ኣቕርቦት ንምርግጋጽ	Iskaan QR-ka qaadaha si aad u xaqiijiso gaarsiinta	
+Scan Courier's QR Code	QR koodii ergamaa scan godhi	ኮድ QR ኣብጻሒ ስካን ግበር	Iskaan koodhka QR ee qaadaha	
+Recommended · Instant	Kan filatame · Battalumatti	ዝተመክሮ · ቅልጡፍ	La xushay · Degdeg	
+Noodles	Noodlii	ኑድል	Noodhal	
+Value of the contents, ETB (optional)	Gatii wantoota keessa jiranii, ETB (dirqama miti)	ዋጋ ዘለዎ ኣብ ውሽጢ፡ ETB (ኣማራጺ)	Qiimaha waxa ku jira, ETB (ikhtiyaari)	
+Telebirr, CBE, bank or card (Chapa)	Telebirr, CBE, baankii ykn kaardii (Chapa)	ተሌብር፡ CBE፡ ባንኪ ወይ ካርድ (ቻፓ)	Telebirr, CBE, bangi ama kaarka (Chapa)	
+Pick the pickup place on the map or choose its area.	Bakka ka'umsaa kaartaa irratti filadhu ykn naannoo isaa filadhu.	መሳፈሪ ቦታ ኣብ ካርታ ምረጽ ወይ ከባቢኡ ምረጽ።	Ka dooro meesha qaadashada khariidadda ama dooro aaggeeda.	
+Pick the drop-off place on the map or choose its area.	Bakka ga'umsaa kaartaa irratti filadhu ykn naannoo isaa filadhu.	መወረዲ ቦታ ኣብ ካርታ ምረጽ ወይ ከባቢኡ ምረጽ።	Ka dooro meesha dejinta khariidadda ama dooro aaggeeda.	
+Enter a valid sender mobile number.	Lakkoofsa bilbilaa ergaa sirrii galchi.	ቅኑዕ ቁጽሪ ተሌፎን ሰዳዲ ኣእትው።	Geli lambar taleefan sax ah oo diraha ah.	
+Enter a valid recipient mobile number.	Lakkoofsa bilbilaa fudhataa sirrii galchi.	ቅኑዕ ቁጽሪ ተሌፎን ተቐባሊ ኣእትው።	Geli lambar taleefan sax ah oo qataha ah.	
+Say what is inside (a few words).	Wanta keessa jiru himi (jecha muraasa).	እንታይ ኣብ ውሽጢ ከም ዘሎ ንገር (ሒደት ቃላት)።	Sheeg waxa ku jira (erayo yar).	
+Please confirm the package has no prohibited items.	Maaloo qoodni wantoota dhorkaman akka hin qabne mirkaneessi.	በጃኹም እቲ ፓኬጅ ዝተኸልከሉ ሸቶታት ከም ዘይብሉ ኣረጋግጹ።	Fadlan xaqiiji in xirmadu aanay ku jirin alaab mamnuuc ah.	
+since you booked	erga ajajtee	ካብ ዝኣዘዝካ	tan iyo markaad dalbatay	
+This spot is outside Hawassa. Move the pin closer to the city.	Iddoon kun Hawaasaa ala jira. Pinii gara magaalaatti dhiyeessi.	እዚ ቦታ ካብ ሃዋሳ ወጻኢ እዩ። ፒን ናብ ከተማ ኣቕርብ።	Goobtan waxay ka baxsan tahay Hawaasa. U dhaweey pin-ka magaalada.	
+Too small for this package	Qooda kanaaf xiqqaadha	ንዚ ፓኬጅ ኣዝዩ ንእሽቶ	Aad ugu yar xirmadan	
+Pay from your Telebirr (dial *150#)	Telebirr keetii kaffali (*150# waamii)	ካብ ተሌብርካ ክፈል (*150# ደውል)	Ka bixi Telebirr-kaaga (wac *150#)	
+Bank transfer, we check your reference	Dabarsa baankii, wabii kee ilaalla	ምቕያር ባንኪ፡ ምጥቃስካ ንርእይ	Wareejin bangi, waan hubinaynaa tixraacaaga	
+Your Telebirr number	Lakkoofsa Telebirr kee	ቁጽሪ ተሌብርካ	Lambarkaaga Telebirr	
+After you book, dial *150# and pay. We confirm your payment.	Erga ajajtee booda, *150# waamiitii kaffali. Kaffaltii kee ni mirkaneessina.	ምስ ኣዘዝካ፡ *150# ደውልን ክፈልን። ክፍሊትካ ኣረጋግጽ ኢና።	Marka aad dalbato, wac *150# oo bixi. Waan xaqiijinaynaa lacagtaada.	
+Send the money to this account, then type the reference number	Maallaqa akkaawuntii kanatti ergi, achiis lakkoofsa wabii galchi	ገንዘብ ናብዚ ኣካውንት ስደድ፡ ድሕሪኡ ቁጽሪ ምጥቃስ ጸሓፍ	U dir lacagta akoonkan, ka dibna ku qor lambarka tixraaca	
+We check the payment within 1-2 hours.	Kaffaltii sa'aatii 1-2 keessatti ilaalla.	ክፍሊት ኣብ 1-2 ሰዓታት ንርእዮ።	Waxaan hubinaynaa lacag bixinta 1-2 saacadood gudahood.	
+Enter your Telebirr phone number.	Lakkoofsa bilbilaa Telebirr kee galchi.	ቁጽሪ ተሌፎን ተሌብርካ ኣእትው።	Geli lambarka taleefanka Telebirr.	
+Enter the reference number of your bank transfer.	Lakkoofsa wabii dabarsa baankii kee galchi.	ቁጽሪ ምጥቃስ ምቕያር ባንክካ ኣእትው።	Geli lambarka tixraaca wareejinta bangigaaga.	
+Dial *150# and pay with Telebirr. We confirm your payment.	*150# waamiitii Telebirr'n kaffali. Kaffaltii kee ni mirkaneessina.	*150# ደውል ብተሌብር ክፈል። ክፍሊትካ ኣረጋግጽ ኢና።	Wac *150# oo ku bixi Telebirr. Waan xaqiijinaynaa lacagtaada.	
+We will check your bank transfer within 1-2 hours.	Dabarsa baankii kee sa'aatii 1-2 keessatti ilaalla.	ምቕያር ባንክካ ኣብ 1-2 ሰዓታት ንርእዮ።	Waxaan hubin doonaa wareejinta bangigaaga 1-2 saacadood gudahood.	
+What happens next	Itti aanee maaltu ta'a	ቀጺሉ እንታይ ይኸውን	Maxaa xiga	
+A nearby courier accepts your package.	Ergamaan naannoo jiru qooda kee fudhata.	ጥቓኻ ዘሎ ኣብጻሒ ፓኬጅካ ይቕበል።	Qaade u dhow ayaa aqbalaya xirmadaada.	
+Give the pickup PIN to the courier when they arrive.	Ergamaan yeroo dhufu PIN ka'umsaa kenniif.	ኣብጻሒ ክመጽእ ከሎ PIN መሳፈሪ ሃቦ።	U sii PIN-ka qaadashada qaadaha marka uu yimaado.	
+Give the delivery PIN to the recipient to confirm the hand-over.	PIN geessii fudhataaf kenni dabarsa mirkaneessuuf.	PIN ኣቕርቦት ንተቐባሊ ሃቦ ርክብ ንምርግጋጽ።	U sii PIN-ka gaarsiinta qaataha si uu u xaqiijiyo gacan-ka-gacan.	
+Address book	Kitaaba teessoo	መጽሓፍ ኣድራሻ	Buugga cinwaannada	
+Save to address book	Kitaaba teessoo keessatti olkaa'i	ናብ መጽሓፍ ኣድራሻ ዕቀብ	Ku kaydi buugga cinwaannada	
+Use	Fayyadami	ተጠቐም	Isticmaal	
+Delete	Haqi	ደምስስ	Tirtir	
+Tap again to delete	Haquuf irra deebi'ii tuqi	ንምድምሳስ ዳግም ንካዕ	Mar kale taabo si aad u tirtirto	
+Could not load your address book.	Kitaaba teessoo kee fe'uu hin dandeenye.	መጽሓፍ ኣድራሻኻ ክጽዓን ኣይተኻኣለን።	Buugga cinwaannadaada lama rari karin.	
+Saved to your address book.	Kitaaba teessoo keessatti olkaa'ameera.	ኣብ መጽሓፍ ኣድራሻኻ ተቐሚጡ።	Waa lagu kaydiyay buugga cinwaannadaada.	
+Fill the name, phone and address first.	Duraan maqaa, bilbilaa fi teessoo guuti.	ቅድም ስም፡ ተሌፎንን ኣድራሻን መልእ።	Marka hore buuxi magaca, taleefanka iyo cinwaanka.	
+Could not save. Try again.	Olkaa'uu hin dandeenye. Irra deebi'i.	ክቕመጥ ኣይተኻኣለን። ደጊምካ ፈትን።	Lama kaydin karin. Isku day mar kale.	
+Deleted.	Haqameera.	ተደምሲሱ።	La tirtiray.	
+Choose who sends it	Eenyutu erga filadhu	መን ከም ዝሰድዶ ምረጽ	Dooro cidda dirayso	
+Choose who gets it	Eenyutu fudhata filadhu	መን ከም ዝቕበሎ ምረጽ	Dooro cidda helayso	
+Send again	Irra deebi'ii ergi	ደጊምካ ስደድ	Dir mar kale	
+Start from a package you sent before	Qooda duraan ergite irraa eegali	ካብ ቅድሚ ሕጂ ዝሰደድካዮ ፓኬጅ ጀምር	Ka bilow xirmo hore u dirtay	
+My packages	Qoodota koo	ፓኬጃተይ	Xirmooyinkayga	
+No packages here yet.	Qoodni as hin jiru ammaaf.	ክሳብ ሕጂ ፓኬጅ የለን።	Weli xirmo halkan ma jirto.	
+Could not load your packages.	Qoodota kee fe'uu hin dandeenye.	ፓኬጃትካ ክጽዓን ኣይተኻኣለን።	Xirmooyinkaaga lama rari karin.	
+Courier on the way	Ergamaan karaarra jira	ኣብጻሒ ኣብ መገዲ	Qaade ayaa soo socda	
+Photo from the courier	Suuraa ergamaa irraa	ስእሊ ካብ ኣብጻሒ	Sawir ka yimid qaadaha	
+Taken by the courier when they delivered your order.	Ergamaan yeroo ajaja kee geessu kaase.	ኣብጻሒ ትእዛዝካ ምስ ኣቕረበ ዝወሰዶ።	Waxaa qaaday qaadaha marka uu gaarsiiyay dalabkaaga.	
+View photo	Suuraa ilaali	ስእሊ ርአ	Eeg sawirka	
+Loading the photo…	Suuraa fe'aa jira…	ስእሊ ይጽዓን ኣሎ…	Waxaa la raraya sawirka…	
+Could not load the photo. Try again.	Suuraa fe'uu hin dandeenye. Irra deebi'i.	ስእሊ ክጽዓን ኣይተኻኣለን። ደጊምካ ፈትን።	Sawirka lama rari karin. Isku day mar kale.	
+Photo of the delivered package	Suuraa qooda dhiyaate	ስእሊ ዝቐረበ ፓኬጅ	Sawirka xirmada la gaarsiiyay	
+ETEL DELIVERY	ETEL GEESSII	ኢትኤል ኣቕርቦት	ETEL GAARSIIN	
+Package waybill	Waraqaa karaa qoodaa	ወረቐት ፓኬጅ	Waraaqda xirmada	
+Tracking number	Lakkoofsa hordoffii	ቁጽሪ ክትትል	Lambarka la-socodka	
+Speed	Saffisa	ቅልጣፈ	Xawaare	
+Delivery timeline	Ssadarkaa geessii	ጊዜ ኣቕርቦት	Jadwalka gaarsiinta	
+Courier on the way to pick it up	Ergamaan fudhachuuf karaarra jira	ኣብጻሒ ክወስዶ ኣብ መገዲ	Qaade ayaa u socda inuu qaado	
+Package picked up	Qoodni fudhatame	ፓኬጅ ተወሲዱ	Xirmada waa la qaaday	
+Copy number	Lakkoofsa garagalchi	ቁጽሪ ቅዳሕ	Koobi lambarka	
+Receipt / PDF	Ragaa / PDF	ቅብሊት / PDF	Rasiid / PDF	
+Tracking number copied	Lakkoofsi hordoffii garagalfameera	ቁጽሪ ክትትል ተቐዲሑ	Lambarka la-socodka waa la koobiyeeyay	
+kg	kg	ኪ.ግ	kg	
+Chapa (online)	Chapa (interneetiin)	ቻፓ (ኣብ መስመር)	Chapa (onlayn)	
+CBE	CBE	CBE	CBE	
+Tracking link	Linkii hordoffii	ሊንክ ክትትል	Xiriirka la-socodka	
+Share tracking	Hordoffii qoodi	ክትትል ኣካፍል	Wadaag la-socodka	
+Share tracking link	Linkii hordoffii qoodi	ሊንክ ክትትል ኣካፍል	Wadaag xiriirka la-socodka	
+Tracking link copied	Linkiin hordoffii garagalfameera	ሊንክ ክትትል ተቐዲሑ	Xiriirka la-socodka waa la koobiyeeyay	
+Report a problem	Rakkoo gabaasi	ጸገም ኣመልክት	Soo sheeg dhibaato	
+Report a problem with this package	Rakkoo qooda kanaa gabaasi	ብዛዕባ እዚ ፓኬጅ ጸገም ኣመልክት	Soo sheeg dhibaato xirmadan	
+What happened?	Maaltu ta'e?	እንታይ ኮነ?	Maxaa dhacay?	
+Send report	Gabaasa ergi	ጸብጻብ ስደድ	Dir warbixinta	
+Thank you. We got your report and will look into it.	Galatoomi. Gabaasa kee argannee ni ilaalla.	የቐንየልና። ጸብጻብካ ተቐቢልና ክንርእዮ ኢና።	Mahadsanid. Waan helnay warbixintaada oo waan eegi doonaa.	
+Could not send the report. Try again.	Gabaasa erguu hin dandeenye. Irra deebi'i.	ጸብጻብ ክሰደድ ኣይተኻኣለን። ደጊምካ ፈትን።	Warbixinta lama dirin karin. Isku day mar kale.	
+It never arrived	Hin gaane	ኣይበጸሐን	Weligeed ma imaan	
+It came late	Turee dhufe	ደንጉዩ መጸ	Waa daahay	
+It is damaged	Miidhameera	ተበላሽዩ	Waa jabay	
+Something is missing	Wanti hir'ateera	ገለ ነገር ጎዲሉ	Waxaa maqan wax	
+The courier was a problem	Ergamaan rakkoo ture	ኣብጻሒ ጸገም ነይሩ	Qaadaha ayaa dhibaato ahaa	
+Something else	Wanti biraa	ካልእ ነገር	Wax kale	
+Dashboard	Gabatee	ዳሽቦርድ	Shabakadda	
+My Services	Tajaajila koo	ኣገልግሎታተይ	Adeegyadayda	
+QR Scanner	Iskaanarii QR	ስካነር QR	Iskaanka QR	
+Analytics	Xiinxala	ትንተና	Falanqeyn	
+Reviews	Yaadaawwan	ርእይቶታት	Faallooyin	
+Payments	Kaffaltiiwwan	ክፍሊታት	Lacag bixin	
+Settings	Qindaa'ina	ቅዓታት	Dejin	
+Staff & Roles	Hojjettoota fi gahee	ሰራሕተኛታትን ግዴታታትን	Shaqaale & Doorar	
+Service Provider	Kennaa tajaajilaa	ኣገልጋሊ	Bixiyaha adeegga	
+Service Dashboard	Gabatee tajaajilaa	ዳሽቦርድ ኣገልግሎት	Shabakadda adeegga	
+Welcome Back	Baga nagaan deebitan	እንቋዕ ብደሓን ተመለስካ	Ku soo dhowow mar kale	
+Here's what's happening with your business today	Har'a daldalli kee akkamitti jira	ሎሚ ኣብ ንግድካ እንታይ ይካየድ ኣሎ	Waa kan wixii ka socda ganacsigaaga maanta	
+Today's Orders	Ajajoota har'aa	ትእዛዛት ሎሚ	Dalabyada maanta	
+Completed	Xumurame	ተወዲኡ	Dhammaaday	
+Total Earnings	Argama waliigalaa	ጠቕላላ ኣታዊ	Wadarta dakhliga	
+Recent Orders	Ajajoota dhiyoo	ቀረባ ትእዛዛት	Dalabyadii dhawaa	
+View All	Hunda ilaali	ኩሉ ርአ	Eeg dhammaan	
+No orders yet	Ajajni hin jiru ammaaf	ክሳብ ሕጂ ትእዛዝ የለን	Weli dalab ma jiro	
+Orders Management	Bulchiinsa ajajaa	ምምሕዳር ትእዛዛት	Maaraynta dalabyada	
+Track and manage all your orders	Ajajoota kee hunda hordofii bulchi	ኩሎም ትእዛዛትካ ተኸታተልን ኣመሓድርን	La soco oo maaree dhammaan dalabyadaada	
+Loading orders...	Ajajoota fe'aa jira...	ትእዛዛት ይጽዓኑ ኣለዉ...	Waxaa la raraya dalabyada...	
+vs yesterday	kaleessa waliin	ምስ ትካቶ	la mid ah shalay	
+vs last week	torban darbe waliin	ምስ ዝሓለፈ ሰሙን	la mid ah usbuucii hore	
+vs last month	ji'a darbe waliin	ምስ ዝሓለፈ ወርሒ	la mid ah bishii hore	
+nothing to compare yet	wanti wal-bira qabuu hin jiru	ክሳብ ሕጂ ዘወዳድር የለን	weli waxba lama barbardhigin	
+no data yet	daataan hin jiru	ክሳብ ሕጂ ዳታ የለን	weli xog ma jirto	
+Pending	Eegaa jira	ዝጽበ	Sugaya	
+Preparing	Qophaa'aa jira	ይዳሎ ኣሎ	Waa la diyaarinayaa	
+Ready for Pickup	Fudhachuuf qophii	ንምውሳድ ድሉው	Diyaar u ah qaadasho	
+Courier On Way	Ergamaan karaarra	ኣብጻሒ ኣብ መገዲ	Qaade ayaa soo socda	
+Picked Up	Fudhatame	ተወሲዱ	La qaaday	
+In Transit	Karaarra	ኣብ መገዲ	Marinta ku jira	
+Start Preparing	Qophii eegali	ምድላው ጀምር	Bilow diyaarinta	
+Decline order	Ajaja didi	ትእዛዝ ኣይትቕበል	Diid dalabka	
+Decline this order?	Ajaja kana didu?	ነዚ ትእዛዝ ኣይትቕበሎ?	Ma diidaysaa dalabkan?	
+Add a note for the customer (optional)	Yaadannoo maamilaaf dabali (dirqama miti)	ንዓሚል መዘኻኸሪ ወስኽ (ኣማራጺ)	Ku dar xusuus macmiilka ah (ikhtiyaari)	
+Keep the order	Ajaja qabadhu	ትእዛዝ ሓዝ	Ilaali dalabka	
+An item is out of stock	Wanti kuufama keessaa dhumeera	ሓደ ሸቶ ተወዲኡ	Alaab ayaa dhammaatay	
+Too busy right now	Amma baay'ee dhiibameera	ሕጂ ኣዝዩ ተጸቢቡ	Aad bay u mashquulsan tahay hadda	
+We are closing	Cufaa jirra	ንዕጾ ኣለና	Waan xirnaa	
+Online — accepting orders	Interneetii irra — ajaja fudhachaa jira	ኣብ መስመር — ትእዛዛት ይቕበል ኣሎ	Onlayn — waa aqbalayaa dalabyada	
+Offline — tap to go online	Interneetii alaa — onlayn ta'uuf tuqi	ኣብ መስመር የለን — ንምእታው ንካዕ	Offline — taabo si aad onlayn u noqoto	
+Print	Maxxansi	ሕተም	Daabac	
+Items	Wantoota	ሸቶታት	Alaabta	
+ITEMS TOTAL	WALIIGALA WANTOOTAA	ጠቕላላ ሸቶታት	WADARTA ALAABTA	
+Order	Ajaja	ትእዛዝ	Dalab	
+Placed	Kaa'ame	ተሰዲዱ	La gudbiyay	
+No courier yet	Ergamaan hin jiru ammaaf	ክሳብ ሕጂ ኣብጻሒ የለን	Weli qaade ma jiro	
+reviews	yaadaawwan	ርእይቶታት	faallooyin	
+QR Code Scanner	Iskaanarii koodii QR	ስካነር ኮድ QR	Iskaanka koodhka QR	
+Scan pickup and delivery QR codes	QR koodii fudhachuu fi geessii scan godhi	ኮዳት QR መሳፈሪን ኣቕርቦትን ስካን ግበር	Iskaan koodhadhka QR ee qaadashada iyo gaarsiinta	
+Delivery	Geessii	ኣቕርቦት	Gaarsiin	
+Start Camera & Scan	Kaameeraa eegaluu fi scan godhi	ካሜራ ጀምርን ስካንን	Bilow kamarada oo iskaan	
+Sales Report	Gabaasa gurgurtaa	ጸብጻብ ሽያጭ	Warbixinta iibka	
+Last 7 days	Guyyoota 7 darban	ዝሓለፉ 7 መዓልታት	7 maalmood ee la soo dhaafay	
+Last 30 days	Guyyoota 30 darban	ዝሓለፉ 30 መዓልታት	30 maalmood ee la soo dhaafay	
+Last 90 days	Guyyoota 90 darban	ዝሓለፉ 90 መዓልታት	90 maalmood ee la soo dhaafay	
+All time	Yeroo hundaa	ኩሉ ግዜ	Waqti kasta	
+Could not load the report.	Gabaasa fe'uu hin dandeenye.	ጸብጻብ ክጽዓን ኣይተኻኣለን።	Warbixinta lama rari karin.	
+yesterday	kaleessa	ትካቶ	shalay	
+no change	jijjiirama hin jiru	ለውጢ የለን	isbeddel ma jiro	
+cancelled	haqame	ተሰሪዙ	la joojiyay	
+Sales	Gurgurtaa	ሽያጭ	Iibka	
+Avg order	Giddu galeessa ajajaa	ማእከላይ ትእዛዝ	Celceliska dalabka	
+delivered orders	ajajoota dhiyaatan	ዝቐረቡ ትእዛዛት	dalabyo la gaarsiiyay	
+Sales per day	Gurgurtaa guyyaatti	ሽያጭ ብመዓልቲ	Iibka maalin kasta	
+Orders per day	Ajajoota guyyaatti	ትእዛዛት ብመዓልቲ	Dalabyo maalin kasta	
+orders	ajajoota	ትእዛዛት	dalabyo	
+Busy hours	Sa'aatii dhiibama	ዝተጸበቡ ሰዓታት	Saacadaha mashquulka ah	
+Top items	Wantoota ol'aanoo	ዝለዓሉ ሸቶታት	Alaabta ugu sarreysa	
+sold	gurgurame	ዝተሸጠ	la iibiyay	
+No orders in this period yet.	Yeroo kana keessatti ajajni hin jiru.	ኣብዚ ግዜ ትእዛዝ የለን።	Muddadan dalab ma jiro.	
+Customer Reviews	Yaada maamilaa	ርእይቶ ዓማዊል	Faallooyinka macmiisha	
+Could not open the receipt. Allow pop-ups and try again.	Ragaa banuu hin dandeenye. Pop-up hayyami irra deebi'i.	ቅብሊት ክኽፈት ኣይተኻኣለን። ፖፕ-ኣፕ ፍቐድ ደጊምካ ፈትን።	Rasiidka lama furi karin. Oggolow pop-up oo isku day mar kale.	
+Tell us more (optional)	Nutti himi (dirqama miti)	ዝያዳ ንገረና (ኣማራጺ)	Noo sheeg wax dheeraad ah (ikhtiyaari)	
+unknown	hin beekamne	ዘይፍለጥ	aan la garanayn	
+Done Preparing — Notify Courier & Customer	Qophiin xumurame — Ergamaa fi maamilaaf beeksisi	ምድላው ተወዲኡ — ንኣብጻሒን ዓሚልን ንግር	Diyaarintu way dhammaatay — Ogeysii qaadaha & macmiilka	
+How your shop is doing — live from your orders	Suuqni kee akkamitti jira — ajaja keetii kallattiin	ድኳንካ ከመይ ኣሎ — ብቀጥታ ካብ ትእዛዛትካ	Sida dukaankaagu u socdo — tooska ka timid dalabyadaada	
+Could not load reviews.	Yaadaawwan fe'uu hin dandeenye.	ርእይቶታት ክጽዓኑ ኣይተኻኣለን።	Faallooyinka lama rari karin.	
+Average	Giddu galeessa	ማእከላይ	Celcelis	
+all time	yeroo hundaa	ኩሉ ግዜ	waqti kasta	
+Need a reply	Deebii barbaachisa	መልሲ የድልዮ	U baahan jawaab	
+all answered	hundi deebifameera	ኩሉ ተመሊሱ	dhammaan waa la jawaabay	
+Customer	Maamilaa	ዓሚል	Macmiil	
+Your reply	Deebii kee	መልስኻ	Jawaabtaada	
+Update reply	Deebii haaromsi	መልሲ ሓድስ	Cusboonaysii jawaabta	
+Reply	Deebisi	መልሲ	Jawaab	
+Write a reply first	Duraan deebii barreessi	ቅድም መልሲ ጸሓፍ	Marka hore qor jawaab	
+Reply sent	Deebiin ergameera	መልሲ ተላኢኹ	Jawaabta waa la diray	
+Payment Management	Bulchiinsa kaffaltii	ምምሕዳር ክፍሊት	Maaraynta lacag bixinta	
+Financial Report	Gabaasa maallaqaa	ፋይናንሳዊ ጸብጻብ	Warbixinta maaliyadda	
+Could not load report.	Gabaasa fe'uu hin dandeenye.	ጸብጻብ ክጽዓን ኣይተኻኣለን።	Warbixinta lama rari karin.	
+Confirmed revenue	Galii mirkanaa'e	ዝተረጋገጸ ኣታዊ	Dakhli la xaqiijiyay	
+Awaiting payment	Kaffaltii eegaa jira	ክፍሊት ይጽበ	Sugaya lacag bixin	
+paid	kaffalame	ተኸፊሉ	la bixiyay	
+unpaid	hin kaffalamne	ኣይተኸፍለን	aan la bixin	
+Bank Account	Akkaawuntii baankii	ኣካውንት ባንኪ	Akoonka bangiga	
+Not configured	Hin qindaa'ne	ኣይተዳለወን	Lama habeynin	
+Update Payment Method	Mala kaffaltii haaromsi	መንገዲ ክፍሊት ሓድስ	Cusboonaysii habka lacag bixinta	
+My Services & Items	Tajaajila fi wantoota koo	ኣገልግሎትን ሸቶታትን	Adeegyadayda & Alaabta	
+Add and manage the products or services you offer	Oomishaalee ykn tajaajila ati dhiyeessitu dabalii bulchi	ዘቕርቦም ዝውጽኢትን ኣገልግሎትን ወስኽን ኣመሓድርን	Ku dar oo maaree alaabta ama adeegyada aad bixiso	
+Item List	Tarree wantootaa	ዝርዝር ሸቶታት	Liiska alaabta	
+Pick from catalog	Kaataloogii irraa filadhu	ካብ ካታሎግ ምረጽ	Ka dooro buug-gacmeedka	
+Add custom item	Wanta addaa dabali	ብዓል ፍቓድ ሸቶ ወስኽ	Ku dar alaab gaar ah	
+Import CSV	CSV galchi	CSV ኣእትው	Soo geli CSV	
+CSV template	Fakkeenya CSV	ቅዲ CSV	Qaabka CSV	
+Loading items…	Wantoota fe'aa jira…	ሸቶታት ይጽዓኑ ኣለዉ…	Waxaa la raraya alaabta…	
+Loading menu items...	Wantoota tarreeffamaa fe'aa jira...	ዝርዝር መግቢ ይጽዓን ኣሎ...	Waxaa la raraya alaabta liiska...	
+Image	Fakkii	ስእሊ	Sawir	
+Name	Maqaa	ስም	Magac	
+Category	Ramaddii	ምድብ	Qaybta	
+Price	Gatii	ዋጋ	Qiimo	
+Stock	Kuufama	ዝተረፈ	Kayd	
+Status	Haala	ኩነታት	Xaalad	
+Actions	Gochaalee	ተግባራት	Ficillo	
+Available	Jira	ዘሎ	Diyaar	
+Hidden	Dhokatee	ዝተሓብአ	La qariyay	
+Edit	Gulaali	ኣርም	Wax ka beddel	
+Settings & Configuration	Qindaa'ina fi qophii	ቅዓትን ምድላውን	Dejin & Habeyn	
+Manage your business profile and preferences	Piroofaayilii daldalaa fi filannoo kee bulchi	መንነት ንግድካን ምርጫታትካን ኣመሓድር	Maaree astaanta ganacsigaaga iyo doorashooyinka	
+Cover photo	Suuraa fuula duraa	ስእሊ ሽፋን	Sawirka dahaadhka	
+Choose cover photo	Suuraa fuula duraa filadhu	ስእሊ ሽፋን ምረጽ	Dooro sawirka dahaadhka	
+Business Information	Odeeffannoo daldalaa	ሓበሬታ ንግዲ	Macluumaadka ganacsiga	
+Business Name	Maqaa daldalaa	ስም ንግዲ	Magaca ganacsiga	
+Your business name	Maqaa daldalaa kee	ስም ንግድካ	Magaca ganacsigaaga	
+Business Type	Gosa daldalaa	ዓይነት ንግዲ	Nooca ganacsiga	
+Restaurant	Mana nyaataa	ቤት መግቢ	Makhaayad	
+Grocery	Suuqa nyaataa	ዱካን ሸቀጣሸቀጥ	Dukaanka raashinka	
+Retail Store	Suuqa gurgurtaa	ድኳን ዕዳጋ	Dukaanka tafaariiqda	
+Cafe	Kaafee	ካፌ	Makhaayad qaxwo	
+Fast Food	Nyaata ariifataa	ቅልጡፍ መግቢ	Cunto degdeg ah	
+Laundry	Miicaa	ሽቶ ሰሓቢ	Dharka dhaqista	
+Fuel Station	Ba'aa boba'aa	ነዳዲ ጣብያ	Xaruntii shidaalka	
+Custom / Other	Kan ofii / Kan biraa	ብመረጽካዮ / ካልእ	Gaar ah / Kale	
+Zone / Address	Naannoo / Teessoo	ከባቢ / ኣድራሻ	Aag / Cinwaan	
+Your service zone	Naannoo tajaajilaa kee	ከባቢ ኣገልግሎትካ	Aagga adeeggaaga	
+Payment Details	Ibsa kaffaltii	ዝርዝር ክፍሊት	Faahfaahinta lacag bixinta	
+Commercial Bank (CBE)	Baankii Daldalaa (CBE)	ንግዳዊ ባንኪ (CBE)	Bangiga Ganacsiga (CBE)	
+Account Holder Name	Maqaa abbaa akkaawuntii	ስም ዓቃቢ ኣካውንት	Magaca leh akoonka	
+Name as it appears on the account	Maqaa akkaawuntii irra jiru	ስም ከም ኣብ ኣካውንት ዝርከብ	Magaca sida uu ugu yaal akoonka	
+Account Number	Lakkoofsa akkaawuntii	ቁጽሪ ኣካውንት	Lambarka akoonka	
+Save CBE Account	Akkaawuntii CBE olkaa'i	ኣካውንት CBE ዕቀብ	Kaydi akoonka CBE	
+Telebirr Phone Number	Lakkoofsa bilbilaa Telebirr	ቁጽሪ ተሌፎን ተሌብር	Lambarka taleefanka Telebirr	
+Save Telebirr Number	Lakkoofsa Telebirr olkaa'i	ቁጽሪ ተሌብር ዕቀብ	Kaydi lambarka Telebirr	
+Kitchen Printer	Maashinii maxxansaa kichuu	ሕታም ምድሪ	Daabacaha jikada	
+Connect Printer	Maashinii maxxansaa walqabsiisi	ሕታም ኣራኽብ	Ku xir daabacaha	
+Forget Printer	Maashinii maxxansaa irraanfadhu	ሕታም ርስዓዮ	Illow daabacaha	
+Your Roles	Gahee kee	ግዴታታትካ	Doorarkaaga	
+Save Role	Gahee olkaa'i	ግዴታ ዕቀብ	Kaydi doorka	
+Cancel edit	Gulaaluu haqi	ምእራም ሰርዝ	Jooji wax-ka-beddelka	
+Staff	Hojjettoota	ሰራሕተኛታት	Shaqaale	
+Staff name	Maqaa hojjetaa	ስም ሰራሕተኛ	Magaca shaqaalaha	
+Add Staff	Hojjetaa dabali	ሰራሕተኛ ወስኽ	Ku dar shaqaale	
+Item Name	Maqaa wantaa	ስም ሸቶ	Magaca alaabta	
+Description	Ibsa	መግለጺ	Sharaxaad	
+Short description	Ibsa gabaabaa	ሓጺር መግለጺ	Sharaxaad kooban	
+Stock Qty	Hanga kuufamaa	መጠን ዝተረፈ	Tirada kaydka	
+Price (ETB)	Gatii (ETB)	ዋጋ (ብር)	Qiimo (ETB)	
+Original Price	Gatii jalqabaa	ቀዳማይ ዋጋ	Qiimaha asalka ah	
+Prep Time (min)	Yeroo qophii (daq)	ግዜ ምድላው (ደቒቕ)	Waqtiga diyaarinta (daq)	
+Quality	Qulqullina	ጽሬት	Tayo	
+Not set	Hin kaa'amne	ኣይተኣምተን	Lama dejin	
+Regular	Idilee	ልሙድ	Caadi	
+Special	Addaa	ፍሉይ	Gaar ah	
+Premium	Premiyeemii	ፕሪምየም	Premium	
+Portion	Qooda	ዓቐን	Qayb	
+Item Image	Fakkii wantaa	ስእሊ ሸቶ	Sawirka alaabta	
+Choose Image	Fakkii filadhu	ስእሊ ምረጽ	Dooro sawir	
+Save Item	Wanta olkaa'i	ሸቶ ዕቀብ	Kaydi alaabta	
+Pick dishes from the catalog	Nyaata kaataloogii irraa filadhu	መግብታት ካብ ካታሎግ ምረጽ	Ka dooro cuntooyinka buug-gacmeedka	
+Loading catalog…	Kaataloogii fe'aa jira…	ካታሎግ ይጽዓን ኣሎ…	Waxaa la raraya buug-gacmeedka…	
+Revenue	Galii	ኣታዊ	Dakhli	
+Business ID	ID daldalaa	መለለዪ ንግዲ	ID-ga ganacsiga	
+Opening hours	Sa'aatii banuu	ሰዓታት ምኽፋት	Saacadaha furitaanka	
+Clear	Qulqulleessi	ኣጽሪ	Tirtir	
+Track and manage orders	Ajajoota hordofii bulchi	ትእዛዛት ተኸታተልን ኣመሓድርን	La soco oo maaree dalabyada	
+Reprint Kitchen Ticket	Tikeetii kichuu irra deebi'ii maxxansi	ትኬት ምድሪ ደጊምካ ሕተም	Dib u daabac tigidhka jikada	
+Based on	Kan irratti hundaa'e	ኣብ ዝተመስረተ	Ku salaysan	
+What customers say about your shop — reply to build trust	Maamiltoonni suuqa kee ilaalchisee maal jedhu — amantaa ijaaruuf deebisi	ዓማዊል ብዛዕባ ድኳንካ እንታይ ይብሉ — እምነት ንምህናጽ መልሲ	Waxa macaamiishu ka sheegaan dukaankaaga — jawaab si aad kalsooni u dhisto	
+Edit your reply…	Deebii kee gulaali…	መልስኻ ኣርም…	Wax ka beddel jawaabtaada…	
+Write a short, polite reply…	Deebii gabaabaa ulfina qabu barreessi…	ሓጺር ትሕትና ዘለዎ መልሲ ጸሓፍ…	Qor jawaab kooban oo edeb leh…	
+View earnings, commissions, and payment history	Argama, komishinii fi seenaa kaffaltii ilaali	ኣታዊ፡ ኮሚሽንን ታሪኽ ክፍሊትን ርአ	Eeg dakhliga, komishanka iyo taariikhda lacag bixinta	
+No items yet. Use "Pick from catalog" or "Import CSV" to get started.	Wanti hin jiru ammaaf. Jalqabuuf "Kaataloogii irraa filadhu" ykn "CSV galchi" fayyadami.	ክሳብ ሕጂ ሸቶታት የለን። ንምጅማር "ካብ ካታሎግ ምረጽ" ወይ "CSV ኣእትው" ተጠቐም።	Weli alaab ma jirto. Isticmaal "Ka dooro buug-gacmeedka" ama "Soo geli CSV" si aad u bilowdo.	
+Sold out · Undo	Dhumeera · Haqi	ተወዲኡ · ሰርዝ	Dhammaaday · Ka noqo	
+Name as it appears on the Telebirr account	Maqaa akkaawuntii Telebirr irra jiru	ስም ከም ኣብ ኣካውንት ተሌብር ዝርከብ	Magaca sida uu ugu yaal akoonka Telebirr	
+Define your own roles, then add staff logins under them	Gahee ofii kee murteessi, achiis hojjettoota isaan jala dabali	ናትካ ግዴታታት ወስን፡ ድሕሪኡ ሰራሕተኛታት ኣብ ትሕቲኦም ወስኽ	Qeex doorarkaaga, kadibna hoostooda ku dar shaqaale	
+Phone number (EtelID)	Lakkoofsa bilbilaa (EtelID)	ቁጽሪ ተሌፎን (EtelID)	Lambarka taleefanka (EtelID)	
+Manage your catalog	Kaataloogii kee bulchi	ካታሎግካ ኣመሓድር	Maaree buug-gacmeedkaaga	
+Settings & Payment	Qindaa'ina fi kaffaltii	ቅዓትን ክፍሊትን	Dejin & Lacag bixin	
+Business info, bank account	Odeeffannoo daldalaa, akkaawuntii baankii	ሓበሬታ ንግዲ፡ ኣካውንት ባንኪ	Macluumaadka ganacsiga, akoonka bangiga	
+Fix app not updating	Appii hin haaromfamne sirreessi	ዘይሕደስ ኣፕ ኣመሓይሽ	Hagaaji app-ka aan cusboonaysiin	
+Could not load profile. Please refresh.	Piroofaayilii fe'uu hin dandeenye. Maaloo haaromsi.	መንነት ክጽዓን ኣይተኻኣለን። በጃኹም ሓድሱ።	Profile lama rari karin. Fadlan cusboonaysii.	
+You are online — orders can reach you	Interneetii irra jirta — ajajni sitti ga'uu danda'a	ኣብ መስመር ኣለኻ — ትእዛዛት ክበጽሑኻ ይኽእሉ	Waad onlayn tahay — dalabyadu way kuu soo gaadhi karaan	
+You are offline — no new orders will come in	Interneetii alaa jirta — ajajni haaraan hin dhufu	ኣብ መስመር የለኻን — ሓደስቲ ትእዛዛት ኣይመጹን	Waad offline tahay — dalabyo cusub ma iman doonaan	
+Order declined. The customer will be refunded.	Ajajni didameera. Maamilaaf deebifama.	ትእዛዝ ተነጽጉ። ንዓሚል ክምለስ እዩ።	Dalabka waa la diiday. Macmiilka waa la soo celinayaa.	
+Order declined.	Ajajni didameera.	ትእዛዝ ተነጽጉ።	Dalabka waa la diiday.	
+preparing	qophaa'aa jira	ይዳሎ ኣሎ	waa la diyaarinayaa	
+ready for pickup — courier and customer notified	fudhachuuf qophii — ergamaa fi maamilaaf beeksifameera	ንምውሳድ ድሉው — ኣብጻሒን ዓሚልን ተነጊሮም	diyaar u ah qaadasho — qaadaha iyo macmiilka waa la ogeysiiyay	
+Confirm that the courier has picked up this order?	Ergamaan ajaja kana akka fudhate mirkaneessuu?	ኣብጻሒ እዚ ትእዛዝ ከም ዝወሰደ ትረጋግጽ ዲኻ?	Ma xaqiijisaa in qaadaha uu qaaday dalabkan?	
+Pickup confirmed! Order is now in transit.	Fudhachuun mirkanaa'eera! Ajajni amma karaarra jira.	ምውሳድ ተረጋጊጹ! ትእዛዝ ሕጂ ኣብ መገዲ ኣሎ።	Qaadashada waa la xaqiijiyay! Dalabka hadda wuu socdaa.	
+Refreshed	Haaromfameera	ተሓዲሱ	La cusboonaysiiyay	
+Could not refresh - check your connection	Haaromsuu hin dandeenye - walqunnamtii kee ilaali	ክሕደስ ኣይተኻኣለን - ርክብካ ርአ	Lama cusboonaysiin karin - hubi xiriirkaaga	
+Marked sold out for today - it returns tomorrow	Har'aaf dhumeera jedhamee mallatteeffameera - boru deebi'a	ሎሚ ተወዲኡ ተመልኪቱ - ጽባሕ ይምለስ	Waxaa loo calaamadeeyay dhammaaday maanta - berrito ayuu soo laaban doonaa	
+Back on sale	Deebi'ee gurguramaa jira	ዳግማይ ይሽየጥ ኣሎ	Dib baa loo iibinayaa	
+Item deleted	Wanti haqameera	ሸቶ ተደምሲሱ	Alaabta waa la tirtiray	
+Settings saved	Qindaa'inni olkaa'ameera	ቅዓታት ተቐሚጡ	Dejinta waa la kaydiyay	
+Submitted for admin approval	Hayyama bulchaaf ergameera	ንፍቓድ ኣመሓዳሪ ተሰዲዱ	Waxaa loo diray ogolaansho maamule	
+CBE account updated	Akkaawuntiin CBE haaromfameera	ኣካውንት CBE ተሓዲሱ	Akoonka CBE waa la cusboonaysiiyay	
+Telebirr number updated	Lakkoofsi Telebirr haaromfameera	ቁጽሪ ተሌብር ተሓዲሱ	Lambarka Telebirr waa la cusboonaysiiyay	
+Not configured yet	Ammaaf hin qindaa'ne	ክሳብ ሕጂ ኣይተዳለወን	Weli lama habeynin	
+Change pending approval	Jijjiiramni hayyama eegaa jira	ለውጢ ፍቓድ ይጽበ ኣሎ	Isbeddelku wuxuu sugayaa ogolaansho	
+Role updated	Gaheen haaromfameera	ግዴታ ተሓዲሱ	Doorka waa la cusboonaysiiyay	
+Role created	Gaheen uumameera	ግዴታ ተፈጢሩ	Doorka waa la sameeyay	
+Role deleted	Gaheen haqameera	ግዴታ ተደምሲሱ	Doorka waa la tirtiray	
+No role	Gahee hin qabu	ግዴታ የለን	Door ma leh	
+Could not load staff list.	Tarree hojjettootaa fe'uu hin dandeenye.	ዝርዝር ሰራሕተኛታት ክጽዓን ኣይተኻኣለን።	Liiska shaqaalaha lama rari karin.	
+Could not load roles.	Gahee fe'uu hin dandeenye.	ግዴታታት ክጽዓኑ ኣይተኻኣለን።	Doorarka lama rari karin.	
+No staff accounts yet.	Akkaawuntii hojjetaa hin jiru ammaaf.	ክሳብ ሕጂ ኣካውንት ሰራሕተኛ የለን።	Weli ma jiraan akoonno shaqaale.	
+Cashier	Kaffalaa	ኣካዋሊ	Khasnajiga	
+Deactivated	Dhaabbate	ተዓጽዩ	La xiray	
+Deactivate	Dhaabi	ዕጸው	Xir	
+Reactivate	Deebisii hojjechiisi	ዳግማይ ኣንቅሕ	Dib u shid	
+Name and phone are required.	Maqaa fi bilbilli ni barbaachisa.	ስምን ተሌፎንን የድልዩ።	Magaca iyo taleefanka waa loo baahan yahay.	
+Staff reactivated	Hojjetaan deebi'ee hojjechiifame	ሰራሕተኛ ዳግማይ ተኣንቂሑ	Shaqaalaha dib ayaa loo shiday	
+Staff deactivated	Hojjetaan dhaabbateera	ሰራሕተኛ ተዓጽዩ	Shaqaalaha waa la xiray	
+Role name is required.	Maqaan gahee ni barbaachisa.	ስም ግዴታ የድሊ።	Magaca doorka waa loo baahan yahay.	
+Printer connected! Kitchen tickets will print directly to it.	Maashinii maxxansaa walqabateera! Tikeetiin kichuu kallattiin ni maxxanfama.	ሕታም ተራኺቡ! ትኬታት ምድሪ ብቀጥታ ይሕተም።	Daabacaha waa ku xiran yahay! Tigidhada jikadu si toos ah ayay u daabacmi doonaan.	
+Add New Item	Wanta haaraa dabali	ሓድሽ ሸቶ ወስኽ	Ku dar alaab cusub	
+Edit Item	Wanta gulaali	ሸቶ ኣርም	Wax ka beddel alaabta	
+Adding…	Dabalaa jira…	ይውስኽ ኣሎ…	Waa lagu darayaa…	
+Verified	Mirkanaa'e	ዝተረጋገጸ	La xaqiijiyay	
+Pending Verification	Mirkaneessuu eegaa jira	ምርግጋጽ ይጽበ	Sugaya xaqiijin	
+Suspended	Dhaabbate	ተሓጺሩ	La hakiyay	
+Inactive	Hojii hin qabne	ዘይንጡፍ	Aan firfircoonayn	
+Active Order	Ajaja hojiirra jiru	ዘሎ ትእዛዝ	Dalab socda	
+Fast food, groceries & packages across all 12 Hawassa zones.	Nyaata ariifataa, nyaata mana keessaa fi qoodota naannoowwan Hawaasaa 12 hunda keessatti.	ቅልጡፍ መግቢ፡ መግቢ ገዛን ፓኬጅን ኣብ ኩለን 12 ከባብታት ሃዋሳ።	Cunto degdeg ah, raashin & xirmooyin dhammaan 12-ka aag ee Hawaasa.	
+12 Hawassa zones covered	Naannoowwan Hawaasaa 12 haguugaman	12 ከባብታት ሃዋሳ ዝሽፈኑ	12 aag oo Hawaasa ah ayaa la daboolay	
+Real-time GPS tracking	Hordoffii GPS yeroo dhugaa	ክትትል GPS ብቀጥታ	La-socod GPS waqti-dhab ah	
+E Pay · Telebirr · Cash	E Pay · Telebirr · Maallaqa harkaa	E Pay · ተሌብር · ጥረ ገንዘብ	E Pay · Telebirr · Lacag caddaan	
+Phone Number, EtelID or Etel Code	Lakkoofsa bilbilaa, EtelID ykn Koodii Etel	ቁጽሪ ተሌፎን፡ EtelID ወይ ኮድ ኢትኤል	Lambarka taleefanka, EtelID ama Koodhka Etel	
+Password	Jecha darbii	ሕሱም ቃል	Erayga sirta	
+Enter password	Jecha darbii galchi	ሕሱም ቃል ኣእትው	Geli erayga sirta	
+Forgot password?	Jecha darbii irraanfatte?	ሕሱም ቃልካ ረሲዕካ?	Ma illowday erayga sirta?	
+Recommended — One ID for all ETEL services	Kan filatame — ID tokko tajaajila ETEL hundaaf	ዝተመክረ — ሓደ ID ንኩሉ ኣገልግሎት ኢትኤል	La xushay — Hal ID oo adeegyada ETEL oo dhan	
+Sign in with EtelID	EtelID'n seeni	ብ EtelID እቶ	Ku gal EtelID	
+Delivery · Ride · Pay — one identity	Geessii · Imala · Kaffaltii — eenyummaa tokko	ኣቕርቦት · ጉዕዞ · ክፍሊት — ሓደ መንነት	Gaarsiin · Safar · Lacag bixin — hal aqoonsi	
+Create EtelID Account	Akkaawuntii EtelID uumi	ኣካውንት EtelID ፍጠር	Samee akoon EtelID	
+Get your EtelID First	Duraan EtelID kee argadhu	ቅድም EtelID ረኽብ	Marka hore hel EtelID-gaaga	
+One ID. All Services.	ID tokko. Tajaajila hunda.	ሓደ ID። ኩሉ ኣገልግሎት።	Hal ID. Dhammaan adeegyada.	
+Order food & packages	Nyaataa fi qoodota ajaji	መግብን ፓኬጅን ኣዝዝ	Dalbo cunto & xirmooyin	
+Book rides across Hawassa	Hawaasaa keessatti imala ajaji	ኣብ ሃዋሳ ጉዕዞ ኣዝዝ	Dalbo safarro Hawaasa oo dhan	
+Digital wallet & payments	Korojoo dijitaalaa fi kaffaltii	ዲጂታላዊ ቦርሳን ክፍሊትን	Boorsada dhijitaalka & lacag bixin	
+Use your EtelID everywhere	EtelID kee bakka hundatti fayyadami	EtelID ኣብ ኩሉ ቦታ ተጠቐም	Isticmaal EtelID-gaaga meel kasta	
+Register at EtelID Portal	Poortaala EtelID irratti galmaa'i	ኣብ ፖርታል EtelID ተመዝገብ	Isdiiwaangeli bogga EtelID	
+Already have an EtelID?	EtelID qabdaa?	EtelID ኣለካ ድዩ?	Ma haysataa EtelID?	
+Sign in here	Asitti seeni	ኣብዚ እቶ	Ka gal halkan	
+Customer Login	Seensa maamilaa	ምእታው ዓሚል	Gelitaanka macmiilka	
+Courier Login	Seensa ergamaa	ምእታው ኣብጻሒ	Gelitaanka qaadaha	
+Driver Login	Seensa konkolaachisaa	ምእታው ሾፌር	Gelitaanka darawalka	
+Service Login	Seensa tajaajilaa	ምእታው ኣገልግሎት	Gelitaanka adeegga	
+Passenger Login	Seensa imaltuu	ምእታው ተሳፋሪ	Gelitaanka rakaabka	
+Login	Seeni	እቶ	Gal	
+Sign in to continue	Itti fufuuf seeni	ንምቕጻል እቶ	Gal si aad u sii wadato	
+Welcome back	Baga nagaan deebitan	እንቋዕ ብደሓን ተመለስካ	Ku soo dhowow mar kale	
+Rider	Imaltuu	ተሳፋሪ	Rakaab	
+Create Account	Akkaawuntii uumi	ኣካውንት ፍጠር	Samee akoon	
+Join	Makamaa	ተሓወስ	Ku biir	
+ETEL Delivery	ETEL Geessii	ኢትኤል ኣቕርቦት	ETEL Gaarsiin	
+ETEL Service	ETEL Tajaajila	ኢትኤል ኣገልግሎት	ETEL Adeeg	
+ETEL Group	ETEL Garee	ኢትኤል ጉጅለ	ETEL Koox	
+Go online and start earning across all Hawassa zones.	Interneetii irratti ba'iitii naannoowwan Hawaasaa hunda keessatti argachuu eegali.	ኣብ መስመር እቶ ኣብ ኩለን ከባብታት ሃዋሳ ምርካብ ጀምር።	Onlayn noqo oo bilow inaad kasbato dhammaan aaggaga Hawaasa.	
+Safe, affordable rides across all Hawassa zones.	Imala nagaa, gatii laafaa naannoowwan Hawaasaa hunda keessatti.	ውሑስ፡ ርካሽ ጉዕዞ ኣብ ኩለን ከባብታት ሃዋሳ።	Safarro ammaan ah oo jaban dhammaan aaggaga Hawaasa.	
+Pick up and deliver orders across all Hawassa zones.	Ajajoota naannoowwan Hawaasaa hunda keessatti fudhadhuu fi geessi.	ኣብ ኩለን ከባብታት ሃዋሳ ትእዛዛት ውሰድን ኣቕርብን።	Qaad oo gaarsii dalabyada dhammaan aaggaga Hawaasa.	
+Manage your shop and orders across all Hawassa zones.	Suuqa kee fi ajajoota naannoowwan Hawaasaa hunda keessatti bulchi.	ድኳንካን ትእዛዛትካን ኣብ ኩለን ከባብታት ሃዋሳ ኣመሓድር።	Maaree dukaankaaga iyo dalabyada dhammaan aaggaga Hawaasa.	
