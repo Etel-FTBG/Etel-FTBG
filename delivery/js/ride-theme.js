@@ -25,7 +25,19 @@
         try {
             var r = window.RIDE;
             if (r && r.map && window.EtelUI && EtelUI.mapStyles && r.__mapTheme !== t) {
-                r.map.setOptions({ styles: EtelUI.mapStyles(t === 'light') });
+                var light = t === 'light', gm = window.google && google.maps, o = {};
+                /* Light = Google's own colourful map (place names, hospitals, schools, hotels, churches), like the driver map.
+                   Dark = the carbon map. Both get the Map / Hybrid switch and the + - zoom buttons, like the driver map. */
+                o.styles = light ? [] : EtelUI.mapStyles(false);
+                if (gm && gm.ControlPosition) {
+                    o.mapTypeControl = true;
+                    o.mapTypeControlOptions = { style: gm.MapTypeControlStyle ? gm.MapTypeControlStyle.HORIZONTAL_BAR : undefined, position: gm.ControlPosition.TOP_RIGHT, mapTypeIds: ['roadmap', 'hybrid'] };
+                    o.zoomControl = true;
+                    o.zoomControlOptions = { position: gm.ControlPosition.RIGHT_CENTER };
+                    o.clickableIcons = false;   /* a tap on a shop icon must still set the pickup / drop-off point, not open Google's card */
+                    o.gestureHandling = 'greedy';
+                }
+                r.map.setOptions(o);
                 r.__mapTheme = t;
             }
         } catch (e) { /* map not ready yet - the timer below retries */ }
