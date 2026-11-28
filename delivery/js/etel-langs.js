@@ -24,6 +24,7 @@
   ];
   var DICTS = {};
   var me = document.currentScript, mySrc = (me && me.src) || '';
+  var WALK_AM = !!window.ETEL_LANGS_WALK_AM || !!(me && me.getAttribute('data-walk-am'));
 
   /* The owner controls each language in Admin > Branding > Languages: live (no tag), beta, soon (listed, cannot be chosen), off (hidden), and which one new visitors start in.
      get_language_config is read in the background and kept for 6 hours; until it is read the built-in states above apply. */
@@ -37,7 +38,8 @@
   function usable(c) { var l = find(c); if (!l) return false; var s = status(l); return s === 'live' || s === 'beta'; }
   function stored() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
   function get() { var v = stored(); if (usable(v)) return v; return (!v && CFG && usable(CFG.def)) ? CFG.def : 'en'; }
-  function isNew(c) { return c !== 'en' && c !== 'am' && !!find(c); }
+  /* English and Amharic stay with an app's own engine; a page that has none (Admin, Pay, ...) puts data-walk-am="1" on this script tag and gets Amharic from i18n/am.js like the other languages. */
+  function isNew(c) { return c !== 'en' && (c !== 'am' || WALK_AM) && !!find(c); }
 
   function saveToAccount(c) {
     try {
@@ -121,7 +123,7 @@
     // dictionary file: i18n/<code>.js next to js/
     var base = mySrc ? mySrc.replace(/js\/[^\/?#]*(\?.*)?$/, '') : '/delivery/';
     var s = document.createElement('script');
-    s.src = base + 'i18n/' + cur + '.js?v=2'; s.async = true;
+    s.src = base + 'i18n/' + cur + '.js?v=3'; s.async = true;
     document.head.appendChild(s);
   }
   function add(code, dict) {
@@ -160,6 +162,8 @@
     st.textContent = '[data-etel-oldlang]{display:none!important}' +
       /* the button: always a navy pill with a gold ring and light text, so it reads on the light and the dark theme alike */
       '#etel-lang-btn{all:unset;box-sizing:border-box;display:inline-flex' + I + ';align-items:center;gap:7px;min-height:36px;min-width:46px;padding:0 11px 0 8px;border-radius:999px;border:1.5px solid #D4AF37' + I + ';background:linear-gradient(180deg,#1B2140,#0E1226)' + I + ';color:#FFFFFF' + I + ';font:800 12.5px/1 system-ui,-apple-system,"Segoe UI",sans-serif' + I + ';letter-spacing:.4px;cursor:pointer;flex:0 0 auto;box-shadow:0 2px 10px rgba(8,10,24,.35),inset 0 1px 0 rgba(255,255,255,.12);-webkit-tap-highlight-color:transparent}' +
+      /* some pages (Admin) force a text fill colour on every span: ours must follow the text colour */
+      '#etel-lang-btn,#etel-lang-btn *,#etel-lang-sheet,#etel-lang-sheet *{-webkit-text-fill-color:currentColor' + I + ';text-shadow:none' + I + '}' +
       '#etel-lang-btn:focus-visible{outline:3px solid #FFE27A;outline-offset:2px}' +
       '#etel-lang-btn:active{transform:scale(.96)}' +
       '#etel-lang-btn.fl{position:fixed' + I + ';top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;z-index:9300}' +
@@ -308,7 +312,8 @@
         }
       } catch (e) {}
     } else if (!btn.parentNode) {
-      btn.classList.add('fl'); document.body.appendChild(btn);
+      var slot = document.querySelector('[data-etel-lang-host]');   // a page can reserve a place for the picker (the Admin header)
+      if (slot) { btn.classList.remove('fl'); slot.appendChild(btn); } else { btn.classList.add('fl'); document.body.appendChild(btn); }
     }
     paintBtn();
     return !!old;

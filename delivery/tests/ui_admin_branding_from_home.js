@@ -22,6 +22,12 @@ let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fai
   await p.waitForTimeout(1200);
   t('Branding opened from the home card shows the image cards', (await p.$$('#brand-pro .ak-card')).length > 5, String((await p.$$('#brand-pro .ak-card')).length));
   t('and the Languages section under them', !!(await p.$('#brand-lang select[data-st="om"]')));
+  // other ways in: the menu itself (the loader must run once, not twice) and AdminNav.go (the dashboard's "Needs attention" links)
+  await p.evaluate(() => { window.__lp = 0; const f = window.loadPromos; window.loadPromos = function () { window.__lp++; return f && f.apply(this, arguments); }; });
+  await p.evaluate(() => document.querySelector('.nav-item[data-page="promos"]').click()); await p.waitForTimeout(900);
+  t('menu click: the Promos loader runs once, not twice', (await p.evaluate(() => window.__lp)) === 1, String(await p.evaluate(() => window.__lp)));
+  await p.evaluate(() => { window.__lp = 0; AdminNav.go('promos'); }); await p.waitForTimeout(900);
+  t('AdminNav.go (dashboard links) starts the Promos loader too', (await p.evaluate(() => window.__lp)) === 1, String(await p.evaluate(() => window.__lp)));
   console.log(fails.length ? fails.map(f => ' FAIL ' + f).join('\n') + '\n' : '', pass + ' passed, ' + fails.length + ' failed'); await b.close();
   if (fails.length) process.exitCode = 1;
 })();

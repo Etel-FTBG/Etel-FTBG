@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Builds the language dictionaries of the Delivery apps (28 Nov 2026) from ONE readable table.
 
-    python3 tools/i18n/build_langs.py          writes delivery/i18n/<code>.js for om, ti, so, aa   (check: --check = only compare, change nothing)
+    python3 tools/i18n/build_langs.py          writes delivery/i18n/<code>.js for am, om, ti, so, aa   (check: --check = only compare, change nothing)
 
-tools/i18n/strings.tsv   columns: English (the exact on-screen text of the app), om (Afaan Oromoo), ti (Tigrinya), so (Somali), aa (Afar)
+tools/i18n/strings.tsv   columns: English (the exact on-screen text of the app), am (Amharic: only used by pages that have no Amharic of their own; the apps keep theirs), om (Afaan Oromoo), ti (Tigrinya), so (Somali), aa (Afar)
   - A native reader fixes a translation by editing one cell of this table (any spreadsheet app opens it: tab separated, UTF-8), then runs this script.
   - An empty cell means "not translated yet": that text simply stays English in that language.
   - The first column must match the English text on screen (the apps' own English). Texts that do not match anything on screen are harmless.
@@ -15,7 +15,7 @@ import sys
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 tsv = os.path.join(root, 'tools', 'i18n', 'strings.tsv')
 out_dir = os.path.join(root, 'delivery', 'i18n')
-CODES = ['om', 'ti', 'so', 'aa']
+CODES = ['am', 'om', 'ti', 'so', 'aa']
 
 def esc(s):
     return ''.join(c if 32 <= ord(c) < 127 and c not in '\\"' else ('\\"' if c == '"' else ('\\\\' if c == '\\' else '\\u%04x' % ord(c))) for c in s)
@@ -33,7 +33,7 @@ def build():
             if r[idx].strip():
                 d[r[0].strip()] = r[idx].strip()
         body = ',\n'.join('"%s":"%s"' % (esc(k), esc(v)) for k, v in sorted(d.items()))
-        res[code] = ('/* ETEL language dictionary %s (BETA): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */\n'
+        res[code] = ('/* ETEL language dictionary %s (om, ti, so: BETA drafts): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */\n'
                      'EtelLangs.add("%s", {\n%s\n});\n') % (code, code, body)
     return res
 

@@ -1,4 +1,4 @@
-/* ETEL language dictionary so (BETA): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */
+/* ETEL language dictionary so (om, ti, so: BETA drafts): English text -> translated text. Made by tools/i18n/build_langs.py from tools/i18n/strings.tsv: edit the table, not this file. */
 EtelLangs.add("so", {
 "12 Hawassa zones covered":"12 aag oo Hawaasa ah ayaa la daboolay",
 "A courier with the vehicle you chose will pick it up.":"Qaade leh gaadhiga aad dooratay ayaa qaadi doona.",
