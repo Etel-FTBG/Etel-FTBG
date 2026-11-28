@@ -163,7 +163,7 @@
     // dictionary file: i18n/<code>.js next to js/
     var base = mySrc ? mySrc.replace(/js\/[^\/?#]*(\?.*)?$/, '') : '/delivery/';
     var s = document.createElement('script');
-    s.src = base + 'i18n/' + cur + '.js?v=8'; s.async = true;
+    s.src = base + 'i18n/' + cur + '.js?v=9'; s.async = true;
     document.head.appendChild(s);
   }
   function add(code, dict) {
@@ -370,20 +370,22 @@
   function avoid() {
     if (!btn || !btn.classList.contains('fl')) return;
     btn.style.right = '';
-    var r = btn.getBoundingClientRect(), cy = r.top + r.height / 2, hit = null, i, j, els, e, cs, q;
-    for (i = 0; i < 3 && !hit; i++) {
-      els = document.elementsFromPoint([r.left + 4, r.left + r.width / 2, r.right - 4][i], cy);
-      for (j = 0; j < els.length; j++) {
-        e = els[j];
-        if (e === btn || btn.contains(e) || e === document.body || e === document.documentElement) continue;
-        for (; e && e !== document.body; e = e.parentElement) {
-          cs = getComputedStyle(e); q = e.getBoundingClientRect();
-          if ((cs.position === 'fixed' || cs.position === 'absolute') && q.width < 260 && q.height < 140) { hit = q; break; }
+    for (var pass = 0; pass < 3; pass++) {
+      var r = btn.getBoundingClientRect(), cy = r.top + r.height / 2, hit = null, i, j, els, e, cs, q, xs = [r.left + 4, r.left + r.width / 2, r.right - 4];
+      for (i = 0; i < 3 && !hit; i++) {
+        els = document.elementsFromPoint(xs[i], cy);
+        for (j = 0; j < els.length && !hit; j++) {
+          e = els[j];
+          if (e === btn || btn.contains(e) || e === document.body || e === document.documentElement) continue;
+          for (; e && e !== document.body; e = e.parentElement) {
+            cs = getComputedStyle(e); q = e.getBoundingClientRect();
+            if ((cs.position === 'fixed' || cs.position === 'absolute' || e.tagName === 'BUTTON' || e.tagName === 'A') && q.width < 260 && q.height < 140) { hit = q; break; }
+          }
         }
-        if (hit) break;
       }
+      if (!hit) break;
+      btn.style.right = Math.round(window.innerWidth - hit.left + 8) + 'px';
     }
-    if (hit) btn.style.right = Math.round(window.innerWidth - hit.left + 8) + 'px';
   }
   function start() {
     if (window.ETEL_LANGS_NO_PICKER) return;
