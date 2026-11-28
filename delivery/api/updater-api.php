@@ -145,7 +145,7 @@ function verify_token($token) {
     $uid = $p[0]; $ts = $p[1]; $version = $p[2]; $sig = $p[3];
     if ((time() - intval($ts)) > 86400 * 7) return null;
     $expected = hash_hmac('sha256', $uid . ':' . $ts . ':' . $version, UPD_SECRET);
-    return ($sig === $expected) ? ['uid' => intval($uid), 'version' => intval($version)] : null;
+    return etel_sa_sig_ok($expected, $sig) ? ['uid' => intval($uid), 'version' => intval($version)] : null;
 }
 
 function upd_table_columns($pdo, $table) {
@@ -176,10 +176,15 @@ function get_auth_user($pdo) {
     return $u;
 }
 
-function require_admin($pdo) {
+/* The same rules as boot.php require_admin(): signed-out devices, disabled accounts, the idle sign-out,
+   admin two-step and the owner permission ($capability, e.g. 'system.backup'). Before, $capability was ignored. */
+require_once __DIR__ . '/lib/standalone_auth.php';
+function require_admin($pdo, $capability = null) {
     $u = get_auth_user($pdo);
     if (!$u) { http_response_code(401); echo json_encode(['success' => false, 'message' => 'Unauthorized']); exit; }
     if ($u['role'] !== 'admin') { http_response_code(403); echo json_encode(['success' => false, 'message' => 'Admin only']); exit; }
+    $no = etel_sa_check($pdo, $u, get_bearer(), $capability);
+    if ($no) { http_response_code($no[0]); echo json_encode(['success' => false, 'message' => $no[1]]); exit; }
     return $u;
 }
 

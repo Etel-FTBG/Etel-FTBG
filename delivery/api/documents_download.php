@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/lib/standalone_auth.php';
 /**
  * ETEL Admin Documents - download / inline-view streaming handler
  * GET with Authorization: Bearer <admin token> and query params:
@@ -102,7 +103,7 @@ function dd_verify_token($token) {
     $uid = $p[0]; $ts = $p[1]; $version = $p[2]; $sig = $p[3];
     if ((time() - intval($ts)) > 86400 * 7) return null;
     $expected = hash_hmac('sha256', $uid . ':' . $ts . ':' . $version, DD_TOKEN_SECRET);
-    return ($sig === $expected) ? array('uid' => intval($uid), 'version' => intval($version)) : null;
+    return etel_sa_sig_ok($expected, $sig) ? array('uid' => intval($uid), 'version' => intval($version)) : null;
 }
 
 $token = dd_get_bearer();
@@ -133,6 +134,9 @@ try {
 
 if (!$user) dd_json_fail('User not found', 401);
 if ($has_ver && intval($user['token_version']) !== $tok['version']) dd_json_fail('Unauthorised - token revoked', 401);
+/* Signed-out devices, disabled accounts, the idle sign-out and admin two-step: the same rules as boot.php (lib/standalone_auth.php). */
+$sa_no = etel_sa_check($pdo, $user, $token);
+if ($sa_no) dd_json_fail($sa_no[1], $sa_no[0]);
 if ($user['role'] !== 'admin') dd_json_fail('Admin access required', 403);
 
 $managed = false;
