@@ -126,6 +126,7 @@ jobs:
           python3 delivery/tests/ci/check_transport_brand.py
           python3 delivery/tests/ci/check_launcher_icons.py
           python3 delivery/tests/ci/check_ride_map_traffic.py
+          python3 delivery/tests/ci/check_backfill_removed.py
           python3 delivery/tests/ci/check_app_icons.py
           python3 delivery/tests/ci/check_system_icons.py
           python3 delivery/tests/ci/check_login_role_marks.py
