@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/lib/standalone_auth.php';
 /**
  * ETEL Image Upload Handler
  * POST multipart with Authorization: Bearer <token> and field: image (file)
@@ -106,7 +107,7 @@ function up_verify_token($token) {
     $uid = $p[0]; $ts = $p[1]; $version = $p[2]; $sig = $p[3];
     if ((time() - intval($ts)) > 86400 * 7) return null;
     $expected = hash_hmac('sha256', $uid . ':' . $ts . ':' . $version, UP_TOKEN_SECRET);
-    return ($sig === $expected) ? ['uid' => intval($uid), 'version' => intval($version)] : null;
+    return etel_sa_sig_ok($expected, $sig) ? ['uid' => intval($uid), 'version' => intval($version)] : null;
 }
 
 /*  Auth: any logged-in user can upload images  */
@@ -139,6 +140,9 @@ try {
 
 if (!$user) upfail('User not found', 401);
 if ($up_has_ver && intval($user['token_version']) !== $tok['version']) upfail('Unauthorised  token revoked', 401);
+/* Signed-out devices, disabled accounts, the idle sign-out and admin two-step: the same rules as boot.php (lib/standalone_auth.php). */
+$sa_no = etel_sa_check($pdo, $user, $token);
+if ($sa_no) upfail($sa_no[1], $sa_no[0]);
 $uid = $tok['uid'];
 
 /*  File validation  */

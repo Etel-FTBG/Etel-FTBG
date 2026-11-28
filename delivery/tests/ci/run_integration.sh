@@ -44,6 +44,7 @@ run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
 run python3 tests/authz_matrix_smoke.py
 run python3 tests/admin_2fa_required_smoke.py
+run python3 tests/standalone_auth_smoke.py
 run python3 tests/etel_code_login_smoke.py
 run python3 tests/auditor_findings_smoke.py
 run python3 tests/package_smoke.py
