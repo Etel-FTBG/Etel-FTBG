@@ -211,7 +211,6 @@ Emergency SOS		SOS ariifachiisaa	ህጹጽ SOS	SOS degdeg ah
 Remove	አስወግድ	Haqi	ኣልግስ	Ka saar	
 Tip amount		Hanga kennaa	መጠን ቲፕ	Qaddarka tip-ka	
 Switch to English		Gara Ingliffaatti jijjiiri	ናብ እንግሊዝኛ ቀይር	U beddel Ingiriisi	
-English		Ingiliffaa	እንግሊዝኛ	Ingiriisi	
 ETEL Driver	ኢትኤል ሾፌር	ETEL Konkolaachisaa	ኢትኤል ሾፌር	ETEL Darawal	
 Menu	ምናሌ	Tarreeffama	ዝርዝር	Liiska	
 Requests	ጥያቄዎች	Gaaffiiwwan	ጠለባት	Codsiyada	
@@ -632,7 +631,7 @@ The map could not load. Check your connection.		Kaartaan fe'amuu hin dandeenye. 
 My location		Bakka koo	ቦታይ	Goobtayda	
 Recipient		Fudhataa	ተቐባሊ	Qaataha	
 Pinned on the map		Kaartaa irratti kaa'ame	ኣብ ካርታ ተቐሚጡ	Lagu dhejiyay khariidadda	
-Documents		Sanadoota	ሰነዳት	Dukumeentiyo	
+Documents	ሰነዶች	Sanadoota	ሰነዳት	Dukumeentiyo	
 Clothes		Uffata	ክዳውንቲ	Dhar	
 Electronics	ኤሌክትሮኒክስ	Elektirooniksii	ኤሌክትሮኒክስ	Qalab elektaroonik ah	
 Gift		Kennaa	ህያብ	Hadiyad	
@@ -1361,7 +1360,7 @@ Opening hours cleared - you are open whenever your switch is on	የሥራ ሰዓ
 Open and closed follow your opening hours ({a} to {b}). Change the hours in the box below.	ክፍት እና ዝግ በሥራ ሰዓትዎ ይወሰናል ({a} እስከ {b})። ሰዓቱን ከታች ባለው ሳጥን ይቀይሩ።				
 Error rendering orders	ትዕዛዞችን ማሳየት አልተቻለም				
 Order marked as {s}!	ትዕዛዙ እንደ {s} ተመዝግቧል!				
-Delete "{n}"? This cannot be undone.	"{n}" ይሰረዝ? ይህ ሊመለስ አይችልም።				
+Delete "{t}"? This cannot be undone.	"{t}" ይሰረዝ? ይህ ሊመለስ አይችልም።				
 Settings saved!	ቅንብሮች ተቀምጠዋል!				
 CBE account updated!	የCBE አካውንት ተዘምኗል!				
 Abysinia account updated!	የአቢሲኒያ አካውንት ተዘምኗል!				
@@ -1377,9 +1376,9 @@ New staff account created!	አዲስ የሠራተኛ አካውንት ተፈጥ�
 Select at least one capability.	ቢያንስ አንድ ፈቃድ ይምረጡ።				
 Direct printing needs Chrome on Android or desktop.	ቀጥታ ማተም Chrome በአንድሮይድ ወይም በኮምፒውተር ላይ ይፈልጋል።				
 Printer forgotten. Connect again to pair.	ፕሪንተሩ ተረስቷል። ለማጣመር እንደገና ያገናኙ።				
-Add {n} to my menu	{n} ወደ ምናሌዬ ጨምር				
+Add {t} to my menu	{t} ወደ ምናሌዬ ጨምር				
 Tick dishes to add	ለመጨመር ምግቦችን ይምረጡ				
-Added {n} to your menu	{n} ወደ ምናሌዎ ተጨምሯል				
+Added {t} to your menu	{t} ወደ ምናሌዎ ተጨምሯል				
 ({n} already on your menu)	({n} ቀድሞ በምናሌዎ ውስጥ ነበሩ)				
 ✓ Verified	✓ ተረጋግጧል				
 ⏳ Pending Verification	⏳ ማረጋገጫ በመጠባበቅ ላይ				
@@ -1401,3 +1400,364 @@ Manage Etel Group staff, roles, and operations.	የኤቴል ግሩፕ ሰራተ
 Full admin access — every panel	ሙሉ የአስተዳዳሪ መዳረሻ — ሁሉም ፓነል				
 Typically lands on:	በተለምዶ ያርፋል፡				
 Landing page depends on your EtelGroup role	የማረፊያ ገጽ በእርስዎ EtelGroup ሚና ላይ የተመሰረተ ነው				
+{n} km	{n} ኪ.ሜ	{n} km	{n} ኪ.ሜ	{n} km	
+{n} km away	{n} ኪ.ሜ ይርቃል	{n} km fagaatee	{n} ኪ.ሜ ርሑቅ	{n} km u jirta	
+{n} km trip	{n} ኪ.ሜ ጉዞ	imala {n} km	{n} ኪ.ሜ ጉዕዞ	safar {n} km ah	
+{n1} km · {n2} min	{n1} ኪ.ሜ · {n2} ደቂቃ	{n1} km · daqiiqaa {n2}	{n1} ኪ.ሜ · {n2} ደቒቕ	{n1} km · {n2} daqiiqo	
+{n1} km · {n2} mins	{n1} ኪ.ሜ · {n2} ደቂቃ	{n1} km · daqiiqaa {n2}	{n1} ኪ.ሜ · {n2} ደቒቕ	{n1} km · {n2} daqiiqo	
+{n} min	{n} ደቂቃ	daqiiqaa {n}	{n} ደቒቕ	{n} daqiiqo	
+{n} mins	{n} ደቂቃ	daqiiqaa {n}	{n} ደቒቕ	{n} daqiiqo	
+~{n} min	~{n} ደቂቃ	~daqiiqaa {n}	~{n} ደቒቕ	~{n} daqiiqo	
+{n} min away	{n} ደቂቃ ይርቃል	daqiiqaa {n} fagaatee	{n} ደቒቕ ርሑቅ	{n} daqiiqo u jirta	
+~{n1} min away · {n2} seat	~{n1} ደቂቃ ይርቃል · {n2} መቀመጫ	~daqiiqaa {n1} fagaatee · teessoo {n2}	~{n1} ደቒቕ ርሑቅ · {n2} ከብሒ	~{n1} daqiiqo u jirta · {n2} kursi	
+~{n1} min away · {n2} seats	~{n1} ደቂቃ ይርቃል · {n2} መቀመጫ	~daqiiqaa {n1} fagaatee · teessoo {n2}	~{n1} ደቒቕ ርሑቅ · {n2} ከብሒ	~{n1} daqiiqo u jirta · {n2} kursi	
+No drivers online · {n} seat	ሾፌር በመስመር ላይ የለም · {n} መቀመጫ	Konkolaachisaan toora interneetii irra hin jiru · teessoo {n}	ሾፌር ኣብ መስመር የለን · {n} ከብሒ	Darawal online ah ma jiro · {n} kursi	
+No drivers online · {n} seats	ሾፌር በመስመር ላይ የለም · {n} መቀመጫ	Konkolaachisaan toora interneetii irra hin jiru · teessoo {n}	ሾፌር ኣብ መስመር የለን · {n} ከብሒ	Darawal online ah ma jiro · {n} kursi	
+Drivers available · {n} seat	ሾፌሮች አሉ · {n} መቀመጫ	Konkolaachisaan jira · teessoo {n}	ሾፌራት ኣለዉ · {n} ከብሒ	Darawallo diyaar ah · {n} kursi	
+Drivers available · {n} seats	ሾፌሮች አሉ · {n} መቀመጫ	Konkolaachisaan jira · teessoo {n}	ሾፌራት ኣለዉ · {n} ከብሒ	Darawallo diyaar ah · {n} kursi	
+ETB {n}	ብር {n}	ETB {n}	ETB {n}	ETB {n}	
+fr ETB {n}	ከ ETB {n}	irraa ETB {n}	ካብ ETB {n}	laga bilaabo ETB {n}	
+{n}% off	{n}% ቅናሽ	%{n} hir'ata	{n}% ቅናሽ	{n}% dhimis	
+ETB {n} off	ETB {n} ቅናሽ	ETB {n} hir'ata	ETB {n} ቅናሽ	ETB {n} dhimis	
+{n}% off your fare	ከዋጋዎ {n}% ቅናሽ	kaffaltii kee irraa %{n} hir'ata	ካብ ዋጋኻ {n}% ቅናሽ	{n}% ka dhimis kharashkaaga	
+ETB {n} off your fare	ከዋጋዎ ETB {n} ቅናሽ	kaffaltii kee irraa ETB {n} hir'ata	ካብ ዋጋኻ ETB {n} ቅናሽ	ETB {n} ka dhimis kharashkaaga	
+about ETB {n} off	ወደ ETB {n} ቅናሽ	ETB {n} ga'u hir'ata	ዳርጋ ETB {n} ቅናሽ	ku dhawaad ETB {n} dhimis	
+{n1}% off (most ETB {n2})	{n1}% ቅናሽ (እስከ ETB {n2})	%{n1} hir'ata (hamma ETB {n2})	{n1}% ቅናሽ (ክሳብ ETB {n2})	{n1}% dhimis (ugu badnaan ETB {n2})	
+Approved · {t}	ጸድቋል · {t}	Mirkanaa'e · {t}	ጸዲቑ · {t}	La ansixiyay · {t}	
+Arrive about {t}	ይደርሳል በ {t}	Dhufa ni jedhama {t}	ብ {t} ይበጽሕ	Waxay imaanaysaa ku dhawaad {t}	
+Sender: {t}	ላኪ፦ {t}	Ergaa: {t}	ሰዳዲ፦ {t}	Dhiraha: {t}	
+Pickup · {t}	መረከቢያ · {t}	Fudhachuu · {t}	መቐበሊ · {t}	Qaadasho · {t}	
+Drop-off · {t}	ማስረከቢያ · {t}	Gadi-dhiisuu · {t}	መረዳእታ · {t}	Dhigid · {t}	
+Accept job {t}	ሥራ {t} ተቀበል	Hojii {t} fudhadhu	ስራሕ {t} ተቐበል	Aqbal shaqada {t}	
+{n} trip	{n} ጉዞ	imala {n}	{n} ጉዕዞ	{n} safar	
+{n} trips	{n} ጉዞዎች	imala {n}	{n} ጉዕዞታት	{n} safarro	
+{n} trip completed	{n} ጉዞ ተጠናቀቀ	imala {n} xumurame	{n} ጉዕዞ ተወዲኡ	{n} safar la dhammeeyay	
+{n} trips completed	{n} ጉዞዎች ተጠናቀዋል	imala {n} xumurame	{n} ጉዕዞታት ተወዲኦም	{n} safarro la dhammeeyay	
+{n} trips goal	የ{n} ጉዞዎች ግብ	kaayyoo imala {n}	ዕላማ {n} ጉዕዞታት	hadafka {n} safarro	
+{n} job	{n} ሥራ	hojii {n}	{n} ስራሕ	{n} shaqo	
+{n} jobs	{n} ሥራ	hojii {n}	{n} ስራሓት	{n} shaqooyin	
+{n} delivery	{n} አቅርቦት	geessuu {n}	{n} ኣቕራቦ	{n} gaarsiin	
+{n} deliveries	{n} አቅርቦት	geessuu {n}	{n} ኣቕራቦታት	{n} gaarsiinno	
+{n} item	{n} እቃ	meeshaa {n}	{n} ዕቃ	{n} shay	
+{n} items	{n} እቃዎች	meeshaalee {n}	{n} ዕቃታት	{n} alaab	
+{n} order	{n} ትዕዛዝ	ajaja {n}	{n} ትእዛዝ	{n} dalab	
+{n} orders	{n} ትዕዛዞች	ajajoota {n}	{n} ትእዛዛት	{n} dalabyo	
+{n} min ago	ከ{n} ደቂቃ በፊት	daqiiqaa {n} dura	ቅድሚ {n} ደቒቕ	{n} daqiiqo ka hor	
+{n} hr ago	ከ{n} ሰዓት በፊት	sa'aatii {n} dura	ቅድሚ {n} ሰዓት	{n} saac ka hor	
+{n} days ago	ከ{n} ቀን በፊት	guyyaa {n} dura	ቅድሚ {n} መዓልቲ	{n} maalmood ka hor	
+Order #{t}	ትዕዛዝ #{t}	Ajaja #{t}	ትእዛዝ #{t}	Dalab #{t}	
+Open now — until {t}	አሁን ክፍት ነው — እስከ {t}	Amma banaadha — hanga {t}	ሕጂ ክፉት እዩ — ክሳብ {t}	Hadda furan — ilaa {t}	
+Closed — opens at {t}	ዝግ ነው — የሚከፈተው {t}	Cufaadha — {t} irratti banama	ዕጹው እዩ — ብ {t} ይኽፈት	Xiran — wuxuu furmayaa {t}	
+Order marked as {t}!	ትዕዛዙ እንደ {t} ተመዝግቧል!	Ajajni akka {t} mallattaa'eera!	ትእዛዝ ከም {t} ተመዝጊቡ!	Dalabka waxaa loo calaamadeeyay {t}!	
+Opening hours saved: {t1} to {t2}	የመክፈቻ ሰዓት ተቀምጧል፦ ከ{t1} እስከ {t2}	Sa'aatiin banaa kuufame: {t1} hanga {t2}	ሰዓታት ምኽፋት ተዓቂቡ፦ ካብ {t1} ክሳብ {t2}	Saacadaha furitaanka waa la keydiyay: {t1} ilaa {t2}	
+Good afternoon ☀️	እንደምን ዋሉ ☀️	Akkam oolte ☀️	ከመይ ኣምሲኹም ☀️	Galab wanaagsan ☀️	
+Wallet Balance	የዋሌት ቀሪ ሂሳብ	Hanga Waalet	ዝተረፈ ሂሳብ ዋሌት	Hadhaagga Wallet-ka	
+Send	ላክ	Ergi	ስደድ	Dir	
+Receive	ተቀበል	Fudhadhu	ተቐበል	Hel	
+Top up	ሙላ	Guuti	መልእ	Buuxi	
+Scan	ቃኝ	Iskaan godhi	ስካን	Iskaan	
+Recent	የቅርብ ጊዜ	Kan dhiyoo	ናይ ቀረባ	Kuwa dhow	
+See all →	ሁሉንም ተመልከት →	Hunda ilaali →	ኩሉ ርአ →	Dhammaan arag →	
+No transactions yet	እስካሁን ምንም ግብይት የለም	Hanga ammaatti daldalli hin jiru	ክሳብ ሕጂ ዝኾነ ግብይት የለን	Weli wax wareejin ah ma jiraan	
+QR	QR	QR	QR	QR	
+Top up wallet	ዋሌት ሙላ	Waalet guuti	ዋሌት መልእ	Wallet-ka buuxi	
+Send money to your wallet number via Telebirr or bank transfer. Contact support after sending to credit your account.	ገንዘብ ወደ ዋሌት ቁጥርዎ በቴሌብር ወይም በባንክ ይላኩ። ከላኩ በኋላ ሂሳብዎ እንዲሞላ ድጋፍን ያነጋግሩ።	Maallaqa lakkoofsa Waalet keetii irratti Telebirr yookaan baankiin ergi. Erguun booda akka herregni kee guutamu deeggarsa quunnami.	ገንዘብ ናብ ቁጽሪ ዋሌትካ ብቴሌብር ወይ ብባንክ ስደድ። ምስ ሰዳኻ ሂሳብካ ክመልእ ደገፍ ተወከስ።	Lacagta u dir lambarka wallet-kaaga Telebirr ama bangi. Markaad dirto kadib la xidhiidh taageerada si koontadaada loo buuxiyo.	
+Your wallet number	የዋሌት ቁጥርዎ	Lakkoofsa Waalet kee	ቁጽሪ ዋሌትካ	Lambarkaaga wallet-ka	
+Support contacts	የድጋፍ አድራሻዎች	Quunnamtii deeggarsaa	ናይ ደገፍ ኣድራሻታት	Xiriirka taageerada	
+Email:	ኢሜይል፦	Imeelii:	ኢመይል፦	Iimaylka:	
+Admin instant top-up	አስተዳዳሪ ፈጣን ሙሌት	Guuttannaa battalumatti admin	ፈጣን መመላእታ ኣስተዳዳሪ	Buuxinta degdegga ah ee admin	
+Add to my wallet	ወደ ዋሌቴ ጨምር	Waalet kootti dabali	ናብ ዋሌተይ ወስኽ	Ku dar wallet-kayga	
+Theme | ገጽታ	ገጽታ	Mala bocaa	ገጽታ	Muuqaalka	
+Light	ብርሃን	Ifaa	ብርሃን	Iftiin	
+Dark	ጨለማ	Dukkana	ጸልማት	Mugdi	
+Text size | መጠን	የጽሑፍ መጠን	Gara barruu	ዓቐን ጽሑፍ	Cabbirka qoraalka	
+Hide balance	ቀሪ ሂሳብ ደብቅ	Hanga dhoksi	ሂሳብ ሕባእ	Qari hadhaaga	
+Amount (ETB)	መጠን (ብር)	Hanga (ETB)	መጠን (ብር)	Qadar (ETB)	
+Help and support	እገዛ እና ድጋፍ	Gargaarsaa fi deeggarsa	ሓገዝን ደገፍን	Caawimaad iyo taageero	
+Language: English	ቋንቋ፦ እንግሊዝኛ	Afaan: Ingiliffa	ቋንቋ፦ እንግሊዝኛ	Luuqad: Ingiriis	
+Send money	ገንዘብ ላክ	Maallaqa ergi	ገንዘብ ስደድ	Lacag dir	
+Phone number	ስልክ ቁጥር	Lakkoofsa bilbilaa	ቁጽሪ ተሌፎን	Lambarka taleefanka	
+Note (optional)	ማስታወሻ (አማራጭ)	Yaadannoo (filannoo)	መዘኻኸሪ (ኣማራጺ)	Xusuusin (ikhtiyaari)	
+Confirm transfer	ዝውውሩን አረጋግጥ	Dabarsa mirkaneessi	ምስግጋር ኣረጋግጽ	Xaqiiji wareejinta	
+Fee	ክፍያ	Kaffaltii tajaajilaa	ኽፍሊት	Khidmad	
+Confirm & Send	አረጋግጥ እና ላክ	Mirkaneessiitii ergi	ኣረጋግጽ ስደድ	Xaqiiji oo dir	
+Sent!	ተልኳል!	Ergameera!	ተሰዲዱ!	Waa la diray!	
+Back to wallet	ወደ ዋሌት ተመለስ	Gara Waalet deebi'i	ናብ ዋሌት ተመለስ	Ku noqo wallet-ka	
+View history	ታሪክ ተመልከት	Seenaa ilaali	ታሪኽ ርአ	Arag taariikhda	
+Lookup	ፈልግ	Barbaadi	ጽዓር	Raadi	
+Top Up Wallet	ዋሌት ሙላ	Waalet guuti	ዋሌት መልእ	Wallet-ka buuxi	
+Pay online: Telebirr, CBE Birr, banks, cards	በመስመር ላይ ይክፈሉ፦ ቴሌብር፣ ሲቢኢ ብር፣ ባንኮች፣ ካርዶች	Toora interneetii irratti kaffali: Telebirr, CBE Birr, baankota, kaardii	ኣብ መስመር ክፈል፦ ቴሌብር፣ ሲቢኢ ብር፣ ባንኪታት፣ ካርድታት	Ku bixi online: Telebirr, CBE Birr, bangiyo, kaararka	
+INSTANT	ፈጣን	DHABA	ቅጽበታዊ	DEGDEG	
+POPULAR	ተወዳጅ	BARUMSA KAN BEEKAMU	ፍቱው	LA BAAHAN YAHAY	
+Commercial Bank transfer	የንግድ ባንክ ዝውውር	Dabarsa Baankii Daldalaa	ምስግጋር ንግዳዊ ባንክ	Wareejin Bangiga Ganacsiga	
+Bank Transfer	የባንክ ዝውውር	Dabarsa Baankii	ምስግጋር ባንክ	Wareejin Bangi	
+Any Ethiopian bank	ማንኛውም የኢትዮጵያ ባንክ	Baankii Itoophiyaa kamiyyuu	ዝኾነ ባንኪ ኢትዮጵያ	Bangi kasta oo Itoobiya ah	
+Cash or in-person to an admin	ጥሬ ገንዘብ ወይም በአካል ለአስተዳዳሪ	Maallaqa harkaa yookaan fuullee-fuullee admin tti	ጥረ ገንዘብ ወይ ብኣካል ንኣስተዳዳሪ	Lacag caddaan ah ama gacan ka gacan admin-ka	
+Get Payment Instructions	የክፍያ መመሪያ አግኝ	Qajeelfama kaffaltii argadhu	መምርሒ ክፍሊት ረኸብ	Hel tilmaamaha lacag bixinta	
+Your Reference Number	የማጣቀሻ ቁጥርዎ	Lakkoofsa wabii kee	ቁጽሪ ርእይቶኻ	Lambarkaaga tixraaca	
+Tap to copy · Use this exact reference when paying	ለመቅዳት ይንኩ · ሲከፍሉ ይህንኑ ማጣቀሻ ይጠቀሙ	Garagalchuuf tuqi · Yeroo kaffaltu lakkoofsa kana sirriitti fayyadami	ንምቕዳሕ ተንክፍ · ክትኸፍል ከለኻ እዚ ሓቲ ቁጽሪ ተጠቐም	Taabo si aad u koobiyayso · Marka aad bixinayso isticmaal tixraacan saxda ah	
+I've Sent the Money	ገንዘቡን ልኬያለሁ	Maallaqa ergeera	ገንዘብ ሰዲደ ኣለኹ	Lacagta waan dirnay	
+Start Over	እንደገና ጀምር	Irra deebi'ii jalqabi	ካብ ብሓድሽ ጀምር	Dib u bilow	
+Confirmation Sent!	ማረጋገጫ ተልኳል!	Mirkaneessi ergameera!	መረጋገጺ ተሰዲዱ!	Xaqiijintii waa la diray!	
+We received your confirmation and will credit your wallet within minutes. You'll see the balance update automatically.	ማረጋገጫዎን ተቀብለናል፤ በደቂቃዎች ውስጥ ዋሌትዎ ይሞላል። ቀሪ ሂሳቡ በራሱ ይታደሳል።	Mirkaneessa kee fudhanneerra; daqiiqaa muraasa keessatti Waalet kee ni guutama. Hanga ofumaan haaromsama.	መረጋገጺኻ ተቐቢልናዮ፤ ኣብ ውሽጢ ደቓይቕ ዋሌትካ ክመልእ እዩ። ሂሳብ ባዕሉ ይሓድስ።	Xaqiijintaada waan helnay; daqiiqado gudahood ayaa wallet-kaaga la buuxin doonaa. Hadhaaggu si toos ah ayuu isu cusbooneysiinayaa.	
+Go to Wallet	ወደ ዋሌት ሂድ	Gara Waalet deemi	ናብ ዋሌት ኪድ	U gudub Wallet-ka	
+Enter amount	መጠን ያስገቡ	Hanga galchi	መጠን የእትው	Geli qadarka	
+Total In	ጠቅላላ ገቢ	Walumaan seene	ጠቕላላ እተወሰኸ	Wadarta soo gashay	
+Total Out	ጠቅላላ ወጪ	Walumaan ba'e	ጠቕላላ ዝወጸ	Wadarta baxday	
+Incoming	ገቢ	Kan seenu	እተኸዓ	Soo socda	
+Outgoing	ወጪ	Kan ba'u	ዝወጽእ	Baxaya	
+Deposits	ተቀማጭ	Kuufama	ዝተቐመጠ	Kaydinta	
+Failed to load. Pull to retry.	መጫን አልተቻለም። ለመሞከር ይጎትቱ።	Fe'uun hin danda'amne. Irra deebi'ee yaaluuf harkisi.	ክጸዓን ኣይተኻኣለን። ዳግም ንምፍታን ስሓብ።	Ma soo dhacin. Jiid si aad mar kale u tijaabiso.	
+Load more	ተጨማሪ ጫን	Dabalataan fe'i	ተወሳኺ ጸዓን	Soo rar dheeraad ah	
+Transaction details	የግብይት ዝርዝር	Tarreeffama daldalaa	ዝርዝር ግብይት	Faahfaahinta wareejinta	
+Print Receipt	ደረሰኝ አትም	Ragaa kaffaltii maxxansi	ቅብሊት ሓትም	Daabac rasiidka	
+Download PDF	PDF አውርድ	PDF buusi	PDF ኣውርድ	Soo deji PDF	
+Search by phone, note…	በስልክ፣ ማስታወሻ ፈልግ…	Bilbilaan, yaadannoon barbaadi…	ብተሌፎን፣ መዘኻኸሪ ድለ…	Ku raadi taleefan, xusuusin…	
+Not Verified	አልተረጋገጠም	Hin mirkanoofne	ኣይተረጋገጸን	Lama xaqiijin	
+Balance ETB	ቀሪ ሂሳብ ብር	Hanga ETB	ዝተረፈ ብር	Hadhaag ETB	
+Sent	ተልኳል	Ergame	ተሰዲዱ	La diray	
+Received	ተቀብሏል	Fudhatame	ተቐቢሉ	La helay	
+Account Information	የመለያ መረጃ	Odeeffannoo Akkaawuntii	ሓበሬታ ኣካውንት	Macluumaadka Koontada	
+Email address	የኢሜይል አድራሻ	Teessoo imeelii	ኣድራሻ ኢመይል	Cinwaanka iimaylka	
+Security	ደህንነት	Nageenya	ድሕነት	Amniga	
+Change PIN	PIN ቀይር	PIN jijjiiri	PIN ቀይር	Beddel PIN	
+Update your wallet PIN	የዋሌት PIN ያዘምኑ	PIN Waalet kee haaromsi	PIN ዋሌትካ ሓድስ	Cusbooneysii PIN-ka wallet-kaaga	
+Verify Identity	ማንነትን አረጋግጥ	Eenyummaa mirkaneessi	መንነት ኣረጋግጽ	Xaqiiji aqoonsiga	
+Upload ID · Unlock full limits	መታወቂያ ጫን · ሙሉ ገደብ ክፈት	ID olkaa'i · Daangaa guutuu banaa	መንነት ጸዓን · ምሉእ ገደብ ክፈት	Soo geli ID · Fur xadka oo dhan	
+Services	አገልግሎቶች	Tajaajiloota	ኣገልግሎታት	Adeegyada	
+Add funds via Telebirr or bank	በቴሌብር ወይም በባንክ ገንዘብ ጨምር	Telebirr yookaan baankiin maallaqa dabali	ብቴሌብር ወይ ብባንክ ገንዘብ ወስኽ	Ku dar lacag Telebirr ama bangi	
+Payment Links	የክፍያ ሊንኮች	Liinkii Kaffaltii	ሊንክታት ክፍሊት	Xiriiriyeyaasha Lacag bixinta	
+Create & share pay links	የክፍያ ሊንክ ፍጠር እና አጋራ	Liinkii kaffaltii uumii qoodi	ሊንክ ክፍሊት ፍጠር ኣካፍል	Samee oo wadaag xiriiriyeyaasha lacag bixinta	
+View your payment statistics	የክፍያ ስታቲስቲክስዎን ይመልከቱ	Istaatistiksii kaffaltii kee ilaali	ስታቲስቲክስ ክፍሊትካ ርአ	Arag tirakoobka lacag bixintaada	
+Preferences	ምርጫዎች	Filannoowwan	ምርጫታት	Doorbidyada	
+Administration	አስተዳደር	Bulchiinsa	ኣስተዳደር	Maamulka	
+Admin Panel	የአስተዳዳሪ ፓነል	Paaneelii Admin	ፓነል ኣስተዳዳሪ	Guddiga Admin	
+Manage users, KYC, disputes	ተጠቃሚዎችን፣ KYC እና ክርክሮችን ያስተዳድሩ	Fayyadamtoota, KYC fi lilmoo bulchi	ተጠቀምቲ፣ KYC፣ ክሲታት ኣመሓድር	Maaree isticmaalayaasha, KYC, khilaafaadka	
+System Updater	የሲስተም አዘምን	Haaromsaa Sirnaa	ሓዳሲ ሲስተም	Cusbooneysiiyaha Nidaamka	
+Deploy files · run migrations	ፋይሎችን ጫን · ማይግሬሽን አሂድ	Faayilota fe'i · migration hojjachiisi	ፋይላት ጸዓን · migration ኣሂድ	Rar faylasha · ordi migration	
+Sign out	ውጣ	Ba'i	ውጻእ	Ka bax	
+Current PIN	የአሁኑ PIN	PIN yeroo ammaa	PIN ናይ ሕጂ	PIN-ka hadda	
+New PIN	አዲስ PIN	PIN haaraa	PIN ሓድሽ	PIN cusub	
+Confirm new PIN	አዲሱን PIN አረጋግጥ	PIN haaraa mirkaneessi	PIN ሓድሽ ኣረጋግጽ	Xaqiiji PIN-ka cusub	
+Update PIN	PIN አዘምን	PIN haaromsi	PIN ሓድስ	Cusbooneysii PIN	
+Edit Name	ስም አርም	Maqaa gulaali	ስም ኣዳልው	Wax ka beddel magaca	
+Edit Email	ኢሜይል አርም	Imeelii gulaali	ኢመይል ኣዳልው	Wax ka beddel iimaylka	
+Email	ኢሜይል	Imeelii	ኢመይል	Iimayl	
+QR Code	QR ኮድ	Koodii QR	QR ኮድ	Koodhka QR	
+Request	ጠይቅ	Gaafadhu	ሕተት	Weydii	
+Scan / Pay	ቃኝ / ክፈል	Iskaan godhi / Kaffali	ስካን / ክፈል	Iskaan / Bixi	
+Scan to send money to this wallet	ገንዘብ ወደዚህ ዋሌት ለመላክ ቃኙ	Maallaqa Waalet kanaaf ergachuuf iskaan godhi	ገንዘብ ናብዚ ዋሌት ንምስዳድ ስካን ግበር	Iskaan si aad lacag ugu dirto wallet-kan	
+Share QR	QR አጋራ	QR qoodi	QR ኣካፍል	Wadaag QR	
+Download	አውርድ	Buusi	ኣውርድ	Soo deji	
+Generate a QR code with a specific amount. Anyone who scans it will be prompted to pay exactly that amount.	የተወሰነ መጠን ያለው QR ኮድ ይፍጠሩ። የሚቃኘው ሰው ያንኑ መጠን እንዲከፍል ይጠየቃል።	Koodii QR hanga murtaa'e qabu uumi. Namni isa iskaan godhu hanga sana kaffaluuf gaafatama.	QR ኮድ ብዝተወሰነ መጠን ፍጠር። እቲ ዝስካን ሰብ ነታ መጠን ክኸፍል ይሓተት።	Samee koodh QR oo qadar gaar ah leh. Qofka iskaaniya waxaa lagu weydiin doonaa inuu bixiyo qadarkaas.	
+Label / Description	መለያ / መግለጫ	Mallattoo / Ibsa	ምልክት / መግለጺ	Summad / Sharaxaad	
+Generate QR	QR ፍጠር	QR uumi	QR ፍጠር	Samee QR	
+Payment request	የክፍያ ጥያቄ	Gaaffii kaffaltii	ሕቶ ክፍሊት	Codsiga lacag bixinta	
+Pay by QR	በQR ክፈል	QR'n kaffali	ብQR ክፈል	Ku bixi QR	
+Paste a QR token below or enter the payment code you received.	ከታች የQR ቶከን ይለጥፉ ወይም የተቀበሉትን የክፍያ ኮድ ያስገቡ።	Gadii QR token maxxansi yookaan koodii kaffaltii fudhatte galchi.	ኣብ ታሕቲ QR ቶከን ለጥፍ ወይ ዝተቐበልካዮ ኮድ ክፍሊት የእትው።	Hoos ku dheji token QR ama geli koodhka lacag bixinta ee aad heshay.	
+QR token / payment code	QR ቶከን / የክፍያ ኮድ	QR token / koodii kaffaltii	QR ቶከን / ኮድ ክፍሊት	Token QR / koodhka lacag bixinta	
+Amount (ETB) — leave blank if preset	መጠን (ብር) — ቀድሞ ከተወሰነ ባዶ ይተዉ	Hanga (ETB) — duraan kan murtaa'e yoo ta'e duwwaa dhiisi	መጠን (ብር) — ቅድም እንተ ተወሲኑ ባዶ ሕደግ	Qadar (ETB) — iska daa haddii horey loo qeexay	
+Payment sent!	ክፍያ ተልኳል!	Kaffaltiin ergameera!	ክፍሊት ተሰዲዱ!	Lacag bixinta waa la diray!	
+Paste token here…	ቶከኑን እዚህ ይለጥፉ…	Token as maxxansi…	ቶከን ኣብዚ ለጥፍ…	Halkan ku dheji token…	
+Optional	አማራጭ	Filannoo	ኣማራጺ	Ikhtiyaari	
+Loading payment…	ክፍያ በመጫን ላይ…	Kaffaltii fe'aa jira…	ክፍሊት ይጽዓን ኣሎ…	Lacag bixinta waa la rarayaa…	
+Paying from	የሚከፈለው ከ	Kaffaluu irraa	ዝኽፈል ካብ	Laga bixinayo	
+Pay Now	አሁን ክፈል	Amma kaffali	ሕጂ ክፈል	Hadda bixi	
+💡 You need an ኢE Pay account to send this payment.	💡 ይህን ክፍያ ለመላክ የኢE Pay መለያ ያስፈልግዎታል።	💡 Kaffaltii kana ergachuuf akkaawuntii ETEL Pay si barbaachisa.	💡 ነዚ ክፍሊት ንምስዳድ ኣካውንት ኢE Pay የድልየካ።	💡 Waxaad u baahan tahay koonto ETEL Pay si aad lacagtan u dirto.	
+It's free and takes 30 seconds.	ነጻ ነው እና 30 ሰከንድ ይወስዳል።	Bilisaa dha; sekondii 30 fudhata.	ናጻ እዩ 30 ካልኢት ይወስድ።	Waa bilaash oo waxay qaadataa 30 ilbiriqsi.	
+Create Free Account	ነጻ መለያ ፍጠር	Akkaawuntii bilisaa uumi	ናጻ ኣካውንት ፍጠር	Samee koonto bilaash ah	
+I already have an account	መለያ አለኝ	Akkaawuntii qaba	ኣካውንት ኣለኒ	Horey koonto ayaan u leeyahay	
+Payment Sent!	ክፍያ ተልኳል!	Kaffaltiin ergameera!	ክፍሊት ተሰዲዱ!	Lacag bixinta waa la diray!	
+View Wallet	ዋሌት ተመልከት	Waalet ilaali	ዋሌት ርአ	Arag Wallet-ka	
+Link Not Found	ሊንኩ አልተገኘም	Liinkiin hin argamne	ሊንክ ኣይተረኽበን	Xiriiriyaha lama helin	
+This payment link is invalid, expired, or has already been used.	ይህ የክፍያ ሊንክ ልክ አይደለም፣ ጊዜው አልፏል ወይም ቀድሞ ጥቅም ላይ ውሏል።	Liinkiin kaffaltii kun sirrii miti, yeroon isaa darbeera, yookaan duraan fayyadamameera.	እዚ ሊንክ ክፍሊት ቅኑዕ ኣይኮነን፣ ግዜኡ ሓሊፉ ወይ ቅድም ተጠቒሙ።	Xiriiriyahan lacag bixinta waa khalad, wuu dhacay, ama horey ayaa loo isticmaalay.	
+Share a link · anyone can pay you instantly	ሊንክ ያጋሩ · ማንም ወዲያውኑ ሊከፍልዎ ይችላል	Liinkii qoodi · nami kamiyyuu battalumatti si kaffaluu danda'a	ሊንክ ኣካፍል · ዝኾነ ሰብ ብቅጽበት ክኸፍለካ ይኽእል	Wadaag xiriiriye · qof kasta ayaa degdeg kuu bixin kara	
++ New	+ አዲስ	+ Haaraa	+ ሓድሽ	+ Cusub	
+Could not load links	ሊንኮችን መጫን አልተቻለም	Liinkiiwwan fe'uu hin dandeenye	ሊንክታት ክጽዓን ኣይተኻእለን	Xiriiriyeyaasha lama rari karin	
+Create Payment Link	የክፍያ ሊንክ ፍጠር	Liinkii Kaffaltii Uumi	ሊንክ ክፍሊት ፍጠር	Samee Xiriiriyaha Lacag bixinta	
+Label / Purpose	መለያ / ዓላማ	Mallattoo / Kaayyoo	ምልክት / ዕላማ	Summad / Ujeeddo	
+Amount (leave blank for open amount)	መጠን (ክፍት መጠን ለማድረግ ባዶ ይተዉ)	Hanga (hanga banaa ta'uuf duwwaa dhiisi)	መጠን (ክፉት መጠን ንምግባር ባዶ ሕደግ)	Qadar (iska daa si qadar furan u noqoto)	
+Expires in	የሚያልቀው በ	Kan darbu keessatti	ዝውዳእ ኣብ	Wuxuu dhacayaa	
+24 hours	24 ሰዓት	Sa'aatii 24	24 ሰዓታት	24 saac	
+3 days	3 ቀን	Guyyaa 3	3 መዓልታት	3 maalmood	
+1 week	1 ሳምንት	Torban 1	1 ሰሙን	1 usbuuc	
+30 days	30 ቀን	Guyyaa 30	30 መዓልታት	30 maalmood	
+Never	መቼም	Gonkumaa	ፈጺሙ	Weligeed	
+Create Link	ሊንክ ፍጠር	Liinkii uumi	ሊንክ ፍጠር	Samee xiriiriye	
+Add a note…	ማስታወሻ ጨምር…	Yaadannoo dabali…	መዘኻኸሪ ወስኽ…	Ku dar xusuusin…	
+0.00 = any amount	0.00 = ማንኛውም መጠን	0.00 = hanga kamiyyuu	0.00 = ዝኾነ መጠን	0.00 = qadar kasta	
+Identity Verified	ማንነት ተረጋግጧል	Eenyummaan mirkanaa'eera	መንነት ተረጋጊጹ	Aqoonsiga waa la xaqiijiyay	
+Your identity is verified. All transaction limits are unlocked.	ማንነትዎ ተረጋግጧል። ሁሉም የግብይት ገደቦች ተከፍተዋል።	Eenyummaan kee mirkanaa'eera. Daangaan daldalaa hundi banameera.	መንነትካ ተረጋጊጹ። ኩሉ ገደብ ግብይት ተኸፊቱ።	Aqoonsigaaga waa la xaqiijiyay. Xadka wareejinta oo dhan waa furan yahay.	
+Back to Profile	ወደ መገለጫ ተመለስ	Gara Piroofaayilii deebi'i	ናብ መግለጺ ተመለስ	Ku noqo Profile-ka	
+Verify Your Identity	ማንነትዎን ያረጋግጡ	Eenyummaa kee mirkaneessi	መንነትካ ኣረጋግጽ	Xaqiiji aqoonsigaaga	
+Choose your verification method.	የማረጋገጫ ዘዴ ይምረጡ።	Mala mirkaneessuu filadhu.	ኣገባብ መረጋገጺ ምረጽ።	Dooro habka xaqiijinta.	
+EtelID gives you instant verification.	EtelID ፈጣን ማረጋገጫ ይሰጥዎታል።	EtelID mirkaneessa battalumaa siif kenna.	EtelID ቅጽበታዊ መረጋገጺ ይህበካ።	EtelID waxay ku siinaysaa xaqiijin degdeg ah.	
+Verify with EtelID	በEtelID ያረጋግጡ	EtelID'n mirkaneessi	ብEtelID ኣረጋግጽ	Ku xaqiiji EtelID	
+You already have an EtelID account? Connect it instantly — no document upload needed.	EtelID መለያ አለዎት? ወዲያውኑ ያገናኙ — ሰነድ መጫን አያስፈልግም።	Akkaawuntii EtelID duraan qabdaa? Battalumatti walitti hidhi — sanadni olkaa'uun hin barbaachisu.	ኣካውንት EtelID ቅድሚ ሕጂ ኣለካ ድዩ? ብቅጽበት ኣተሓሕዞ — ሰነድ ምጽዓን የድልን።	Koonto EtelID horey ma leedahay? Isla markiiba ku xidh — uma baahnid inaad dukumeenti soo gelisid.	
+RECOMMENDED · INSTANT	የሚመከር · ፈጣን	KAN FILATAME · DHABA	ዝተመከረ · ቅጽበታዊ	LA TALIYAY · DEGDEG	
+Upload Documents	ሰነዶችን ጫን	Sanadoota olkaa'i	ሰነዳት ጸዓን	Soo geli Dukumeentiyada	
+Upload your national ID, passport, or driving license for manual review (24–48hrs).	ብሔራዊ መታወቂያዎን፣ ፓስፖርትዎን ወይም መንጃ ፈቃድዎን ለእጅ ግምገማ ይጫኑ (24–48 ሰዓት)።	ID biyyaalessaa, paaspoortii yookaan hayyama konkolaachisaa ilaalcha harkaatiif olkaa'i (sa'aatii 24–48).	ብሄራዊ መንነት፣ ፓስፖርት ወይ ፍቓድ መዘወሪ ንብኢድ ግምገማ ጸዓን (24–48 ሰዓታት)።	Soo geli aqoonsiga qaranka, baasaboorka ama shatiga darawalnimada si gacanta loogu eego (24–48 saac).	
+Connect your EtelID account	የEtelID መለያዎን ያገናኙ	Akkaawuntii EtelID kee walitti hidhi	ኣካውንት EtelID ኣተሓሕዝ	Ku xidh koontadaada EtelID	
+Your EtelID phone (if different)	የEtelID ስልክዎ (የተለየ ከሆነ)	Bilbila EtelID kee (yoo adda ta'e)	ተሌፎን EtelID ናይካ (እንተ ዝተፈልየ)	Taleefankaaga EtelID (haddii uu kala duwan yahay)	
+Leave blank to use your wallet phone number.	የዋሌት ስልክ ቁጥርዎን ለመጠቀም ባዶ ይተዉ።	Lakkoofsa bilbilaa Waalet kee fayyadamuuf duwwaa dhiisi.	ቁጽሪ ተሌፎን ዋሌትካ ንምጥቃም ባዶ ሕደግ።	Iska daa si aad u isticmaasho lambarka taleefanka wallet-kaaga.	
+Don't have EtelID?	EtelID የለዎትም?	EtelID hin qabduu?	EtelID የብልካን?	EtelID ma haysatid?	
+Register here →	እዚህ ይመዝገቡ →	As galmaa'i →	ኣብዚ ተመዝገብ →	Halkan iska diiwaangeli →	
+Connect EtelID & Verify	EtelID አገናኝ እና አረጋግጥ	EtelID walitti hidhiitii mirkaneessi	EtelID ኣተሓሕዝ ኣረጋግጽ	Ku xidh EtelID oo xaqiiji	
+Done — View Profile	ተጠናቋል — መገለጫ ተመልከት	Xumurameera — Piroofaayilii ilaali	ተወዲኡ — መግለጺ ርአ	Waa dhammaaday — Arag Profile-ka	
+Document type	የሰነድ ዓይነት	Gosa sanadaa	ዓይነት ሰነድ	Nooca dukumeentiga	
+Ethiopian National ID	የኢትዮጵያ ብሔራዊ መታወቂያ	ID Biyyaalessaa Itoophiyaa	ብሄራዊ መንነት ኢትዮጵያ	Aqoonsiga Qaranka Itoobiya	
+Passport	ፓስፖርት	Paaspoortii	ፓስፖርት	Baasaboor	
+Driving License	መንጃ ፈቃድ	Hayyama Konkolaachisaa	ፍቓድ መዘወሪ	Shatiga Darawalnimada	
+Upload document front	የሰነዱን ፊት ጫን	Fuula duraa sanadaa olkaa'i	ሰነድ ንቅድሚት ጸዓን	Soo geli dhinaca hore ee dukumeentiga	
+Tap to take photo or upload	ፎቶ ለማንሳት ወይም ለመጫን ይንኩ	Suuraa kaasuuf yookaan olkaa'uuf tuqi	ፎቶ ንምውሳድ ወይ ንምጽዓን ተንክፍ	Taabo si aad sawir u qaadato ama u soo gelisid	
+Selfie with document (optional)	ከሰነዱ ጋር የራስ ፎቶ (አማራጭ)	Suuraa ofii sanada waliin (filannoo)	ሰልፊ ምስ ሰነድ (ኣማራጺ)	Selfi dukumeentiga la jira (ikhtiyaari)	
+Hold document next to your face	ሰነዱን ከፊትዎ አጠገብ ይያዙ	Sanada gara fuula keetti qabi	ሰነድ ኣብ ጥቓ ገጽካ ሓዝ	Dukumeentiga ku hay wejigaaga agtiisa	
+My activity · 30d	እንቅስቃሴዬ · 30 ቀን	Sochii koo · guyyaa 30	ንጥፈተይ · 30 መዓልታት	Dhaqdhaqaaqayga · 30 maalmood	
+Error loading analytics	ትንታኔ መጫን ላይ ስህተት	Dogoggora analiitiksii fe'uu	ጌጋ ኣብ ምጽዓን ትንተና	Qalad ka dhacay rarida falanqaynta	
+Users	ተጠቃሚዎች	Fayyadamtoota	ተጠቀምቲ	Isticmaalayaasha	
+Transactions	ግብይቶች	Daldalawwan	ግብይታት	Wareejinno	
+Total Users	ጠቅላላ ተጠቃሚዎች	Walumaan Fayyadamtoota	ጠቕላላ ተጠቀምቲ	Wadarta Isticmaalayaasha	
+Recent transactions	የቅርብ ጊዜ ግብይቶች	Daldalawwan dhiyoo	ናይ ቀረባ ግብይታት	Wareejinnada dhow	
+No transactions.	ምንም ግብይት የለም።	Daldalli hin jiru.	ዝኾነ ግብይት የለን።	Wareejin ma jiro.	
+Sends	መላኮች	Ergaawwan	ስደዳት	Dirid	
+Receives	መቀበሎች	Fudhannaawwan	ተቐብልቲ	Helid	
+Orders, couriers, shops, menus and delivery prices.	ትዕዛዞች፣ ተላላኪዎች፣ ሱቆች፣ ምናሌዎች እና የማድረሻ ዋጋዎች።	Ajajoota, geessitootaa, suuqota, menu fi gatii geessuu.	ትእዛዛት፣ ኣቕራብቲ፣ ድኳናት፣ ምናሌታትን ዋጋ ምቕራብን።	Dalabyada, gaarsiiyeyaasha, dukaamada, menu-yada iyo qiimaha gaarsiinta.	
+Run the day	ቀኑን አስኪዱ	Guyyaa geggeessi	መዓልቲ ኣካይድ	Maamul maalinta	
+Couriers and shops	ተላላኪዎች እና ሱቆች	Geessitoota fi suuqota	ኣቕራብቲን ድኳናትን	Gaarsiiyeyaasha iyo dukaamada	
+Menu and prices	ምናሌ እና ዋጋዎች	Menu fi gatiiwwan	ምናሌን ዋጋታትን	Menu iyo qiimaha	
+Money and reports	ገንዘብ እና ሪፖርቶች	Maallaqaa fi gabaasa	ገንዘብን ጸብጻባትን	Lacag iyo warbixinno	
+Ride requests, drivers, safety and ride payments.	የጉዞ ጥያቄዎች፣ ሾፌሮች፣ ደህንነት እና የጉዞ ክፍያዎች።	Gaaffii imalaa, konkolaachisoota, nageenyaa fi kaffaltii imalaa.	ሕቶ ጉዕዞ፣ ሾፌራት፣ ድሕነትን ክፍሊት ጉዕዞን።	Codsiyada safarka, darawallada, amniga iyo lacag bixinta safarka.	
+Drivers and safety	ሾፌሮች እና ደህንነት	Konkolaachisoota fi nageenya	ሾፌራትን ድሕነትን	Darawallada iyo amniga	
+Money and prices	ገንዘብ እና ዋጋዎች	Maallaqaa fi gatiiwwan	ገንዘብን ዋጋታትን	Lacag iyo qiimaha	
+Company	ኩባንያ	Dhaabbata	ኩባንያ	Shirkadda	
+People, money, support and settings that both systems share.	ሁለቱም ሲስተሞች የሚጋሯቸው ሰዎች፣ ገንዘብ፣ ድጋፍ እና ቅንብሮች።	Namoota, maallaqa, deeggarsa fi qindaa'inoota sirnoonni lamaan waliin fayyadaman.	ክልቲኦም ሲስተማት ዘካፍልዎም ሰባት፣ ገንዘብ፣ ደገፍን ቅጥዕታትን።	Dadka, lacagta, taageerada iyo dejinnada labada nidaam wadaagaan.	
+Overview	አጠቃላይ እይታ	Ilaalcha waliigalaa	ሓፈሻዊ ሕብረት	Guudmar	
+People	ሰዎች	Namoota	ሰባት	Dadka	
+Money	ገንዘብ	Maallaqa	ገንዘብ	Lacag	
+Support and records	ድጋፍ እና መዝገቦች	Deeggarsaa fi galmeewwan	ደገፍን መዝገባትን	Taageero iyo diiwaanno	
+System	ሲስተም	Sirna	ሲስተም	Nidaamka	
+Orders that need a courier right now. Assign by hand.	አሁን ተላላኪ የሚፈልጉ ትዕዛዞች። በእጅ ይመድቡ።	Ajajoota amma geessaa barbaadan. Harkaan ramadi.	ሕጂ ኣቕራቢ ዝደልዩ ትእዛዛት። ብኢድ መድብ።	Dalabyada hadda gaarsiiye u baahan. Ku qoondee gacan.	
+Every delivery order: search, status, details.	እያንዳንዱ የማድረሻ ትዕዛዝ፦ ፍለጋ፣ ሁኔታ፣ ዝርዝር።	Ajaja geessuu hunda: barbaaduu, haala, tarreeffama.	ነፍሲ ወከፍ ትእዛዝ ምቕራብ፦ ድሌት፣ ኩነታት፣ ዝርዝር።	Dalab kasta oo gaarsiin: raadin, xaalad, faahfaahin.	
+Package prices by vehicle, distance and weight.	የጥቅል ዋጋ በተሽከርካሪ፣ ርቀት እና ክብደት።	Gatii ba'aa konkolaataa, fageenyaa fi ulfaatina irratti.	ዋጋ ጥቅል ብመጓዓዚ፣ ርሕቀትን ክብደትን።	Qiimaha xirmooyinka marka loo eego baabuurka, masaafada iyo culeyska.	
+Chats between customers, shops and couriers.	በደንበኞች፣ ሱቆች እና ተላላኪዎች መካከል ያሉ ውይይቶች።	Haasaa maamiltootaa, suuqotaa fi geessitootaa gidduu.	ኣብ ማእከል ዓማዊል፣ ድኳናትን ኣቕራብትን ዝኾነ ዝርርብ።	Sheekaysiga ka dhexeeya macaamiisha, dukaamada iyo gaarsiiyeyaasha.	
+Courier list, approval, vehicle, documents.	የተላላኪ ዝርዝር፣ ማጽደቂያ፣ ተሽከርካሪ፣ ሰነዶች።	Tarree geessitootaa, mirkaneessa, konkolaataa, sanadoota.	ዝርዝር ኣቕራብቲ፣ ምጽዳቕ፣ መጓዓዚ፣ ሰነዳት።	Liiska gaarsiiyeyaasha, ogolaansho, baabuur, dukumeentiyo.	
+Shops and service givers: verification and menus.	ሱቆች እና አገልግሎት ሰጪዎች፦ ማረጋገጫ እና ምናሌዎች።	Suuqotaa fi tajaajila kennitoota: mirkaneessaa fi menu.	ድኳናትን ኣገልገልትን፦ መረጋገጺን ምናሌታትን።	Dukaamada iyo bixiyeyaasha adeegga: xaqiijin iyo menu-yo.	
+What customers said about shops and couriers.	ደንበኞች ስለ ሱቆች እና ተላላኪዎች የተናገሩት።	Wanti maamiltoonni suuqotaa fi geessitootaa irratti jedhan.	ዓማዊል ብዛዕባ ድኳናትን ኣቕራብትን ዝበልዎ።	Wixii macaamiishu ka yidhaahdeen dukaamada iyo gaarsiiyeyaasha.	
+Products and prices in every shop.	በእያንዳንዱ ሱቅ ውስጥ ያሉ ምርቶች እና ዋጋዎች።	Oomishootaa fi gatiiwwan suuqii hunda keessa.	ኣብ ነፍሲ ወከፍ ድኳን ዘለዉ ምህርቲን ዋጋታትን።	Alaabta iyo qiimaha dukaan kasta.	
+The shared menu catalog shops pick from.	ሱቆች የሚመርጡበት የጋራ የምናሌ ካታሎግ።	Kaataloogii menu waloo suuqonni irraa filatan.	ድኳናት ዝመርጽዎ ሓባራዊ ካታሎግ ምናሌ።	Buug-gacmeedka menu-ga la wadaago ee dukaamadu doortaan.	
+Delivery fees and zones, and ride fares.	የማድረሻ ክፍያዎች እና ዞኖች፣ እና የጉዞ ዋጋዎች።	Kaffaltii geessuu fi aanaalee, fi gatii imalaa.	ክፍሊት ምቕራብን ዞናትን ዋጋ ጉዕዞን።	Khidmadaha gaarsiinta iyo aagagga, iyo qiimaha safarka.	
+Price each delivery by distance for every vehicle, and share it between the company and the courier.	ለእያንዳንዱ ተሽከርካሪ እያንዳንዱን ማድረሻ በርቀት ዋጋ ይወስኑ፣ እና በኩባንያው እና በተላላኪው መካከል ያካፍሉ።	Geessuu hunda fageenyaan konkolaataa hundaaf gatii kaa'i, dhaabbataa fi geessaa gidduutti qoodi.	ነፍሲ ወከፍ ምቕራብ ብርሕቀት ንነፍሲ ወከፍ መጓዓዚ ዋጋ ሰይም፣ ኣብ ማእከል ኩባንያን ኣቕራቢን ኣካፍል።	U qiimee gaarsiin kasta masaafada baabuur kasta, oo u qaybi shirkadda iyo gaarsiiyaha.	
+Promo codes for orders and rides.	ለትዕዛዞች እና ለጉዞዎች የማስተዋወቂያ ኮዶች።	Koodii beeksisaa ajajootaa fi imalaaf.	ኮድ ምፍንጫሕ ንትእዛዛትን ጉዕዞታትን።	Koodhadhka dallacaadda dalabyada iyo safarrada.	
+Refunds and the cash couriers hold.	ተመላሽ ገንዘቦች እና ተላላኪዎች የያዙት ጥሬ ገንዘብ።	Deebii maallaqaa fi maallaqa harkaa geessitoonni qaban.	ዝምለስ ገንዘብን ኣቕራብቲ ዝሓዝዎ ጥረ ገንዘብን።	Lacag celinta iyo lacagta caddaanka ah ee gaarsiiyeyaashu haystaan.	
+Payments to check and confirm.	ለመፈተሽ እና ለማረጋገጥ የሚጠብቁ ክፍያዎች።	Kaffaltiiwwan ilaaluu fi mirkaneessuu qaban.	ክትርእይን ከተረጋግጽን ዘለዎ ክፍሊታት።	Lacag bixinno la hubiyo oo la xaqiijiyo.	
+Sales and delivery reports.	የሽያጭ እና የማድረሻ ሪፖርቶች።	Gabaasa gurgurtaa fi geessuu.	ጸብጻብ መሸጣን ምቕራብን።	Warbixinnada iibka iyo gaarsiinta.	
+Ride requests waiting, drivers online, SOS: right now.	የሚጠብቁ የጉዞ ጥያቄዎች፣ በመስመር ላይ ያሉ ሾፌሮች፣ SOS፦ አሁን።	Gaaffii imalaa eegaa jiran, konkolaachisoota toora irra jiran, SOS: amma.	ዝጽበዩ ሕቶ ጉዕዞ፣ ኣብ መስመር ዘለዉ ሾፌራት፣ SOS፦ ሕጂ።	Codsiyada safarka sugaya, darawallada online ah, SOS: hadda.	
+Drivers on a live map, approvals, suspend, add a driver.	ሾፌሮች በቀጥታ ካርታ ላይ፣ ማጽደቂያ፣ ማገድ፣ ሾፌር መጨመር።	Konkolaachisoota kaartaa kallattii irratti, mirkaneessa, dhaabuu, konkolaachisaa dabaluu.	ሾፌራት ኣብ ቀጥታዊ ካርታ፣ ምጽዳቕ፣ ምእጋድ፣ ሾፌር ምውሳኽ።	Darawallada khariidad toos ah, ogolaansho, hakin, ku dar darawal.	
+What drivers see in their Pull tab: far waiting trips, VIP and sweet areas.	ሾፌሮች በPull ትር የሚያዩት፦ ሩቅ የሚጠብቁ ጉዞዎች፣ VIP እና ጣፋጭ አካባቢዎች።	Wanti konkolaachisoonni Pull tab isaaniitti argan: imala fageenyaan eegaa jiru, VIP fi naannoowwan mi'aawaa.	ሾፌራት ኣብ Pull ትር ዝርእይዎ፦ ርሑቕ ዝጽበዩ ጉዕዞታት፣ VIP ከምኡ ጥዑም ቦታታት።	Waxa darawalladu ku arkaan Pull tab: safarrada fog ee sugaya, VIP iyo meelaha macaan.	
+All rides, fares, receipts, cancel or finish a ride.	ሁሉም ጉዞዎች፣ ዋጋዎች፣ ደረሰኞች፣ ጉዞ መሰረዝ ወይም ማጠናቀቅ።	Imala hunda, gatii, ragaa kaffaltii, imala haquu yookaan xumuruu.	ኩሉ ጉዕዞታት፣ ዋጋታት፣ ቅብሊታት፣ ጉዕዞ ምስራዝ ወይ ምውዳእ።	Dhammaan safarrada, qiimaha, rasiidhada, tirtir ama dhammee safar.	
+Driver documents, expired papers, fake GPS checks.	የሾፌር ሰነዶች፣ ጊዜያቸው ያለፈ ወረቀቶች፣ የሐሰት GPS ፍተሻ።	Sanadoota konkolaachisaa, waraqaa yeroon isaa darbe, qoranoo GPS sobaa.	ሰነዳት ሾፌር፣ ግዜኦም ዝሓለፈ ወረቓቕቲ፣ ምርመራ ሓሶት GPS።	Dukumeentiyada darawalka, waraaqaha dhacay, hubinta GPS been ah.	
+Agents who book rides and bring in drivers.	ጉዞ የሚያስይዙ እና ሾፌሮችን የሚያመጡ ወኪሎች።	Bakka bu'oota imala qabsiisanii konkolaachisoota fidan.	ጉዕዞ ዘመዝግቡን ሾፌራት ዘምጽኡን ወከልቲ።	Wakiillada qoondeeya safarrada oo keena darawallada.	
+Ride payments, wallet and tips.	የጉዞ ክፍያዎች፣ ዋሌት እና ጉርሻ።	Kaffaltii imalaa, Waalet fi kennaa.	ክፍሊት ጉዕዞ፣ ዋሌትን ጉርሻን።	Lacag bixinta safarka, wallet-ka iyo tibaaxaha.	
+The numbers of the whole company.	የመላው ኩባንያ ቁጥሮች።	Lakkoofsa dhaabbata guutuu.	ቁጽሪታት ሙሉእ ኩባንያ።	Tirooyinka shirkadda oo dhan.	
+Everyone with an account, by role.	መለያ ያላቸው ሁሉም ሰዎች፣ በሚና።	Nama akkaawuntii qabu hundumaa, gahee irratti.	ኣካውንት ዘለዎ ኩሉ ሰብ፣ ብሚናኡ።	Qof kasta oo koonto leh, marka loo eego doorka.	
+Customers: orders, rides, accounts.	ደንበኞች፦ ትዕዛዞች፣ ጉዞዎች፣ መለያዎች።	Maamiltoota: ajajoota, imala, akkaawuntiiwwan.	ዓማዊል፦ ትእዛዛት፣ ጉዕዞታት፣ ኣካውንታት።	Macaamiisha: dalabyada, safarrada, koontooyinka.	
+Money, plans and investors.	ገንዘብ፣ እቅዶች እና ባለሀብቶች።	Maallaqa, karoorota fi invastaroota.	ገንዘብ፣ መደባት ከምኡ ወፃእተኛታት።	Lacag, qorshayaal iyo maalgashadayaal.	
+Equb groups.	የእቁብ ቡድኖች።	Garee Iqqubaa.	ጉጅለታት ዕቑብ።	Kooxaha Iqub.	
+Payment companies and banks (keys).	የክፍያ ኩባንያዎች እና ባንኮች (ቁልፎች)።	Dhaabbilee kaffaltii fi baankota (furtuuwwan).	ኩባንያታት ክፍሊትን ባንኪታትን (መፍትሕታት)።	Shirkadaha lacag bixinta iyo bangiyada (furayaasha).	
+Support desk: cases and answers.	የድጋፍ ጠረጴዛ፦ ጉዳዮች እና መልሶች።	Deeskii deeggarsaa: dhimmoota fi deebiiwwan.	ዴስክ ደገፍ፦ ጉዳያትን መልስታትን።	Miiska taageerada: kiisaska iyo jawaabaha.	
+Messages from users.	ከተጠቃሚዎች የሚመጡ መልዕክቶች።	Ergaawwan fayyadamtoota irraa.	ካብ ተጠቀምቲ ዝመጽኡ መልእኽትታት።	Fariimaha isticmaalayaasha.	
+Company documents.	የኩባንያ ሰነዶች።	Sanadoota dhaabbataa.	ሰነዳት ኩባንያ።	Dukumeentiyada shirkadda.	
+Is the system ready to open? Checklist.	ሲስተሙ ለመክፈት ዝግጁ ነው? ዝርዝር ማረጋገጫ።	Sirni banuuf qophiidhaa? Tarree mirkaneessaa.	ሲስተም ንምኽፋት ድሉው ድዩ? ዝርዝር መረጋገጺ።	Nidaamku ma diyaar u yahay furitaan? Liis hubineed.	
+Admin settings.	የአስተዳዳሪ ቅንብሮች።	Qindaa'ina Admin.	ቅጥዕታት ኣስተዳዳሪ።	Dejinnada Admin.	
+The cities Etel serves.	ኢትኤል የሚያገለግላቸው ከተሞች።	Magaalota Etel tajaajilu.	ኢትኤል ዘገልግለን ከተማታት።	Magaalooyinka Etel u adeegto.	
+Logos, colours, names.	አርማዎች፣ ቀለሞች፣ ስሞች።	Mallattoowwan, halluuwwan, maqaawwan.	ወግዕታት፣ ሕብርታት፣ ስማት።	Summadaha, midabada, magacyada.	
+Who may do what (staff roles).	ማን ምን ማድረግ ይችላል (የሠራተኛ ሚናዎች)።	Eenyu maal hojjechuu danda'a (gahee hojjettootaa).	መን እንታይ ክገብር ይኽእል (ሚናታት ሰራሕተኛታት)።	Yaa maxaa samayn kara (doorarka shaqaalaha).	
+App releases.	የመተግበሪያ ልቀቶች።	Baasii appii.	ወፃኢታት ኣፕ።	Daabacaadaha app-ka.	
+What the ETEL phone app shows (owner).	የኢትኤል ስልክ መተግበሪያ የሚያሳየው (ባለቤት)።	Wanti appiin bilbilaa ETEL agarsiisu (abbaa).	ኣፕ ተሌፎን ኢትኤል ዘርእዮ (ወናኒ)።	Waxa app-ka taleefanka ETEL muujiyo (mulkiilaha).	
+Upload files.	ፋይሎችን ጫን።	Faayilota olkaa'i.	ፋይላት ጸዓን።	Soo geli faylasha.	
+Careful: reset and delete tools.	ጥንቃቄ፦ የማጥፋት እና የመሰረዝ መሳሪያዎች።	Of eeggannoo: meeshaalee haaromsaa fi haquu.	ጥንቃቐ፦ መሳርሒታት ምድምሳስን ምስራዝን።	Digniin: qalabka dib u dejinta iyo tirtirka.	
+Admin two-step sign-in (the code at the EtelID login page is separate: change it in the EtelID portal).	የአስተዳዳሪ ባለሁለት ደረጃ መግቢያ (በEtelID መግቢያ ገጽ ያለው ኮድ የተለየ ነው፤ በEtelID ፖርታል ይቀይሩት)።	Seensa tarkaanfii lama Admin (koodiin fuula seensa EtelID adda; poortaala EtelID keessatti jijjiiri).	ባዕለ ክልተ ደረጃ መእተዊ ኣስተዳዳሪ (እቲ ኣብ ገጽ መእተዊ EtelID ዘሎ ኮድ ዝተፈለየ እዩ፤ ኣብ ፖርታል EtelID ቀይሮ)።	Gelitaanka laba tallaabo ee Admin (koodhka bogga gelitaanka EtelID waa kale: ka beddel albaabka EtelID).	
+Block attacks and people outside Ethiopia, sign out when not used, security log.	ጥቃቶችን እና ከኢትዮጵያ ውጭ ያሉ ሰዎችን አግድ፣ ሲቀመጥ ውጣ፣ የደህንነት መዝገብ።	Weeraraa fi namoota Itoophiyaa alaa gufuu, yeroo hin fayyadamne ba'uu, galmee nageenyaa.	ተጻብኦን ካብ ኢትዮጵያ ወጻኢ ዘለዉ ሰባትን ኣዕግት፣ ዘይተጠቐምካ ኣብ ዝኾነሉ ግዜ ውጻእ፣ መዝገብ ድሕነት።	Xir weerarada iyo dadka Itoobiya ka baxsan, ka bax marka aan la isticmaalin, diiwaanka amniga.	
+Make text and buttons bigger or smaller.	ጽሑፍ እና አዝራሮችን ያሳድጉ ወይም ያሳንሱ።	Barruu fi qabduuwwan guddisi yookaan xiqqeessi.	ጽሑፍን ዝራብታትን ኣዕቢ ወይ ኣነኽይ።	Ka weyneey ama ka yaree qoraalka iyo badhamada.	
+Ride fares per vehicle, peak hours, driver goals, commission, incentives.	የጉዞ ዋጋ በተሽከርካሪ፣ የፍጥነት ሰዓታት፣ የሾፌር ግቦች፣ ኮሚሽን፣ ማበረታቻዎች።	Gatii imalaa konkolaataan, sa'aatii ol-aanaa, kaayyoo konkolaachisaa, komishinii, kakaasuu.	ዋጋ ጉዕዞ ብመጓዓዚ፣ ሰዓታት ብዙሕ ሓላፍነት፣ ዕላማ ሾፌር፣ ኮሚሽን፣ ምትብባዕ።	Qiimaha safarka baabuur kasta, saacadaha ugu mashquulka badan, hadafyada darawalka, komishinka, dhiirigelinta.	
+Delivery fees and zones, vehicle fees, courier pay, bank accounts.	የማድረሻ ክፍያዎች እና ዞኖች፣ የተሽከርካሪ ክፍያዎች፣ የተላላኪ ክፍያ፣ የባንክ ሂሳቦች።	Kaffaltii geessuu fi aanaalee, kaffaltii konkolaataa, kaffaltii geessaa, herrega baankii.	ክፍሊት ምቕራብን ዞናትን፣ ክፍሊት መጓዓዚ፣ ክፍሊት ኣቕራቢ፣ ሂሳብ ባንክ።	Khidmadaha gaarsiinta iyo aagagga, khidmadaha baabuurta, mushaharka gaarsiiyaha, koontooyinka bangiga.	
+Ride prices	የጉዞ ዋጋዎች	Gatiiwwan imalaa	ዋጋታት ጉዕዞ	Qiimaha safarka	
+Delivery prices	የማድረሻ ዋጋዎች	Gatiiwwan geessuu	ዋጋታት ምቕራብ	Qiimaha gaarsiinta	
+Delivery home	የማድረሻ መነሻ	Mana Geessuu	ዋና ገጽ ምቕራብ	Guriga Gaarsiinta	
+Ride home	የጉዞ መነሻ	Mana Imalaa	ዋና ገጽ ጉዕዞ	Guriga Safarka	
+Company home	የኩባንያ መነሻ	Mana Dhaabbataa	ዋና ገጽ ኩባንያ	Guriga Shirkadda	
+Skip to main content	ወደ ዋና ይዘት ዝለል	Gara qabiyyee ijoo darbi	ናብ ዋና ትሕዝቶ ሕለፍ	U gudub nuxurka ugu muhiimsan	
+ETEL Admin	ኢትኤል አስተዳዳሪ	ETEL Admin	ኢትኤል ኣስተዳዳሪ	ETEL Admin	
+Enterprise Dashboard	የድርጅት ዳሽቦርድ	Daashboordii Dhaabbataa	ዳሽቦርድ ትካል	Dashboard-ka Shirkadda	
+All Systems Online	ሁሉም ሲስተሞች በመስመር ላይ	Sirnoonni hundi toora irra jiru	ኩሎም ሲስተማት ኣብ መስመር	Dhammaan nidaamyadu waa online	
+Updated: {t}	ተዘምኗል፦ {t}	Haaromfame: {t}	ተሓዲሱ፦ {t}	La cusbooneysiiyay: {t}	
+{n} pages	{n} ገጾች	fuula {n}	{n} ገጻት	{n} bog	
+{n} page	{n} ገጽ	fuula {n}	{n} ገጽ	{n} bog	
+Customer App	የደንበኛ መተግበሪያ	Appii Maamilaa	ኣፕ ዓማዊል	App-ka Macmiilka	
+Service Giver App	የአገልግሎት ሰጪ መተግበሪያ	Appii Tajaajila Kennaa	ኣፕ ኣገልጋሊ	App-ka Bixiyaha Adeegga	
+Driver App	የሾፌር መተግበሪያ	Appii Konkolaachisaa	ኣፕ ሾፌር	App-ka Darawalka	
+Courier App	የተላላኪ መተግበሪያ	Appii Geessaa	ኣፕ ኣቕራቢ	App-ka Gaarsiiyaha	
+Ride App	የጉዞ መተግበሪያ	Appii Imalaa	ኣፕ ጉዕዞ	App-ka Safarka	
+All pages	ሁሉም ገጾች	Fuulawwan hunda	ኩሎም ገጻት	Dhammaan boggaga	
+Operations	ሥራዎች	Hojii guyyaa	ስራሕታት	Hawlgallada	
+Package prices	የጥቅል ዋጋዎች	Gatii ba'aa	ዋጋታት ጥቅል	Qiimaha xirmooyinka	
+Live operations	ቀጥታ ሥራዎች	Hojii kallattii	ቀጥታዊ ስራሕታት	Hawlgallada toos ah	
+Drivers	ሾፌሮች	Konkolaachisoota	ሾፌራት	Darawallada	
+Special offers	ልዩ ቅናሾች	Dhiyeessii addaa	ፍሉያት ቅናሻት	Dalacsiimo gaar ah	
+Driver trust	የሾፌር እምነት	Amantaa konkolaachisaa	እምነት ሾፌር	Aaminaadda darawalka	
+Ride Payments	የጉዞ ክፍያዎች	Kaffaltii Imalaa	ክፍሊት ጉዕዞ	Lacag bixinta Safarka	
+Agents	ወኪሎች	Bakka bu'oota	ወከልቲ	Wakiilada	
+Order chats	የትዕዛዝ ውይይቶች	Haasaa ajajaa	ዝርርብ ትእዛዝ	Sheekaysiga dalabka	
+Couriers	ተላላኪዎች	Geessitoota	ኣቕራብቲ	Gaarsiiyeyaasha	
+Service Givers	አገልግሎት ሰጪዎች	Tajaajila kennitoota	ኣገልገልቲ	Bixiyeyaasha Adeegga	
+Catalog & pricing	ካታሎግ እና ዋጋ	Kaataloogii fi gatii	ካታሎግን ዋጋን	Buug-gacmeed iyo qiimeyn	
+Menu catalog	የምናሌ ካታሎግ	Kaataloogii menu	ካታሎግ ምናሌ	Buug-gacmeedka menu-ga	
+Pricing	ዋጋ አወጣጥ	Gatii kaa'uu	ዋጋ ምውሳን	Qiimeynta	
+Delivery fees	የማድረሻ ክፍያዎች	Kaffaltii geessuu	ክፍሊት ምቕራብ	Khidmadaha gaarsiinta	
+Finance & Planning	ፋይናንስ እና እቅድ	Faayinaansii fi karoora	ፋይናንስን መደብን	Maaliyadda iyo Qorshaynta	
+Equb	እቁብ	Iqqubaa	ዕቑብ	Iqub	
+Reports	ሪፖርቶች	Gabaasaalee	ጸብጻባት	Warbixinno	
+Support & records	ድጋፍ እና መዝገቦች	Deeggarsaa fi galmeewwan	ደገፍን መዝገባትን	Taageero iyo diiwaanno	
+Support desk	የድጋፍ ጠረጴዛ	Deeskii deeggarsaa	ዴስክ ደገፍ	Miiska taageerada	
+Launch	ማስጀመሪያ	Jalqabuu	ምጅማር	Bilaabid	
+Service areas	የአገልግሎት አካባቢዎች	Naannoowwan tajaajilaa	ቦታታት ኣገልግሎት	Aagagga adeegga	
+Branding	ብራንዲንግ	Mallattoo dhaabbataa	ብራንድ	Summadaynta	
+Roles	ሚናዎች	Gahee	ሚናታት	Doorarka	
+Releases	ልቀቶች	Baasii	ወፃኢታት	Daabacaadyo	
+ETEL app	የኢትኤል መተግበሪያ	Appii ETEL	ኣፕ ኢትኤል	App-ka ETEL	
+Updater	አዘምን	Haaromsaa	ኣሓዳሲ	Cusbooneysiiyaha	
+Danger Zone	አደገኛ ዞን	Naannoo Balaa	ሓደገኛ ዞና	Aagga Khatarta	
+Admin two-step	የአስተዳዳሪ ባለሁለት ደረጃ	Tarkaanfii lama Admin	ክልተ ደረጃ ኣስተዳዳሪ	Laba tallaabo Admin	
+Etel Shield	ኢትኤል ጋሻ	Gaachana Etel	ኣዕጋዪ ኢትኤል	Gaashaanka Etel	
+Dispatch	መላኪያ	Ergisiisaa	ምስዳድ	Qoondeyn	
+Ratings	ደረጃዎች	Sadarkaawwan	ደረጃታት	Qiimeyn	
+Payments & banks	ክፍያዎች እና ባንኮች	Kaffaltii fi baankota	ክፍሊታትን ባንኪታትን	Lacag bixin iyo bangiyo	
+Apps	መተግበሪያዎች	Appiiwwan	ኣፕታት	App-yada	
+Search	ፈልግ	Barbaadi	ድሌት	Raadi	
+Find a page…	ገጽ ፈልግ…	Fuula barbaadi…	ገጽ ድለ…	Raadi bog…	
+Find a page	ገጽ ፈልግ	Fuula barbaadi	ገጽ ድለ	Raadi bog	
+Customers	ደንበኞች	Maamiltoota	ዓማዊል	Macaamiisha	
+Quick tools	ፈጣን መሳሪያዎች	Meeshaalee ariifachiisaa	ቅልጡፍ መሳርሒታት	Qalab degdeg ah	
+Workspace	የሥራ ቦታ	Iddoo hojii	ቦታ ስራሕ	Goobta shaqada	
+Terms	ውሎች	Haalawwan	ኩነታት	Shuruudaha	
+Total Orders	ጠቅላላ ትዕዛዞች	Ajajoota walii gala	ጠቕላላ ትእዛዛት	Wadarta Dalabyada	
+Pending Orders	በመጠባበቅ ላይ ያሉ ትዕዛዞች	Ajajoota eegaa jiran	ዝጽበዩ ትእዛዛት	Dalabyada sugaya	
+Total Revenue (ETB)	ጠቅላላ ገቢ (ብር)	Galii walii gala (ETB)	ጠቕላላ እተወ (ብር)	Wadarta dakhliga (ETB)	
+Orders by Status Distribution	የትዕዛዞች ስርጭት በሁኔታ	Ramaddii ajajootaa haala irratti	ዕደላ ትእዛዛት ብኩነታት	Qaybinta dalabyada marka loo eego xaalad	
+Top 5 Revenue Zones (ETB)	ከፍተኛ 5 የገቢ ዞኖች (ብር)	Aanaalee galii olaanaa 5 (ETB)	5 ልዕሊ ዞናት እተወ (ብር)	5-ta aag ee dakhliga ugu badan (ETB)	
+Order Code	የትዕዛዝ ኮድ	Koodii ajajaa	ኮድ ትእዛዝ	Koodhka dalabka	
+Action	እርምጃ	Tarkaanfii	ስጉምቲ	Ficil	
+Date	ቀን	Guyyaa	ዕለት	Taariikh	
+7 days	7 ቀን	Guyyaa 7	7 መዓልታት	7 maalmood	
+90 days	90 ቀን	Guyyaa 90	90 መዓልታት	90 maalmood	
+Pending Confirmations	በመጠባበቅ ላይ ያሉ ማረጋገጫዎች	Mirkaneessitoota eegaa jiran	ዝጽበዩ መረጋገጺታት	Xaqiijinno sugaya	
+Confirmation History	የማረጋገጫ ታሪክ	Seenaa mirkaneessaa	ታሪኽ መረጋገጺ	Taariikhda xaqiijinta	
+All Orders	ሁሉም ትዕዛዞች	Ajajoota hunda	ኩሎም ትእዛዛት	Dhammaan dalabyada	
+Confirmations	ማረጋገጫዎች	Mirkaneessitoota	መረጋገጺታት	Xaqiijinno	
+Platform pulse	የመድረክ ምት	Sochii marsariitii	ምትእስሳር መድረኽ	Garaaca madalka	
+All Chats	ሁሉም ውይይቶች	Haasaa hunda	ኩሎም ዝርርባት	Dhammaan sheekaysiyada	
+Resolved	ተፈትቷል	Furame	ተፈቲሑ	La xaliyay	
+Checking...	በመፈተሽ ላይ...	Ilaalaa jira...	ይምርመር ኣሎ...	Waa la hubinayaa...	
+Show unread only	ያልተነበቡትን ብቻ አሳይ	Kan hin dubbifamne qofa agarsiisi	ዘይተነበቡ ጥራይ ኣርኢ	Muuji kuwa aan la akhrin oo keliya	
+Print Daily Summary	የቀን ማጠቃለያ አትም	Cuunfaa guyyaa maxxansi	ጠቕላል መዓልታዊ ሓትም	Daabac kooban maalinle	
+Export CSV	CSV ላክ	CSV baasi	CSV ኣውጽእ	U dhoofi CSV	
